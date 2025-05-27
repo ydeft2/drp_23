@@ -1,7 +1,7 @@
 services:
   - type: web
+    runtime: docker
     name: scala-webapp
-    env: docker
     plan: free
     dockerfilePath: ./Dockerfile
     autoDeploy: true
