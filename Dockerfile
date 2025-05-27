@@ -1,28 +1,45 @@
-# 1) builder stage: compile Scala.js + backend assembly
-FROM hseeberger/scala-sbt:11.0.18_2.13.12_1.9.6 AS builder
+###########################
+# 1) builder: openjdk + sbt
+###########################
+FROM openjdk:11-slim AS builder
+
+# allow overriding sbt version if you like
+ARG SBT_VERSION=1.9.9
+
 WORKDIR /app
 
-# 1a) cache sbt metadata
-COPY build.sbt project/plugins.sbt ./
-RUN sbt update
+# install prereqs + add the sbt apt repo
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      curl gnupg2 ca-certificates unzip \
+  && echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" \
+       > /etc/apt/sources.list.d/sbt.list \
+  && curl -sL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x99E82A75642AC823" \
+       | apt-key add - \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends sbt=${SBT_VERSION}* \
+  && rm -rf /var/lib/apt/lists/*
 
-# 1b) bring in your code
+# copy in your project
 COPY . .
 
-# 1c) build the optimized Scala.js bundle
+# 1) build the optimized Scala.js bundle
 RUN sbt frontend/fullOptJS \
   && mkdir -p backend/src/main/resources/web \
-  && cp frontend/target/scala-2.13/dentana-frontend-fullopt.js \
+  && cp frontend/target/scala-*/dentana-frontend-fullopt.js \
         backend/src/main/resources/web/frontend.js
 
-# 1d) assemble the fat JAR
+# 2) assemble the backend fat JAR
 RUN sbt backend/assembly
 
-# 2) runtime stage: just ship the JAR
+###########################
+# 2) runtime: just the JAR
+###########################
 FROM openjdk:11-jre-slim
 WORKDIR /app
+
+# copy over only the assembled JAR
 COPY --from=builder \
-     /app/backend/target/scala-2.13/dentana-backend-assembly-0.1.0-SNAPSHOT.jar \
+     /app/backend/target/scala-2.13/*-assembly-*.jar \
      ./app.jar
 
 EXPOSE 8080
