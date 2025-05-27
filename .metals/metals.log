@@ -1,0 +1,24 @@
+2025.05.27 18:42:41 INFO  Started: Metals version 1.5.2 in folders '/mnt/c/Users/ydeft/OneDrive/Documents/GitHub/drp_23' for client Visual Studio Code 1.99.3.[0m
+May 27, 2025 6:42:43 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2
+2025.05.27 18:42:45 INFO  no build target found for /mnt/c/Users/ydeft/OneDrive/Documents/GitHub/drp_23/build.sbt. Using presentation compiler with project's scala-library version: 3.3.5[0m
+May 27, 2025 6:42:47 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 13
+2025.05.27 18:42:47 INFO  no build target found for /mnt/c/Users/ydeft/OneDrive/Documents/GitHub/drp_23/build.sbt. Using presentation compiler with project's scala-library version: 3.3.5[0m
+2025.05.27 18:42:47 WARN  no build target for: /mnt/c/Users/ydeft/OneDrive/Documents/GitHub/drp_23/build.sbt[0m
+2025.05.27 18:44:08 INFO  Shutting down server[0m
+2025.05.27 18:44:08 INFO  shutting down Metals[0m
+2025.05.27 18:44:08 INFO  Exiting server[0m
+2025.05.27 18:44:08 ERROR 2025.05.27 18:44:29 INFO  Started: Metals version 1.5.3 in folders '/mnt/c/Users/ydeft/OneDrive/Documents/GitHub/drp_23' for client Visual Studio Code 1.100.2.[0m
+2025.05.27 18:44:32 INFO  no build target found for /mnt/c/Users/ydeft/OneDrive/Documents/GitHub/drp_23/build.sbt. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.27 18:44:34 WARN  no build target for: /mnt/c/Users/ydeft/OneDrive/Documents/GitHub/drp_23/build.sbt[0m
+May 27, 2025 6:44:34 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1
+2025.05.27 18:46:48 INFO  no build target found for /mnt/c/Users/ydeft/OneDrive/Documents/GitHub/drp_23/frontend/src/scala/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.27 18:46:49 INFO  no build target found for /mnt/c/Users/ydeft/OneDrive/Documents/GitHub/drp_23/frontend/src/scala/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.27 18:46:49 WARN  no build target for: /mnt/c/Users/ydeft/OneDrive/Documents/GitHub/drp_23/frontend/src/scala/Main.scala[0m
+2025.05.27 18:46:49 INFO  no build target found for /mnt/c/Users/ydeft/OneDrive/Documents/GitHub/drp_23/frontend/src/scala/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.27 18:47:41 INFO  no build target found for /mnt/c/Users/ydeft/OneDrive/Documents/GitHub/drp_23/frontend/src/scala/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.27 19:03:24 INFO  no build target found for /mnt/c/Users/ydeft/OneDrive/Documents/GitHub/drp_23/backend/src/main/scala/dentana/Server.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.27 19:03:25 INFO  no build target found for /mnt/c/Users/ydeft/OneDrive/Documents/GitHub/drp_23/backend/src/main/scala/dentana/Server.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.27 19:03:25 WARN  no build target for: /mnt/c/Users/ydeft/OneDrive/Documents/GitHub/drp_23/backend/src/main/scala/dentana/Server.scala[0m
