@@ -22,7 +22,7 @@ RUN sbt frontend/fastLinkJS
 
 # Copy the JS bundle to backend/public
 RUN mkdir -p backend/public \
-  && cp frontend/target/scala-3.3.1/frontend-fastopt/main.js backend/public/main.js \
+  && cp frontend/target/scala-3.3.1/frontend-fastopt/main.js backend/public/frontend.js \
   && cp frontend/public/index.html backend/public/index.html
 RUN sbt backend/assembly
 
