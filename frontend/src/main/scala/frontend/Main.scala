@@ -3,16 +3,25 @@ package frontend
 import org.scalajs.dom
 import org.scalajs.dom.document
 import org.scalajs.dom.html._
-import frontend.Inbox
 
 object Main {
+  case class Booking(name: String, time: String, location: String)
+
+  private var bookings: List[Booking] = List(
+    Booking("Dental Cleaning", "10:00 AM", "Downtown Clinic"),
+    Booking("Root Canal", "2:30 PM", "East Side Dental"),
+    Booking("Checkup", "9:15 AM", "Northview Dental Office")
+  )
+
   def main(args: Array[String]): Unit = render()
 
   def render(): Unit = {
-    // Clear existing page content before rendering
     document.body.innerHTML = ""
+    document.body.appendChild(buildHeader())
+    document.body.appendChild(buildBookingsBox())
+  }
 
-    // Create header
+  private def buildHeader(): Div = {
     val header = document.createElement("div").asInstanceOf[Div]
     header.style.backgroundColor = "purple"
     header.style.color = "white"
@@ -27,7 +36,6 @@ object Main {
     header.style.height = "50px"
     header.style.zIndex = "1"
 
-
     val accountBtn = document.createElement("button").asInstanceOf[Button]
     accountBtn.textContent = "Account"
     accountBtn.style.background = "transparent"
@@ -35,6 +43,7 @@ object Main {
     accountBtn.style.border = "none"
     accountBtn.style.cursor = "pointer"
     accountBtn.style.fontSize = "16px"
+    accountBtn.addEventListener("click", (_: dom.MouseEvent) => Account.render())
 
     val inboxBtn = document.createElement("button").asInstanceOf[Button]
     inboxBtn.textContent = "Inbox"
@@ -45,56 +54,104 @@ object Main {
     inboxBtn.style.fontSize = "16px"
     inboxBtn.addEventListener("click", (_: dom.MouseEvent) => Inbox.render())
 
-    val title = document.createElement("div")
+    val title = document.createElement("div").asInstanceOf[Div]
     title.textContent = "Dentana"
-    title.asInstanceOf[Div].style.fontSize = "20px"
-    title.asInstanceOf[Div].style.fontWeight = "bold"
-    title.asInstanceOf[Div].style.margin = "0 auto"
-    title.asInstanceOf[Div].style.position = "absolute"
-    title.asInstanceOf[Div].style.left = "50%"
-    title.asInstanceOf[Div].style.transform = "translateX(-50%)"
+    title.style.fontSize = "20px"
+    title.style.fontWeight = "bold"
+    title.style.margin = "0 auto"
+    title.style.position = "absolute"
+    title.style.left = "50%"
+    title.style.transform = "translateX(-50%)"
 
     header.appendChild(accountBtn)
     header.appendChild(title)
     header.appendChild(inboxBtn)
-    document.body.appendChild(header)
+    header
+  }
 
-    // Create scroll box for bookings
-    val bookingsBox = document.createElement("div").asInstanceOf[Div]
-    bookingsBox.style.marginTop = "70px"
-    bookingsBox.style.marginLeft = "auto"
-    bookingsBox.style.marginRight = "auto"
-    bookingsBox.style.width = "80%"
-    bookingsBox.style.maxHeight = "400px"
-    bookingsBox.style.overflowY = "scroll"
-    bookingsBox.style.border = "1px solid #ccc"
-    bookingsBox.style.borderRadius = "8px"
-    bookingsBox.style.padding = "20px"
-    bookingsBox.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)"
-    bookingsBox.style.backgroundColor = "#f9f9f9"
+  private def buildBookingsBox(): Div = {
+    val box = document.createElement("div").asInstanceOf[Div]
+    box.style.marginTop = "70px"
+    box.style.marginLeft = "auto"
+    box.style.marginRight = "auto"
+    box.style.width = "80%"
+    box.style.maxHeight = "400px"
+    box.style.overflowY = "scroll"
+    box.style.border = "1px solid #ccc"
+    box.style.borderRadius = "8px"
+    box.style.padding = "20px"
+    box.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)"
+    box.style.backgroundColor = "#f9f9f9"
 
-    val bookingsTitle = document.createElement("h2")
-    bookingsTitle.textContent = "Your bookings"
-    bookingsBox.appendChild(bookingsTitle)
+    val title = document.createElement("h2")
+    title.textContent = "Your bookings"
+    box.appendChild(title)
 
-    val mockBookings = List(
-      ("Dental Cleaning", "10:00 AM", "Downtown Clinic"),
-      ("Root Canal", "2:30 PM", "East Side Dental"),
-      ("Checkup", "9:15 AM", "Northview Dental Office")
-    )
+    bookings.foreach(b => box.appendChild(buildBookingEntry(b)))
+    box
+  }
 
-    mockBookings.foreach { case (name, time, location) =>
-      val bookingEntry = document.createElement("div")
-      bookingEntry.innerHTML =
-        s"""
-           |<strong>$name</strong><br>
-           |Time: $time<br>
-           |Location: $location
-           |<hr>
-           |""".stripMargin
-      bookingsBox.appendChild(bookingEntry)
-    }
+  private def buildBookingEntry(booking: Booking): Div = {
+    val entry = document.createElement("div").asInstanceOf[Div]
+    entry.innerHTML = s"<strong>${booking.name}</strong><br>Time: ${booking.time}<br>Location: ${booking.location}"
+    entry.style.cursor = "pointer"
+    entry.addEventListener("click", (_: dom.MouseEvent) => renderBookingDetails(booking))
+    val hr = document.createElement("hr")
+    entry.appendChild(hr)
+    entry
+  }
 
-    document.body.appendChild(bookingsBox)
+  private def renderBookingDetails(booking: Booking): Unit = {
+    document.body.innerHTML = ""
+    document.body.appendChild(buildHeader())
+
+    val container = document.createElement("div").asInstanceOf[Div]
+    container.style.marginTop = "70px"
+    container.style.marginLeft = "auto"
+    container.style.marginRight = "auto"
+    container.style.width = "80%"
+    container.style.padding = "20px"
+    container.style.border = "1px solid #ccc"
+    container.style.borderRadius = "8px"
+    container.style.backgroundColor = "#f9f9f9"
+    container.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)"
+
+    val title = document.createElement("h2")
+    title.textContent = booking.name
+    container.appendChild(title)
+
+    val timeP = document.createElement("p")
+    timeP.textContent = s"Time: ${booking.time}"
+    container.appendChild(timeP)
+
+    val locP = document.createElement("p")
+    locP.textContent = s"Location: ${booking.location}"
+    container.appendChild(locP)
+
+    val cancelBtn = document.createElement("button").asInstanceOf[Button]
+    cancelBtn.textContent = "Cancel Booking"
+    cancelBtn.style.backgroundColor = "red"
+    cancelBtn.style.color = "white"
+    cancelBtn.style.border = "none"
+    cancelBtn.style.padding = "10px 20px"
+    cancelBtn.style.cursor = "pointer"
+    cancelBtn.style.borderRadius = "4px"
+    cancelBtn.addEventListener("click", (_: dom.MouseEvent) => {
+      bookings = bookings.filterNot(_ == booking)
+      render()
+    })
+    container.appendChild(cancelBtn)
+
+    val backBtn = document.createElement("button").asInstanceOf[Button]
+    backBtn.textContent = "Back"
+    backBtn.style.marginLeft = "10px"
+    backBtn.style.padding = "10px 20px"
+    backBtn.style.cursor = "pointer"
+    backBtn.style.border = "1px solid #333"
+    backBtn.style.background = "transparent"
+    backBtn.addEventListener("click", (_: dom.MouseEvent) => render())
+    container.appendChild(backBtn)
+
+    document.body.appendChild(container)
   }
 }
