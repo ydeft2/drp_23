@@ -16,7 +16,7 @@ object Server extends IOApp.Simple {
   }
 
   // Static file routes (serves files from backend/public)
-  val staticRoutes = resourceServiceBuilder[IO]("/public").toRoutes
+  val staticRoutes = resourceServiceBuilder[IO]("backend/public").toRoutes
 
   // Combine routes: API under /api, static files at root
   val httpApp = Router[IO](
@@ -26,6 +26,7 @@ object Server extends IOApp.Simple {
 
   val run = {
     val port = sys.env.get("PORT").flatMap(p => scala.util.Try(p.toInt).toOption).getOrElse(8080)
+    // val port = 8080 // Default port, can be overridden by environment variable
     EmberServerBuilder
       .default[IO]
       .withHost(Host.fromString("0.0.0.0").get)
