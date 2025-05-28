@@ -16,8 +16,7 @@ object Server extends IOApp.Simple {
   }
 
   // Static file routes (serves files from backend/public)
-  val staticRoutes = fileService[IO](FileService.Config("backend/public"))
-
+  val staticRoutes = fileService[IO](FileService.Config("backend/public", pathPrefix = ""))
   // Combine routes: API under /api, static files at root
   val httpApp = Router[IO](
     "/api" -> apiRoutes,

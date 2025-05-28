@@ -32,5 +32,5 @@ WORKDIR /app
 
 # Copy the assembled JAR
 COPY --from=builder /app/backend/target/scala-3.3.1/*-assembly-*.jar ./app.jar
-
+COPY --from=builder /app/backend/public ./public
 ENTRYPOINT ["java", "-jar", "app.jar"]
