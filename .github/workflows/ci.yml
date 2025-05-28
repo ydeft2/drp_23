@@ -21,10 +21,13 @@ jobs:
           distribution: 'temurin'
           java-version: 17
 
-      - name: Setup sbt
-        uses: actions/setup-scala@v1
-        with:
-          sbt-version: 1.9.6 
+      - name: Install sbt
+        run: |
+          curl -L -o sbt.deb https://github.com/sbt/sbt/releases/download/v1.9.6/sbt-1.9.6.deb
+          sudo dpkg -i sbt.deb
+          sudo apt-get update
+          sudo apt-get install sbt
+
       - name: Cache sbt and Ivy
         uses: actions/cache@v3
         with:
