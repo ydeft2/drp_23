@@ -1,29 +1,23 @@
-ThisBuild / scalaVersion     := "2.13.12"
-ThisBuild / version          := "0.1.0-SNAPSHOT"
+import org.scalajs.linker.interface.ModuleInitializer
 
-lazy val frontend = project
-  .in(file("frontend"))
-  .enablePlugins(org.scalajs.sbtplugin.ScalaJSPlugin)
+ThisBuild / scalaVersion := "3.3.1"
+
+enablePlugins(ScalaJSPlugin)
+lazy val frontend = (project in file("frontend"))
+  .enablePlugins(ScalaJSPlugin)
   .settings(
-    name := "dentana-frontend",
-    libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "2.6.0",
-    // tell sbt where to emit the JS so backend can pick it up:
-    Compile / fastOptJS / artifactPath :=
-      baseDirectory.value / ".." / "backend" / "src" / "main" / "resources" / "web" / "frontend-fastopt.js",
+    name := "frontend",
+    scalaJSUseMainModuleInitializer := true,
+    libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "2.3.0"
   )
 
-lazy val backend = project
-  .in(file("backend"))
+lazy val backend = (project in file("backend"))
   .settings(
-    name := "dentana-backend",
+    scalaVersion := "3.3.1",
     libraryDependencies ++= Seq(
-      "com.typesafe.akka" %% "akka-http"   % "10.2.9",
-      "com.typesafe.akka" %% "akka-stream" % "2.6.20"
-    ),
-    Compile / unmanagedResourceDirectories +=
-      baseDirectory.value / "src" / "main" / "resources" / "web"
+      "org.http4s" %% "http4s-dsl"          % "0.23.23",
+      "org.http4s" %% "http4s-ember-server" % "0.23.23",
+      "org.http4s" %% "http4s-server" % "0.23.23",
+      "org.typelevel" %% "cats-effect"      % "3.5.1",
+    )
   )
-
-lazy val root = (project in file("."))
-  .aggregate(frontend, backend)
-  .settings(publish := {}, publishLocal := {}, publishM2 := {})
