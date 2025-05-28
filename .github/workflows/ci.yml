@@ -31,11 +31,11 @@ jobs:
           restore-keys: |
             sbt-cache-${{ runner.os }}-
 
-      # - name: Compile frontend
-      #   run: sbt frontend/fullOptJS
+      - name: Compile frontend
+        run: sbt frontend/fullOptJS
 
-      # - name: Compile backend
-      #   run: sbt backend/compile
+      - name: Compile backend
+        run: sbt backend/compile
 
-      # - name: Run tests
-      #   run: sbt test
+      - name: Run tests
+        run: sbt test
