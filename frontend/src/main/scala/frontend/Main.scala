@@ -3,9 +3,15 @@ package frontend
 import org.scalajs.dom
 import org.scalajs.dom.document
 import org.scalajs.dom.html._
+import frontend.Inbox
 
 object Main {
-  def main(args: Array[String]): Unit = {
+  def main(args: Array[String]): Unit = render()
+
+  def render(): Unit = {
+    // Clear existing page content before rendering
+    document.body.innerHTML = ""
+
     // Create header
     val header = document.createElement("div").asInstanceOf[Div]
     header.style.backgroundColor = "purple"
@@ -37,6 +43,7 @@ object Main {
     inboxBtn.style.border = "none"
     inboxBtn.style.cursor = "pointer"
     inboxBtn.style.fontSize = "16px"
+    inboxBtn.addEventListener("click", (_: dom.MouseEvent) => Inbox.render())
 
     val title = document.createElement("div")
     title.textContent = "Dentana"
