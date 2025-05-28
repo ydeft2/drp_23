@@ -24,11 +24,14 @@ object Server extends IOApp.Simple {
     "/"    -> staticRoutes
   ).orNotFound
 
-  val run = EmberServerBuilder
-    .default[IO]
-    .withHost(Host.fromString("localhost").get)
-    .withPort(Port.fromInt(8080).get)
-    .withHttpApp(httpApp)
-    .build
-    .use(_ => IO.println("Server running at http://localhost:8080") >> IO.never)
-}
+  val run = {
+    val port = sys.env.get("PORT").flatMap(p => scala.util.Try(p.toInt).toOption).getOrElse(8080)
+    EmberServerBuilder
+      .default[IO]
+      .withHost(Host.fromString("0.0.0.0").get)
+      .withPort(Port.fromInt(port).get)
+      .withHttpApp(httpApp)
+      .build
+      .use(_ => IO.println(s"Server running at http://0.0.0.0:$port") >> IO.never)
+  }
+} 

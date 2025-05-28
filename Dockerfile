@@ -1,46 +1,42 @@
-###########################
-# 1) builder: openjdk + sbt
-###########################
+# ---- Builder stage ----
 FROM openjdk:11-slim AS builder
 
-# allow overriding sbt version if you like
-ARG SBT_VERSION=1.9.9
-
+ARG SBT_VERSION=1.9.6
 WORKDIR /app
 
-# install prereqs + add the sbt apt repo
+# Install sbt and dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      curl gnupg2 ca-certificates unzip \
+      curl gnupg2 ca-certificates \
   && echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" \
        > /etc/apt/sources.list.d/sbt.list \
-  && curl -sL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x99E82A75642AC823" \
-       | apt-key add - \
+  && curl -sL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x99E82A75642AC823" | apt-key add - \
   && apt-get update \
   && apt-get install -y --no-install-recommends sbt=${SBT_VERSION}* \
   && rm -rf /var/lib/apt/lists/*
 
-# copy in your project
+# Copy the project
 COPY . .
 
-# 1) build the optimized Scala.js bundle
-RUN sbt frontend/fullOptJS \
-  && mkdir -p backend/src/main/resources/web \
-  && cp frontend/target/scala-*/dentana-frontend-fullopt.js \
-        backend/src/main/resources/web/frontend.js
+# Build frontend (Scala.js)
+RUN sbt frontend/fastLinkJS
 
-# 2) assemble the backend fat JAR
+# Copy the JS bundle to backend/public
+RUN mkdir -p backend/public \
+  && cp frontend/target/scala-3.3.1/frontend-fastopt/main.js backend/public/main.js
+
+# Build backend fat JAR
 RUN sbt backend/assembly
 
-###########################
-# 2) runtime: just the JAR
-###########################
+# ---- Runtime stage ----
 FROM openjdk:11-jre-slim
 WORKDIR /app
 
-# copy over only the assembled JAR
-COPY --from=builder \
-     /app/backend/target/scala-2.13/*-assembly-*.jar \
-     ./app.jar
+# Copy the assembled JAR
+COPY --from=builder /app/backend/target/scala-3.3.1/*-assembly-*.jar ./app.jar
 
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","app.jar"]
+
+# Use the PORT env var if set (Render sets this)
+ENV PORT=8080
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
