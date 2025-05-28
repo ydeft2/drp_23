@@ -33,9 +33,4 @@ WORKDIR /app
 # Copy the assembled JAR
 COPY --from=builder /app/backend/target/scala-3.3.1/*-assembly-*.jar ./app.jar
 
-EXPOSE 8080
-
-# Use the PORT env var if set (Render sets this)
-ENV PORT=8080
-
 ENTRYPOINT ["java", "-jar", "app.jar"]
