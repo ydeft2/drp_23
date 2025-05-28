@@ -23,10 +23,11 @@ jobs:
 
       - name: Install sbt
         run: |
-          curl -L -o sbt.deb https://github.com/sbt/sbt/releases/download/v1.9.6/sbt-1.9.6.deb
-          sudo dpkg -i sbt.deb
+          wget https://github.com/sbt/sbt/releases/download/v1.9.6/sbt-1.9.6.deb
+          sudo dpkg -i sbt-1.9.6.deb
           sudo apt-get update
-          sudo apt-get install sbt
+          sudo apt-get install -f
+
 
       - name: Cache sbt and Ivy
         uses: actions/cache@v3
