@@ -16,7 +16,7 @@ object Server extends IOApp.Simple {
   }
 
   // Static file routes (serves files from backend/public)
-  val staticRoutes = fileService[IO](FileService.Config("/home/guy/Scala/jstest/backend/public"))
+  val staticRoutes = fileService[IO](FileService.Config("backend/public"))
 
   // Combine routes: API under /api, static files at root
   val httpApp = Router[IO](
