@@ -75,7 +75,6 @@ object Account {
     card.style.marginRight = "auto"
     card.style.width = "60%"
     card.style.maxHeight = "400px"
-    card.style.overflowY = "scroll"
     card.style.border = "1px solid #ccc"
     card.style.borderRadius = "8px"
     card.style.padding = "20px"
@@ -97,8 +96,8 @@ object Account {
       row
     }
 
-    card.appendChild(infoRow("Name:",    user.name))
-    card.appendChild(infoRow("DOB:",     user.dob))
+    card.appendChild(infoRow("Name:", user.name))
+    card.appendChild(infoRow("Date of Birth:", user.dob))
     card.appendChild(infoRow("Address:", user.address))
 
  
