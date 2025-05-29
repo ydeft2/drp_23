@@ -5,7 +5,6 @@ import org.scalajs.dom.document
 import org.scalajs.dom.html._
 
 object Account {
-  // Fake user model – replace with real data source when available.
   case class User(name: String, dob: String, address: String)
   private val currentUser = User("Jane Doe", "1996‑02‑14", "123 Maple St, Springfield")
 
@@ -15,36 +14,47 @@ object Account {
     document.body.appendChild(buildProfileCard(currentUser))
   }
 
- 
   private def buildHeader(): Div = {
-    val header = styledDiv(
-      "backgroundColor" -> "purple",
-      "color"            -> "white",
-      "padding"          -> "10px",
-      "display"          -> "flex",
-      "justify-content"  -> "space-between",
-      "align-items"      -> "center",
-      "position"         -> "fixed",
-      "top"              -> "0",
-      "left"             -> "0",
-      "right"            -> "0",
-      "height"           -> "50px",
-      "zIndex"           -> "1"
-    )
+    val header = document.createElement("div").asInstanceOf[Div]
+    header.style.backgroundColor = "purple"
+    header.style.color = "white"
+    header.style.padding = "10px"
+    header.style.display = "flex"
+    header.style.setProperty("justify-content", "space-between")
+    header.style.setProperty("align-items", "center")
+    header.style.position = "fixed"
+    header.style.top = "0"
+    header.style.left = "0"
+    header.style.right = "0"
+    header.style.height = "50px"
+    header.style.zIndex = "1"
+    
 
-    val homeBtn = navButton("Home") { Main.render() }
+    val homeBtn = document.createElement("button").asInstanceOf[Button]
+    homeBtn.textContent = "Home"
+    homeBtn.style.background = "transparent"
+    homeBtn.style.color = "white"
+    homeBtn.style.border = "none"
+    homeBtn.style.cursor = "pointer"
+    homeBtn.style.fontSize = "16px"
+    homeBtn.onclick = (_: dom.MouseEvent) => Main.render()
 
-    val title = document.createElement("div").asInstanceOf[Div]
-    title.textContent       = "Account"
-    title.style.fontSize    = "20px"
-    title.style.fontWeight  = "bold"
-    title.style.margin      = "0 auto"
-    title.style.position    = "absolute"
-    title.style.left        = "50%"
-    title.style.transform   = "translateX(-50%)"
 
-    header.appendChild(homeBtn)
-    header.appendChild(title)
+    val pageTitle = document.createElement("div").asInstanceOf[Div]
+    pageTitle.textContent     = "Dentana Account"
+    pageTitle.style.fontSize  = "20px"
+    pageTitle.style.fontWeight= "bold"
+    pageTitle.style.margin    = "0 auto"
+    pageTitle.style.position  = "absolute"
+    pageTitle.style.left      = "50%"
+    pageTitle.style.transform = "translateX(-50%)"
+
+
+    val spacer = styledDiv("width" -> "55px")
+
+    header.appendChild(homeBtn)  
+    header.appendChild(pageTitle) 
+    header.appendChild(spacer)   
     header
   }
 
@@ -57,73 +67,53 @@ object Account {
     btn
   }
 
+
   private def buildProfileCard(user: User): Div = {
-    val card = styledDiv(
-      "marginTop"       -> "80px",
-      "marginLeft"      -> "auto",
-      "marginRight"     -> "auto",
-      "width"           -> "80%",
-      "maxWidth"        -> "500px",
-      "border"          -> "1px solid #ccc",
-      "borderRadius"    -> "8px",
-      "padding"         -> "24px",
-      "boxShadow"       -> "0 2px 8px rgba(0,0,0,0.1)",
-      "backgroundColor" -> "#ffffff",
-      "boxSizing"       -> "border-box"
-    )
+    val card = document.createElement("div").asInstanceOf[Div]
+    card.style.marginTop = "70px"
+    card.style.marginLeft = "auto"
+    card.style.marginRight = "auto"
+    card.style.width = "60%"
+    card.style.maxHeight = "400px"
+    card.style.overflowY = "scroll"
+    card.style.border = "1px solid #ccc"
+    card.style.borderRadius = "8px"
+    card.style.padding = "20px"
+    card.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)"
+    card.style.backgroundColor = "#f9f9f9"
 
-    // ── Top row: avatar + title ─────────────────────────────────────────────
-    val topRow = styledDiv("display" -> "flex", "align-items" -> "center", "marginBottom" -> "32px")
 
-    val avatar = styledDiv(
-      "width"            -> "64px",
-      "height"           -> "64px",
-      "borderRadius"     -> "50%",
-      "backgroundColor"  -> "#e0e0e0",
-      "display"          -> "flex",
-      "justify-content"  -> "center",
-      "align-items"      -> "center",
-      "fontSize"         -> "32px",
-      "color"            -> "#666"
-    )
-    avatar.textContent = user.name.headOption.map(_.toString).getOrElse("?")
+
 
     val heading = document.createElement("h2").asInstanceOf[Heading]
-    heading.textContent = "Me"
-    heading.style.marginLeft = "16px"
+    heading.textContent    = "Account Details"
+    heading.style.marginBottom = "24px"
+    card.appendChild(heading)
 
-    topRow.appendChild(avatar)
-    topRow.appendChild(heading)
 
-    // ── Details ─────────────────────────────────────────────────────────────
-    def labelValue(label: String, value: String): Div = {
+    def infoRow(label: String, value: String): Div = {
       val row = styledDiv("marginBottom" -> "20px")
       row.innerHTML = s"<strong>$label</strong> $value"
       row
     }
 
-    val nameRow    = labelValue("Name:",    user.name)
-    val dobRow     = labelValue("DOB:",     user.dob)
-    val addressRow = labelValue("Address:", user.address)
+    card.appendChild(infoRow("Name:",    user.name))
+    card.appendChild(infoRow("DOB:",     user.dob))
+    card.appendChild(infoRow("Address:", user.address))
 
-    // ── Edit button ─────────────────────────────────────────────────────────
+ 
     val editBtn = document.createElement("button").asInstanceOf[Button]
     editBtn.textContent = "Edit Profile"
-    styleButton(editBtn, background = "transparent", color = "#555", border = "1px solid #555")
+    styleButton(editBtn, background = "transparent", color = "purple", border = "2px solid purple")
     editBtn.style.display = "block"
     editBtn.style.margin  = "20px auto 0"
-    editBtn.onclick = _ => dom.window.alert("Edit form coming soon …")
-
-    // assemble card
-    card.appendChild(topRow)
-    card.appendChild(nameRow)
-    card.appendChild(dobRow)
-    card.appendChild(addressRow)
+    editBtn.onclick = _ => dom.window.alert("Please contact your dental practice in order to edit your profile.")
     card.appendChild(editBtn)
+
     card
   }
 
- private def clearPage(): Unit = document.body.innerHTML = ""
+  private def clearPage(): Unit = document.body.innerHTML = ""
 
   private def styledDiv(styles: (String, String)*): Div = {
     val d = document.createElement("div").asInstanceOf[Div]
