@@ -66,19 +66,40 @@ object Inbox {
     notificationsBox.appendChild(notificationsTitle)
 
     val dummyNotifications = List(
+      "URGENT: There are currently appointments available for you to book.",
       "Your appointment for Dental Cleaning is confirmed at 10:00 AM.",
       "Reminder: Your Checkup is scheduled for 9:15 AM tomorrow.",
       "Alert: Appointment for Root Canal has been rescheduled to 3:00 PM."
     )
 
+    // dummyNotifications.foreach { note =>
+    //   val noteEntry = document.createElement("div")
+    //   noteEntry.innerHTML = s"""
+    //      |<p>$note</p>
+    //      |<hr>
+    //      |""".stripMargin
+    //   notificationsBox.appendChild(noteEntry)
+    // }
     dummyNotifications.foreach { note =>
-      val noteEntry = document.createElement("div")
-      noteEntry.innerHTML = s"""
-         |<p>$note</p>
-         |<hr>
-         |""".stripMargin
-      notificationsBox.appendChild(noteEntry)
+    val noteEntry = document.createElement("div")
+
+    val paragraph = document.createElement("p")
+    paragraph.textContent = note
+    noteEntry.appendChild(paragraph)
+
+    if (note.contains("appointments available")) {
+      val btn = document.createElement("button").asInstanceOf[Button]
+      btn.textContent = "Click here"
+      btn.style.marginLeft = "10px"
+      btn.style.cursor = "pointer"
+      btn.addEventListener("click", (_: dom.MouseEvent) => BookingPage.render())
+      noteEntry.appendChild(btn)
     }
+
+    val hr = document.createElement("hr")
+    noteEntry.appendChild(hr)
+    notificationsBox.appendChild(noteEntry)
+  }
 
     document.body.appendChild(notificationsBox)
   }
