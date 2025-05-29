@@ -1,0 +1,12 @@
+# ignore Metals directories
+.metals/
+# ignore build directories
+backend/target
+frontend/target
+# ignore project directories
+project/project
+project/target
+# ignore target directories
+target/
+#ignore vscode directories
+.vscode/

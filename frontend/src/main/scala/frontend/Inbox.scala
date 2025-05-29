@@ -10,41 +10,7 @@ object Inbox {
     document.body.innerHTML = ""
 
     // Create header
-    val header = document.createElement("div").asInstanceOf[Div]
-    header.style.backgroundColor = "purple"
-    header.style.color = "white"
-    header.style.padding = "10px"
-    header.style.display = "flex"
-    header.style.setProperty("justify-content", "space-between")
-    header.style.setProperty("align-items", "center")
-    header.style.position = "fixed"
-    header.style.top = "0"
-    header.style.left = "0"
-    header.style.right = "0"
-    header.style.height = "50px"
-    header.style.zIndex = "1"
-
-    // Home button
-    val homeBtn = document.createElement("button").asInstanceOf[Button]
-    homeBtn.textContent = "Home"
-    homeBtn.style.background = "transparent"
-    homeBtn.style.color = "white"
-    homeBtn.style.border = "none"
-    homeBtn.style.cursor = "pointer"
-    homeBtn.style.fontSize = "16px"
-    homeBtn.onclick = (_: dom.MouseEvent) => Main.render()
-
-    val title = document.createElement("div")
-    title.textContent = "Dentana Notifications"
-    title.asInstanceOf[Div].style.fontSize = "20px"
-    title.asInstanceOf[Div].style.fontWeight = "bold"
-    title.asInstanceOf[Div].style.margin = "0 auto"
-    title.asInstanceOf[Div].style.position = "absolute"
-    title.asInstanceOf[Div].style.left = "50%"
-    title.asInstanceOf[Div].style.transform = "translateX(-50%)"
-
-    header.appendChild(homeBtn)
-    header.appendChild(title)
+    val header = createSubpageHeader("Dentana Notifications")
     document.body.appendChild(header)
 
     // Notifications box

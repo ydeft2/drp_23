@@ -37,22 +37,10 @@ object Main {
     header.style.height = "50px"
     header.style.zIndex = "1"
 
-    val accountBtn = document.createElement("button").asInstanceOf[Button]
-    accountBtn.textContent = "Account"
-    accountBtn.style.background = "transparent"
-    accountBtn.style.color = "white"
-    accountBtn.style.border = "none"
-    accountBtn.style.cursor = "pointer"
-    accountBtn.style.fontSize = "16px"
+    val accountBtn = createHeaderButton("Account")
     accountBtn.addEventListener("click", (_: dom.MouseEvent) => Account.render())
 
-    val inboxBtn = document.createElement("button").asInstanceOf[Button]
-    inboxBtn.textContent = "Inbox"
-    inboxBtn.style.background = "transparent"
-    inboxBtn.style.color = "white"
-    inboxBtn.style.border = "none"
-    inboxBtn.style.cursor = "pointer"
-    inboxBtn.style.fontSize = "16px"
+    val inboxBtn = createHeaderButton("Inbox")
     inboxBtn.addEventListener("click", (_: dom.MouseEvent) => Inbox.render())
 
     val title = document.createElement("div").asInstanceOf[Div]

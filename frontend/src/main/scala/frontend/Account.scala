@@ -10,62 +10,10 @@ object Account {
 
   def render(): Unit = {
     clearPage()
-    document.body.appendChild(buildHeader())
+    document.body.appendChild(createSubpageHeader("Dentana Account"))
     document.body.appendChild(buildProfileCard(currentUser))
   }
 
-  private def buildHeader(): Div = {
-    val header = document.createElement("div").asInstanceOf[Div]
-    header.style.backgroundColor = "purple"
-    header.style.color = "white"
-    header.style.padding = "10px"
-    header.style.display = "flex"
-    header.style.setProperty("justify-content", "space-between")
-    header.style.setProperty("align-items", "center")
-    header.style.position = "fixed"
-    header.style.top = "0"
-    header.style.left = "0"
-    header.style.right = "0"
-    header.style.height = "50px"
-    header.style.zIndex = "1"
-    
-
-    val homeBtn = document.createElement("button").asInstanceOf[Button]
-    homeBtn.textContent = "Home"
-    homeBtn.style.background = "transparent"
-    homeBtn.style.color = "white"
-    homeBtn.style.border = "none"
-    homeBtn.style.cursor = "pointer"
-    homeBtn.style.fontSize = "16px"
-    homeBtn.onclick = (_: dom.MouseEvent) => Main.render()
-
-
-    val pageTitle = document.createElement("div").asInstanceOf[Div]
-    pageTitle.textContent     = "Dentana Account"
-    pageTitle.style.fontSize  = "20px"
-    pageTitle.style.fontWeight= "bold"
-    pageTitle.style.margin    = "0 auto"
-    pageTitle.style.position  = "absolute"
-    pageTitle.style.left      = "50%"
-    pageTitle.style.transform = "translateX(-50%)"
-
-
-    val spacer = styledDiv("width" -> "55px")
-
-    header.appendChild(homeBtn)  
-    header.appendChild(pageTitle) 
-    header.appendChild(spacer)   
-    header
-  }
-
-  private def navButton(label: String)(onClick: => Unit): Button = {
-    val btn = document.createElement("button").asInstanceOf[Button]
-    btn.textContent = label
-    styleButton(btn, background = "transparent", color = "white", border = "none")
-    btn.style.fontSize = "16px"
-    btn.onclick = _ => onClick
-    btn
-  }
 
 
   private def buildProfileCard(user: User): Div = {
