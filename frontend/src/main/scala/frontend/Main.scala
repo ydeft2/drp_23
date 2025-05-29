@@ -19,6 +19,7 @@ object Main {
     document.body.innerHTML = ""
     document.body.appendChild(buildHeader())
     document.body.appendChild(buildBookingsBox())
+    document.body.appendChild(createBookingButton())
   }
 
   private def buildHeader(): Div = {
@@ -154,4 +155,25 @@ object Main {
 
     document.body.appendChild(container)
   }
+
+  private def createBookingButton(): Div = {
+    val button = document.createElement("div").asInstanceOf[Div]
+    button.textContent = "Create Booking"
+    button.style.position = "fixed"
+    button.style.left = "50%"
+    button.style.bottom = "80px"
+    button.style.transform = "translateX(-50%)"
+    button.style.backgroundColor = "purple"
+    button.style.color = "white"
+    button.style.padding = "20px 40px"
+    button.style.borderRadius = "50px"
+    button.style.cursor = "pointer"
+    button.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.2)"
+    button.addEventListener("click", (_: dom.MouseEvent) => 
+      System.out.println("Create Booking button clicked")
+      BookingPage.render())
+
+    button
+  }
 }
+

@@ -8,7 +8,10 @@ lazy val frontend = (project in file("frontend"))
   .settings(
     name := "frontend",
     scalaJSUseMainModuleInitializer := true,
-    libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "2.3.0"
+    libraryDependencies ++= Seq(
+      "org.scala-js" %%% "scalajs-dom" % "2.3.0",
+      "io.github.cquiroz" %%% "scala-java-time" % "2.5.0"
+    )
   )
 
 lazy val backend = (project in file("backend"))
