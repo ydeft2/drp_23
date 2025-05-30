@@ -28,11 +28,11 @@ object LoginPage {
     container.setAttribute("style", "margin: 50px auto; width: 300px; padding: 20px; background-color: lightgrey; border-radius: 5px;")
     document.body.appendChild(container)
     
-    // Create a username input field
-    val usernameInput = document.createElement("input").asInstanceOf[Input]
-    usernameInput.placeholder = "Username"
-    usernameInput.setAttribute("style", "display: block; width: 100%; margin-bottom: 10px; padding: 10px; box-sizing: border-box;")
-    container.appendChild(usernameInput)
+    // Create an email input field
+    val emailInput = document.createElement("input").asInstanceOf[Input]
+    emailInput.placeholder = "Email"
+    emailInput.setAttribute("style", "display: block; width: 100%; margin-bottom: 10px; padding: 10px; box-sizing: border-box;")
+    container.appendChild(emailInput)
     
     // Create a password input field
     val passwordInput = document.createElement("input").asInstanceOf[Input]
@@ -57,7 +57,7 @@ object LoginPage {
     loginButton.addEventListener("click", { (_: dom.Event) =>
       
       val data = literal(
-        "username" -> usernameInput.value,
+        "email" -> emailInput.value,
         "password" -> passwordInput.value
       )
       
@@ -69,7 +69,7 @@ object LoginPage {
       ).asInstanceOf[RequestInit]
       
       // Send a HTTPS fetch request to verify the credentials
-      dom.fetch("http://0.0.0.0:8080", requestOptions).toFuture.flatMap { response =>
+      dom.fetch("/api/login", requestOptions).toFuture.flatMap { response =>
         response.text().toFuture
       }.foreach { text =>
         dom.console.log(s"Login response: $text")
