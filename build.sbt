@@ -22,5 +22,11 @@ lazy val backend = (project in file("backend"))
       "org.http4s" %% "http4s-ember-server" % "0.23.23",
       "org.http4s" %% "http4s-server" % "0.23.23",
       "org.typelevel" %% "cats-effect"      % "3.5.1",
+      "org.tpolecat" %% "doobie-core" % "1.0.0-RC4",
+      "org.tpolecat" %% "doobie-postgres" % "1.0.0-RC4",
+      "org.tpolecat" %% "doobie-hikari" % "1.0.0-RC4",
+      "org.mindrot" % "jbcrypt" % "0.4",
+      "org.http4s" %% "http4s-circe" %  "0.23.23",
+      "io.circe" %% "circe-generic" % "0.14.5",
     )
   )
