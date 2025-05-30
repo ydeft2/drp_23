@@ -6,6 +6,7 @@ import org.http4s.server.Router
 import org.http4s.implicits._
 import com.comcast.ip4s.{Host, Port}
 import org.http4s.server.staticcontent._
+import org.http4s.server.middleware.CORS
 
 object Server extends IOApp.Simple {
 
@@ -17,11 +18,15 @@ object Server extends IOApp.Simple {
 
   // Static file routes (serves files from backend/public)
   val staticRoutes = fileService[IO](FileService.Config("public", pathPrefix = ""))
+
   // Combine routes: API under /api, static files at root
   val httpApp = Router[IO](
     "/api" -> apiRoutes,
     "/"    -> staticRoutes
   ).orNotFound
+
+  // Wrap the httpApp with CORS middleware
+  val corsHttpApp = CORS(httpApp)
 
   val port = sys.env.get("PORT").flatMap(p => scala.util.Try(p.toInt).toOption).getOrElse(8080)
 
@@ -29,7 +34,7 @@ object Server extends IOApp.Simple {
     .default[IO]
     .withHost(Host.fromString("0.0.0.0").get)
     .withPort(Port.fromInt(port).get)
-    .withHttpApp(httpApp)
+    .withHttpApp(corsHttpApp)
     .build
     .use(_ => IO.println(s"Server running at http://0.0.0.0:$port") >> IO.never)
 }
