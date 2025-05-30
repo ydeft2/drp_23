@@ -49,9 +49,14 @@ object LoginPage {
     
     // Create the Register button
     val registerButton = document.createElement("button")
-    registerButton.textContent = "Register"
-    registerButton.setAttribute("style", "display: block; width: 100%; padding: 10px; box-sizing: border-box;")
-    container.appendChild(registerButton)
+    registerButton.textContent = "New Here? Register!"
+    registerButton.setAttribute(
+      "style",
+      "display: block; width: 40%; padding: 10px; box-sizing: border-box; " +
+      "background-color: purple; color: white; border: none; border-radius: 4px; " +
+      "font-size: 16px; cursor: pointer; margin: 10px auto 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"
+    )
+    document.body.appendChild(registerButton)
     
     // Add click event listener to the Login button
     loginButton.addEventListener("click", { (_: dom.Event) =>
@@ -79,6 +84,16 @@ object LoginPage {
     // Add click event listener to the Register button
     registerButton.addEventListener("click", { (_: dom.Event) =>
       RegisterPage.render()
+    })
+
+    // THE FOLLOWING BUTTON IS FOR TESTING PURPOSES ONLY
+    val secretBypassButton = document.createElement("button")
+    secretBypassButton.textContent = "Bypass Login"
+    secretBypassButton.setAttribute("style", "display: block; width: 100%; padding: 10px; box-sizing: border-box;")
+    secretBypassButton.setAttribute("style", "position: fixed; bottom: 0; left: 0; right: 0; display: block; padding: 10px; box-sizing: border-box;")
+    document.body.appendChild(secretBypassButton)
+    secretBypassButton.addEventListener("click", { (_: dom.Event) =>
+      HomePage.render()
     })
   }
 }
