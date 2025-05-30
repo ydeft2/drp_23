@@ -33,7 +33,7 @@ def createSubpageHeader(name: String): Div = {
 
     // Home button
     val homeBtn = createHeaderButton("Home")
-    homeBtn.onclick = (_: dom.MouseEvent) => Main.render()
+    homeBtn.onclick = (_: dom.MouseEvent) => HomePage.render()
 
     val title = document.createElement("div")
     title.textContent = name
