@@ -8,6 +8,7 @@ object Main {
   case class Booking(name: String, time: String, location: String)
 
   private var bookings: List[Booking] = List(
+    Booking("Dental Test", "9:00 AM", "City Dental Clinic"),
     Booking("Dental Cleaning", "10:00 AM", "Downtown Clinic"),
     Booking("Root Canal", "2:30 PM", "East Side Dental"),
     Booking("Checkup", "9:15 AM", "Northview Dental Office")
