@@ -18,6 +18,7 @@ import org.http4s.implicits._
 import org.typelevel.ci.CIStringSyntax 
 import com.comcast.ip4s._
 import org.http4s.ember.server.EmberServerBuilder
+import java.time.Instant
 
 
 object Server extends IOApp.Simple {
@@ -30,9 +31,60 @@ object Server extends IOApp.Simple {
     password: String
   )
 
+  case class PatientInsert(
+    uid: String,
+    first_name: String,
+    last_name: String,
+    dob: String
+  )
+
   val supabaseUrl = sys.env("SUPABASE_URL")
   val supabaseKey = sys.env("SUPABASE_API_KEY")
   
+
+  // Function to create an entry in patient table on Supabase
+  def createPatientEntry(uid: String, reg: RegisterRequest): IO[Either[String, Unit]] = {
+    val patient = PatientInsert(
+      uid = uid,
+      first_name = reg.firstName,
+      last_name = reg.lastName,
+      dob = reg.dob
+    )
+
+    val payload = patient.asJson
+
+    val patientUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/patients")
+
+    val patientRequest = Request[IO](
+      method = Method.POST,
+      uri = patientUri,
+      headers = Headers(
+        Header.Raw(ci"Authorization", s"Bearer $supabaseKey"),
+        Header.Raw(ci"apikey", supabaseKey),
+        Header.Raw(ci"Content-Type", "application/json"),
+        Header.Raw(ci"Prefer", "return=minimal")
+      )
+    ).withEntity(payload)
+
+    EmberClientBuilder.default[IO].build.use { httpClient =>
+      httpClient.fetch(patientRequest) { response =>
+        response.status match {
+          case Status.Created =>
+            IO.println("Patient entry created successfully") *> IO.pure(Right(()))
+          case Status.Ok =>
+            IO.println("Patient entry created successfully") *> IO.pure(Right(()))
+          case _ =>
+            response.as[String].flatMap { body =>
+              IO.println(s"Error response: Status ${response.status.code}, Body: $body") *>
+              IO.pure(Left(s"Error creating patient entry: ${response.status.code} - $body"))
+            }
+        }
+      }
+    }
+  }
+
+   
+  // Function to register an authorised user with Supabase
   def registerUserWithSupabase(reg: RegisterRequest): IO[Response[IO]] = {
     val payload = Json.obj(
       "email" := reg.email,
@@ -44,11 +96,11 @@ object Server extends IOApp.Simple {
       )
     )
 
-    val uri = Uri.unsafeFromString(s"$supabaseUrl/auth/v1/admin/users")
+    val userUri = Uri.unsafeFromString(s"$supabaseUrl/auth/v1/admin/users")
 
-    val request = Request[IO](
+    val userRequest = Request[IO](
       method = Method.POST,
-      uri = uri,
+      uri = userUri,
       headers = Headers(
         Header.Raw(ci"Authorization", s"Bearer $supabaseKey"),
         Header.Raw(ci"apikey", s"$supabaseKey"),
@@ -57,41 +109,26 @@ object Server extends IOApp.Simple {
     ).withEntity(payload)
 
     EmberClientBuilder.default[IO].build.use { httpClient =>
-      httpClient.fetch(request) { response =>
-        response.as[Json].flatMap { json =>
-          if (response.status.isSuccess) {
-            val userId = json.hcursor.downField("user").get[String]("id").toOption.get
-
-            // Add patient record via Supabase REST API
-            val insertPatientPayload = Json.obj(
-              "id" := userId,
-              "first_name" := reg.firstName,
-              "last_name" := reg.lastName,
-              "dob" := reg.dob,
-              "email" := reg.email
-            )
-
-            val patientUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/patients")
-            val insertRequest = Request[IO](
-              method = Method.POST,
-              uri = patientUri,
-              headers = Headers(
-                Header.Raw(ci"Authorization", s"Bearer $supabaseKey"),
-                Header.Raw(ci"apikey", s"$supabaseKey"),
-                Header.Raw(ci"Content-Type", "application/json"),
-                Header.Raw(ci"Prefer", "return=representation")
-              )
-            ).withEntity(insertPatientPayload.noSpaces)
-
-            httpClient.fetch(insertRequest) { patientResponse =>
-              if (patientResponse.status.isSuccess)
-                Ok("User and patient registered.")
-              else
-                BadRequest("User created, but failed to insert patient data.")
+      httpClient.fetch(userRequest) { userResponse =>
+        userResponse.status match {
+          case Status.Ok | Status.Created =>
+            userResponse.as[Json].flatMap { json =>
+              // Extract the UID from the JSON (assumes field "id")
+              json.hcursor.get[String]("id") match {
+                case Left(err) =>
+                  BadRequest(s"Error parsing user id: $err")
+                case Right(uid) =>
+                  // Create a patient entry
+                  createPatientEntry(uid, reg).flatMap {
+                    case Right(_) => Ok(s"User registered successfully with UID: $uid")
+                    case Left(err) => BadRequest(s"Error creating patient entry: $err")
+                  }
+              }
             }
-          } else {
-            BadRequest(s"Failed to register user: ${response.status.code}")
-          }
+          case _ =>
+            userResponse.as[String].flatMap { body =>
+              BadRequest(s"Error registering user: ${userResponse.status.code} - $body")
+            }
         }
       }
     }
