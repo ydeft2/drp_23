@@ -32,6 +32,16 @@ object Server extends IOApp.Simple {
           regReq <- req.as[RegisterRequest]
           response <- registerUserWithSupabase(regReq)
         } yield response
+
+      case req @ POST -> Root / "accountDetails" =>
+        for {
+          authReq    <- req.as[AccountDetailsRequest]
+          patientRes <- getAccountDetails(authReq)
+          response   <- patientRes match {
+                          case Right(details) => Ok(details.asJson)
+                          case Left(error)    => BadRequest(Json.obj("error" -> Json.fromString(error)))
+                        }
+        } yield response
     }
 
   val staticRoutes = fileService[IO](FileService.Config("public", pathPrefix = ""))

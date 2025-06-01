@@ -29,7 +29,7 @@ object RegisterPage {
     val lastNameInput = createFormField(container, "Last Name")
     
     val dobInput = createFormField(container, "", "date")
-
+    // TODO ADDRESSES!
     val emailInput = createFormField(container, "Email")
     val passwordInput = createFormField(container, "Password", "password")
     val confirmPasswordInput = createFormField(container, "Confirm Password", "password")

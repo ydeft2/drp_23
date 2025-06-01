@@ -3,15 +3,66 @@ package frontend
 import org.scalajs.dom
 import org.scalajs.dom.document
 import org.scalajs.dom.html._
+import scala.scalajs.js
+import scala.scalajs.js.JSON
+import scala.scalajs.js.annotation._
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+
+
 
 object Account {
   case class User(name: String, dob: String, address: String)
-  private val currentUser = User("Jane Doe", "1996‑02‑14", "123 Maple St, Springfield")
+
+  private var currentUser = User("", "", "")
+
+  def fetchPatientDetails(onSuccess: () => Unit): Unit = {
+    val accessToken = dom.window.localStorage.getItem("accessToken")
+    val uid = dom.window.localStorage.getItem("userId")
+
+    if (accessToken == null || uid == null) {
+      dom.window.alert("You are not logged in.")
+      return
+    }
+
+    val requestHeaders = new dom.Headers()
+    requestHeaders.append("Content-Type", "application/json")
+    requestHeaders.append("Authorization", s"Bearer $accessToken")
+
+    val requestBody = js.Dynamic.literal(
+      "uid" -> uid,
+      "accessToken" -> accessToken
+    )
+
+    val requestInit = new dom.RequestInit {
+      method = dom.HttpMethod.POST
+      headers = requestHeaders
+      body = JSON.stringify(requestBody)
+    }
+
+    dom.fetch("/api/accountDetails", requestInit)
+      .toFuture
+      .flatMap(_.json().toFuture)
+      .map { json =>
+        val user = json.asInstanceOf[js.Dynamic]
+        val name = s"${user.first_name.asInstanceOf[String]} ${user.last_name.asInstanceOf[String]}"
+        val dob = user.dob.asInstanceOf[String]
+        currentUser = User(name, dob, "placeholder address")
+        onSuccess()
+      }
+      .recover {
+        case e => dom.window.alert(s"Error: ${e.getMessage}")
+      }
+  }
+
+
 
   def render(): Unit = {
     clearPage()
     document.body.appendChild(createSubpageHeader("Dentana Account"))
-    document.body.appendChild(buildProfileCard(currentUser))
+    fetchPatientDetails { () =>
+      val card = buildProfileCard(currentUser)
+      document.body.appendChild(card)
+    }
   }
 
 
