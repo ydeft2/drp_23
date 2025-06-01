@@ -50,7 +50,9 @@ object Account {
         onSuccess()
       }
       .recover {
-        case e => dom.window.alert(s"Error: ${e.getMessage}")
+        case e =>
+          Spinner.hide()
+          dom.window.alert(s"Error: ${e.getMessage}")
       }
   }
 
@@ -59,7 +61,11 @@ object Account {
   def render(): Unit = {
     clearPage()
     document.body.appendChild(createSubpageHeader("Dentana Account"))
+
+    Spinner.show()
+
     fetchPatientDetails { () =>
+      Spinner.hide()
       val card = buildProfileCard(currentUser)
       document.body.appendChild(card)
     }
