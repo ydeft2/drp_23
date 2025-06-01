@@ -18,9 +18,12 @@ lazy val backend = (project in file("backend"))
   .settings(
     scalaVersion := "3.3.1",
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-dsl"          % "0.23.23",
-      "org.http4s" %% "http4s-ember-server" % "0.23.23",
-      "org.http4s" %% "http4s-server" % "0.23.23",
-      "org.typelevel" %% "cats-effect"      % "3.5.1",
+      "org.http4s" %% "http4s-dsl"           % "0.23.23",
+      "org.http4s" %% "http4s-ember-server"  % "0.23.23",
+      "org.http4s" %% "http4s-ember-client"  % "0.23.23",
+      "org.http4s" %% "http4s-server"        % "0.23.23",
+      "org.http4s" %% "http4s-circe"         % "0.23.23",
+      "org.typelevel" %% "cats-effect"       % "3.5.1",
+      "io.circe" %% "circe-generic"          % "0.14.5"
     )
   )
