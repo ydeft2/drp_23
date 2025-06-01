@@ -18,35 +18,26 @@ object LoginPage {
     document.body.innerHTML = ""
     
     // Create purple banner with the title "Dentana"
-    val banner = document.createElement("div")
-    banner.innerHTML = "Dentana"
-    banner.setAttribute("style", "background-color: purple; color: white; text-align: center; padding: 20px; font-size: 24px;")
-    document.body.appendChild(banner)
+    document.body.appendChild(createBlankHeaderWithTitle())
     
     // Create a grey box container for the login form
     val container = document.createElement("div")
-    container.setAttribute("style", "margin: 50px auto; width: 300px; padding: 20px; background-color: lightgrey; border-radius: 5px;")
+    container.setAttribute("style", "margin: 200px auto 50px auto; width: 300px; padding: 20px; background-color: lightgrey; border-radius: 5px;")
     document.body.appendChild(container)
-    
     // Create an email input field
-    val emailInput = document.createElement("input").asInstanceOf[Input]
-    emailInput.placeholder = "Email"
-    emailInput.setAttribute("style", "display: block; width: 100%; margin-bottom: 10px; padding: 10px; box-sizing: border-box;")
-    container.appendChild(emailInput)
+    val emailInput = createFormField(container, "Email")
     
     // Create a password input field
-    val passwordInput = document.createElement("input").asInstanceOf[Input]
-    passwordInput.`type` = "password"
-    passwordInput.placeholder = "Password"
-    passwordInput.setAttribute("style", "display: block; width: 100%; margin-bottom: 10px; padding: 10px; box-sizing: border-box;")
-    container.appendChild(passwordInput)
+    val passwordInput = createFormField(container, "Password", "password")
     
+    val errorMessage = document.createElement("div")
+    errorMessage.setAttribute("style", "color: red; text-align: center; margin-bottom: 10px; display: none;")
+    container.appendChild(errorMessage)
+
     // Create the Login button
-    val loginButton = document.createElement("button")
-    loginButton.textContent = "Login"
-    loginButton.setAttribute("style", "display: block; width: 100%; margin-bottom: 10px; padding: 10px; box-sizing: border-box;")
-    container.appendChild(loginButton)
+    val loginButton = createFormButton(container, "Login")
     
+
     // Create the Register button
     val registerButton = document.createElement("button")
     registerButton.textContent = "New Here? Register!"
@@ -57,6 +48,7 @@ object LoginPage {
       "font-size: 16px; cursor: pointer; margin: 10px auto 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"
     )
     document.body.appendChild(registerButton)
+
     
     // Add click event listener to the Login button
     loginButton.addEventListener("click", { (_: dom.Event) =>
@@ -89,8 +81,9 @@ object LoginPage {
             HomePage.render()
         }
       } else {
-          response.text().toFuture.map { body =>
-            dom.window.alert(s"Login failed: ${response.status} - $body")
+          response.text().toFuture.map { errorText =>
+            errorMessage.textContent = "Incorrect email or password"
+            errorMessage.setAttribute("style", "color: red; text-align: center; margin-bottom: 10px; display: block;")
           }
         }
       }.recover {
