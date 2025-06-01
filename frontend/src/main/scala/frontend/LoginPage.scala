@@ -69,15 +69,35 @@ object LoginPage {
       // Prepare request options by casting a literal to RequestInit
       val requestOptions = literal(
         method = "POST",
-        headers = js.Dictionary("Content-Type" -> "application/json"),
+        headers = js.Dictionary(
+          "Content-Type" -> "application/json",
+          "apikey" -> SUPABASE_ANON_KEY),
         body = JSON.stringify(data)
       ).asInstanceOf[RequestInit]
       
       // Send a HTTPS fetch request to verify the credentials
-      dom.fetch("/api/login", requestOptions).toFuture.flatMap { response =>
-        response.text().toFuture
-      }.foreach { text =>
-        dom.console.log(s"Login response: $text")
+      dom.fetch(supabaseAuthUrl, requestOptions).toFuture.flatMap { response =>
+        if(response.ok) {
+          response.json().toFuture.map {json =>
+            val dyn = json.asInstanceOf[js.Dynamic]
+            val accessToken = dyn.access_token.asInstanceOf[String]
+            val userId = dyn.user.id.asInstanceOf[String]
+            
+            dom.window.localStorage.setItem("accessToken", accessToken)
+            dom.console.log(s"Access Token: $accessToken")
+            dom.window.localStorage.setItem("userId", userId)
+            dom.console.log(s"User ID: $userId")
+            dom.window.alert("Login successful!")
+            
+            HomePage.render() // Redirect to home page on successful login}
+        }
+      } else {
+          response.text().toFuture.map { body =>
+            dom.window.alert(s"Login failed: ${response.status} - $body")
+          }
+        }
+      }.recover {
+        case e: Throwable => dom.window.alert(s"An error occurred: ${e.getMessage}")
       }
     })
     

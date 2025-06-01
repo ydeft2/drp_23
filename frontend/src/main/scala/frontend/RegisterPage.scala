@@ -67,7 +67,7 @@ object RegisterPage {
           method = "POST",
           body = js.JSON.stringify(data),
           headers = js.Dictionary("Content-Type" -> "application/json")
-        ).asInstanceOf[dom.RequestInit]).toFuture.map { response =>
+        ).asInstanceOf[RequestInit]).toFuture.map { response =>
           if (response.ok) {
             dom.window.alert("Registration successful!")
             LoginPage.render() // Redirect to login page
