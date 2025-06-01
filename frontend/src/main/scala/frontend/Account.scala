@@ -114,6 +114,16 @@ object Account {
     editBtn.onclick = _ => dom.window.alert("Please contact your dental practice in order to edit your profile.")
     card.appendChild(editBtn)
 
+    val logOutButton = document.createElement("button").asInstanceOf[Button]
+    logOutButton.textContent = "Log Out"
+    styleButton(logOutButton, background = "red", color = "white", border = "none")
+    logOutButton.onclick = (_: dom.MouseEvent) => {
+      dom.window.localStorage.removeItem("accessToken")
+      dom.window.localStorage.removeItem("userId")
+      dom.window.location.href = "/"
+    }
+    card.appendChild(logOutButton)
+
     card
   }
 
