@@ -84,12 +84,9 @@ object LoginPage {
             val userId = dyn.user.id.asInstanceOf[String]
             
             dom.window.localStorage.setItem("accessToken", accessToken)
-            dom.console.log(s"Access Token: $accessToken")
             dom.window.localStorage.setItem("userId", userId)
-            dom.console.log(s"User ID: $userId")
-            dom.window.alert("Login successful!")
             
-            HomePage.render() // Redirect to home page on successful login}
+            HomePage.render()
         }
       } else {
           response.text().toFuture.map { body =>
