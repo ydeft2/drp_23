@@ -3,6 +3,13 @@ package frontend
 import org.scalajs.dom
 import org.scalajs.dom.document
 import org.scalajs.dom.html._
+import scala.scalajs.js
+import scala.scalajs.js.Dynamic.literal
+import scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.concurrent.ExecutionContext.Implicits.global
+import org.scalajs.dom.experimental.RequestInit
+
+
 
 def createHeaderButton(name : String) : Button = {
   val button = document.createElement("button").asInstanceOf[Button]
@@ -94,3 +101,19 @@ def createFormButton(container: org.scalajs.dom.Element, text: String): Button =
 
 val SUPABASE_ANON_KEY: String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqa3JyeXphZnVvZnlldmdjeWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0ODM1OTAsImV4cCI6MjA2NDA1OTU5MH0.s53JxFGfcdKELvKvjs7qqFbPK6DFwqt4k5GMTXFD1Vc"
 val supabaseAuthUrl: String = "https://djkrryzafuofyevgcyic.supabase.co/auth/v1/token?grant_type=password"
+val supabaseUserUrl: String = "https://djkrryzafuofyevgcyic.supabase.co/auth/v1/user"
+
+def verifyToken(accessToken: String): scala.concurrent.Future[Boolean] = {
+  val requestOptions = literal(
+    method = "GET",
+    headers = js.Dictionary(
+      "Authorization" -> s"Bearer $accessToken",
+      "apikey" -> SUPABASE_ANON_KEY
+    )
+  ).asInstanceOf[RequestInit]
+
+  dom.fetch(supabaseUserUrl, requestOptions).toFuture.flatMap { response =>
+    if (response.ok) scala.concurrent.Future.successful(true)
+    else scala.concurrent.Future.successful(false)
+  }.recover { case _ => false }
+}
