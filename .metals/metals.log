@@ -30,3 +30,348 @@ WARNING: Unmatched cancel notification for request id 1
 2025.05.27 19:16:32 INFO  shutting down Metals[0m
 2025.05.27 19:16:32 INFO  Exiting server[0m
 2025.05.27 19:16:52 INFO  Started: Metals version 1.5.3 in folders '/mnt/c/Users/ydeft/OneDrive/Documents/GitHub/drp_23' for client Visual Studio Code 1.100.2.[0m
+2025.05.30 10:17:22 INFO  Started: Metals version 1.5.3 in folders '/root/drp_23' for client Visual Studio Code 1.100.2.[0m
+2025.05.30 10:17:25 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Inbox.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:17:27 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Inbox.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:17:29 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Inbox.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:17:29 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Inbox.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:17:39 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Inbox.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:18:31 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+May 30, 2025 10:18:31 AM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 15
+2025.05.30 10:18:31 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:18:31 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:19:20 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:19:22 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:19:26 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:19:26 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:19:33 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:21 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:21 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:25 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:35 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:35 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:37 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:37 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:37 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:37 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:37 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+May 30, 2025 10:26:38 AM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 47
+2025.05.30 10:26:37 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:37 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:38 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:38 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:38 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:38 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:38 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:38 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:40 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:40 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/Main.scala[0m
+2025.05.30 10:26:40 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:40 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:40 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:41 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/Main.scala[0m
+2025.05.30 10:26:41 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:42 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:42 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:43 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:43 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/Main.scala[0m
+2025.05.30 10:26:43 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:43 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:43 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:43 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:44 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:44 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:45 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/Main.scala[0m
+2025.05.30 10:26:45 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:46 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:46 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:46 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:46 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:46 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:46 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:47 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:47 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:26:47 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/Main.scala[0m
+2025.05.30 10:36:44 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:36:46 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:36:59 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:36:59 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:36:59 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:00 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:00 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:00 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:02 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:20 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:20 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:21 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:22 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:22 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:22 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:25 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:25 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:25 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:25 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:25 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:26 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/Main.scala[0m
+2025.05.30 10:37:26 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:27 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:27 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:27 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:27 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:28 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:28 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/Main.scala[0m
+2025.05.30 10:37:29 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+May 30, 2025 10:37:29 AM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 153
+2025.05.30 10:37:29 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:29 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:29 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:30 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:30 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:30 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:30 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:30 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:31 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:31 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/Main.scala[0m
+2025.05.30 10:37:31 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:37:31 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:44:11 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:47:26 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:47:26 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:47:27 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:47:27 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:47:28 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:47:30 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:47:32 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:47:32 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:47:32 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:47:34 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:50:53 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:50:53 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:50:53 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:51:18 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:55:04 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:55:04 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 10:55:15 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 11:18:16 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.05.30 11:18:16 INFO  Shutting down server[0m
+2025.05.30 11:18:16 INFO  shutting down Metals[0m
+2025.05.30 11:18:16 INFO  Exiting server[0m
+2025.06.01 19:46:56 INFO  Started: Metals version 1.5.3 in folders '/root/drp_23' for client Visual Studio Code 1.100.2.[0m
+2025.06.01 19:46:57 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+Jun 01, 2025 7:47:00 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 6
+2025.06.01 19:47:02 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:47:03 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:47:03 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:47:03 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+Jun 01, 2025 7:47:03 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 10
+Jun 01, 2025 7:47:03 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 11
+2025.06.01 19:47:49 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+Jun 01, 2025 7:47:51 PM org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint notify
+INFO: Unsupported notification method: $/setTrace
+2025.06.01 19:47:57 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:47:57 WARN  no build target for: /root/drp_23/build.sbt[0m
+2025.06.01 19:47:57 INFO  no build target found for /root/drp_23/build.sbt. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:48:14 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:48:22 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Main.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:48:22 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Inbox.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:48:22 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Inbox.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+Jun 01, 2025 7:48:23 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 22
+Jun 01, 2025 7:48:23 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 23
+2025.06.01 19:48:22 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/BookingPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:48:22 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/BookingPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:48:22 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/BookingPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:48:22 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/BookingPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:48:24 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Inbox.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:48:24 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Inbox.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:48:24 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Inbox.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:48:28 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/Inbox.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:48:37 INFO  no build target found for /root/drp_23/backend/src/main/scala/DatabaseUtils.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:48:38 INFO  no build target found for /root/drp_23/backend/src/main/scala/Server.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:48:38 INFO  no build target found for /root/drp_23/backend/src/main/scala/Server.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:48:47 INFO  no build target found for /root/drp_23/backend/src/main/scala/DatabaseUtils.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:48:47 WARN  no build target for: /root/drp_23/backend/src/main/scala/DatabaseUtils.scala[0m
+2025.06.01 19:49:03 INFO  no build target found for /root/drp_23/backend/src/main/scala/DatabaseUtils.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:49:14 INFO  no build target found for /root/drp_23/backend/src/main/scala/DatabaseUtils.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:51:23 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/BookingPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:51:38 INFO  no build target found for /root/drp_23/backend/src/main/scala/Server.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:52:53 INFO  no build target found for /root/drp_23/backend/src/main/scala/DatabaseUtils.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:52:57 INFO  no build target found for /root/drp_23/backend/src/main/scala/DatabaseUtils.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:52:57 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/LoginPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:52:58 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:52:58 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:20 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:20 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:23 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:25 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:25 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:26 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:27 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:27 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:30 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:31 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:31 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:33 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:33 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:35 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:35 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:37 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:37 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:38 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:38 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:40 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:41 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:41 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala[0m
+2025.06.01 19:53:42 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:42 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:42 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:42 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:42 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:43 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:43 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:43 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:43 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:43 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:43 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:44 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:44 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:44 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:44 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:44 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:44 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:45 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:45 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:45 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:45 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:45 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+Jun 01, 2025 7:53:46 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 178
+2025.06.01 19:53:46 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:47 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala[0m
+2025.06.01 19:53:47 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:48 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:48 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:48 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:48 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:48 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:50 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala[0m
+2025.06.01 19:53:50 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:52 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:53 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala[0m
+2025.06.01 19:53:53 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:53 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:53 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:53 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:53 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:53 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:53 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:53 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:54 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:54 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:54 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:54 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:56 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:56 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:56 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala[0m
+2025.06.01 19:53:56 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:56 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:57 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+Jun 01, 2025 7:53:57 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 234
+2025.06.01 19:53:57 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:57 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:57 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:57 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:57 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:57 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:58 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:58 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:58 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:58 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:58 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:58 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:59 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:59 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:59 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:59 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:53:59 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:01 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala[0m
+2025.06.01 19:54:01 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:03 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:03 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:03 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:03 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:03 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:05 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:05 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:05 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:05 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:06 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:07 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:07 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala[0m
+2025.06.01 19:54:07 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:07 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:07 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:07 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:07 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:08 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:08 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala[0m
+2025.06.01 19:54:08 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:08 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:08 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:08 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:10 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala[0m
+2025.06.01 19:54:10 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:10 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:10 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:10 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:11 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:11 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:11 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:12 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala[0m
+2025.06.01 19:54:12 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:12 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:12 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:12 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:12 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:12 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:12 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:13 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:13 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:13 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:13 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:13 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:14 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala[0m
+2025.06.01 19:54:14 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:14 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:14 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:14 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:14 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:14 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:14 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:16 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:16 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:18 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:18 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:18 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:19 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:19 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:20 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:20 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:20 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:20 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:21 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:21 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:21 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:21 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:22 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:22 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:23 INFO  no build target found for /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala. Using presentation compiler with project's scala-library version: 3.3.6[0m
+2025.06.01 19:54:23 WARN  no build target for: /root/drp_23/frontend/src/main/scala/frontend/RegisterPage.scala[0m

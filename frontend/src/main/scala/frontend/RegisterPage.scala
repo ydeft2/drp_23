@@ -61,7 +61,7 @@ object RegisterPage {
           data.password.asInstanceOf[String] != confirmPasswordInput.value
       
       if (isInvalid) {
-        dom.window.alert("Please fill in all fields correctly and ensure passwords match.")
+        dom.window.alert("Please fill in all fields correctly, ensure passwords are at least 6 characters and match.")
       } else {
         dom.window.fetch("/api/register", literal(
           method = "POST",
