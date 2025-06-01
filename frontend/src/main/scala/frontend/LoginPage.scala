@@ -95,15 +95,5 @@ object LoginPage {
     registerButton.addEventListener("click", { (_: dom.Event) =>
       RegisterPage.render()
     })
-
-    // THE FOLLOWING BUTTON IS FOR TESTING PURPOSES ONLY
-    val secretBypassButton = document.createElement("button")
-    secretBypassButton.textContent = "Bypass Login"
-    secretBypassButton.setAttribute("style", "display: block; width: 100%; padding: 10px; box-sizing: border-box;")
-    secretBypassButton.setAttribute("style", "position: fixed; bottom: 0; left: 0; right: 0; display: block; padding: 10px; box-sizing: border-box;")
-    document.body.appendChild(secretBypassButton)
-    secretBypassButton.addEventListener("click", { (_: dom.Event) =>
-      HomePage.render()
-    })
   }
 }
