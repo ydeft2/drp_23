@@ -47,8 +47,10 @@ case class RoleResponse(
 )
 
 case class NotificationResponse(
+    id: Int,
     message: String,
-    created_at: String
+    created_at: String,
+    is_read: Boolean
 )
 
 val supabaseUrl: String = sys.env("SUPABASE_URL")
@@ -346,6 +348,29 @@ def getNotifications(authReq: AuthRequest): IO[Either[String, List[NotificationR
           response.as[String].flatMap { body =>
             IO.pure(Left(s"Error fetching notifications: ${response.status.code} - $body"))
           }
+      }
+    }
+  }
+}
+
+def markNotificationRead(uid: String, notificationId: Int): IO[Either[String, Unit]] = {
+  val updateUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/notifications?id=eq.$notificationId&uid=eq.$uid")
+  val payload = io.circe.Json.obj("is_read" := true)
+  val request = Request[IO](
+    method = Method.PATCH,
+    uri = updateUri,
+    headers = Headers(
+      Header.Raw(ci"Authorization", s"Bearer $supabaseKey"),
+      Header.Raw(ci"apikey", s"$supabaseKey"),
+      Header.Raw(ci"Content-Type", "application/json"),
+      Header.Raw(ci"Prefer", "return=minimal")
+    )
+  ).withEntity(payload)
+  EmberClientBuilder.default[IO].build.use { httpClient =>
+    httpClient.fetch(request) { response =>
+      response.status match {
+        case Status.Ok | Status.NoContent => IO.pure(Right(()))
+        case _ => response.as[String].flatMap(body => IO.pure(Left(s"Error: ${response.status.code} - $body")))
       }
     }
   }

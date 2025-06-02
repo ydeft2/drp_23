@@ -72,6 +72,18 @@ object Server extends IOApp.Simple {
                         case Left(error) => BadRequest(Json.obj("error" -> Json.fromString(error)))
                       }
         } yield response
+      case req @ POST -> Root / "markNotificationRead" =>
+        for {
+          json <- req.as[io.circe.Json]
+          uid = json.hcursor.get[String]("uid").getOrElse("")
+          id = json.hcursor.get[Int]("id").getOrElse(-1)
+          res <- if (uid.nonEmpty && id != -1)
+                  markNotificationRead(uid, id).flatMap {
+                    case Right(_) => Ok(io.circe.Json.obj("success" := true))
+                    case Left(err) => BadRequest(io.circe.Json.obj("error" := err))
+                  }
+                else BadRequest(io.circe.Json.obj("error" := "Missing uid or id"))
+        } yield res
     }
 
   val staticRoutes = fileService[IO](FileService.Config("public", pathPrefix = ""))

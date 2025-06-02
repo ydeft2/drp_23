@@ -11,8 +11,10 @@ import org.scalajs.dom.HTMLSpanElement
 
 @js.native
 trait NotificationResponse extends js.Object {
+  val id: Int
   val message: String
   val created_at: String
+  val is_read: Boolean
 }
 
 object Inbox {
@@ -58,6 +60,41 @@ object Inbox {
       }
   }
 
+  def markNotificationRead(
+    notificationId: Int,
+    notificationsBox: Div,
+    notifications: List[NotificationResponse],
+    onSuccess: () => Unit
+  ): Unit = {
+    val accessToken = dom.window.localStorage.getItem("accessToken")
+    val uid = dom.window.localStorage.getItem("userId")
+    if (accessToken == null || uid == null) return
+
+    val requestHeaders = new dom.Headers()
+    requestHeaders.append("Content-Type", "application/json")
+    requestHeaders.append("Authorization", s"Bearer $accessToken")
+
+    val requestBody = js.Dynamic.literal(
+      "uid" -> uid,
+      "id" -> notificationId
+    )
+
+    val requestInit = new dom.RequestInit {
+      method = dom.HttpMethod.POST
+      headers = requestHeaders
+      body = JSON.stringify(requestBody)
+    }
+
+    // Optimistically update local state
+    notifications.find(_.id == notificationId).foreach { n =>
+      n.asInstanceOf[js.Dynamic].updateDynamic("is_read")(true)
+    }
+    renderNotifications(notificationsBox, notifications)
+
+    dom.fetch("/api/markNotificationRead", requestInit)
+      .toFuture
+      .map(_ => onSuccess())
+  }
   def renderNotifications(notificationsBox: Div, notifications: List[NotificationResponse]): Unit = {
     notificationsBox.innerHTML = ""
 
@@ -71,6 +108,19 @@ object Inbox {
       val notificationsTitle = document.createElement("h2")
       notificationsTitle.textContent = "Notifications"
       notificationsBox.appendChild(notificationsTitle)
+
+      val markAllReadButton = document.createElement("button").asInstanceOf[Button]
+      markAllReadButton.textContent = "Mark all as read"
+      markAllReadButton.style.marginBottom = "10px"
+      markAllReadButton.addEventListener("click", (_: dom.MouseEvent) => {
+        sortedNotifications.foreach { notification =>
+          if (!notification.is_read) {
+            markNotificationRead(notification.id, notificationsBox, notifications, () => ())
+          }
+        }
+      })
+      notificationsBox.appendChild(markAllReadButton)
+
       sortedNotifications.foreach { notification =>
         val notificationItem = document.createElement("div").asInstanceOf[Div]
         val itemStyle = notificationItem.style
@@ -80,9 +130,30 @@ object Inbox {
         itemStyle.padding = "10px"
         itemStyle.borderBottom = "1px solid #ddd"
 
+        // Group left side: dot + message
+        val leftSide = document.createElement("div").asInstanceOf[Div]
+        leftSide.style.display = "flex"
+        leftSide.style.setProperty("align-items", "center")
+        leftSide.style.setProperty("flex", "1")
+
+
+        val dot = document.createElement("span").asInstanceOf[HTMLSpanElement]
+        dot.textContent = "●"
+        dot.style.color = "#2196f3"
+        dot.style.marginRight = "10px"
+        dot.style.minWidth = "16px"
+        if (notification.is_read) {
+          dot.style.visibility = "hidden"
+        }
+
         val messageDiv = document.createElement("span").asInstanceOf[HTMLSpanElement]
         messageDiv.textContent = notification.message
+        messageDiv.style.textAlign = "left"
 
+        leftSide.appendChild(dot)
+        leftSide.appendChild(messageDiv)
+
+        // Right side: time
         val timeDiv = document.createElement("span").asInstanceOf[HTMLSpanElement]
         val date = new js.Date(notification.created_at)
         val months = Array("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
@@ -96,8 +167,12 @@ object Inbox {
         timeStyle.fontSize = "0.9em"
         timeStyle.color = "#888"
         timeStyle.marginLeft = "20px"
+        timeStyle.whiteSpace = "nowrap"
 
         notificationItem.addEventListener("click", (_: dom.MouseEvent) => {
+          if (!notification.is_read) {
+            markNotificationRead(notification.id, notificationsBox, notifications, () => ())
+          }
           val contentHtml =
             s"""
               |<p><strong>Received:</strong> ${timeDiv.textContent}</p>
@@ -107,13 +182,14 @@ object Inbox {
           showModal(contentHtml)
         })
 
-        notificationItem.appendChild(messageDiv)
+        notificationItem.appendChild(leftSide)
         notificationItem.appendChild(timeDiv)
         notificationsBox.appendChild(notificationItem)
       }
     }
   }
 
+  
   def render(): Unit = {
     clearPage()
 
