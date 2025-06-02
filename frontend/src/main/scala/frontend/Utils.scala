@@ -244,3 +244,49 @@ def isPatient(): scala.concurrent.Future[Boolean] = {
       }
 
 }
+
+def createPasswordInput(container: dom.Element, placeholder: String): Input = {
+  val wrapper = document.createElement("div").asInstanceOf[Div]
+  wrapper.setAttribute("style",
+    """
+    position: relative;
+    width: 100%;
+    margin-bottom: 10px;
+    """.stripMargin)
+
+  val input = document.createElement("input").asInstanceOf[Input]
+  input.placeholder = placeholder
+  input.`type` = "password"
+  input.setAttribute("style",
+    """
+    width: 100%;
+    padding: 10px 40px 10px 10px;
+    box-sizing: border-box;
+    """.stripMargin)
+
+  val toggleButton = document.createElement("button").asInstanceOf[Button]
+  toggleButton.innerHTML = "&#128065;"
+  toggleButton.setAttribute("aria-label", "Toggle password visibility")
+  toggleButton.setAttribute("style",
+    """
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 0;
+    """.stripMargin)
+
+  toggleButton.onclick = (_: dom.MouseEvent) => {
+    input.`type` = if (input.`type` == "password") "text" else "password"
+  }
+
+  wrapper.appendChild(input)
+  wrapper.appendChild(toggleButton)
+  container.appendChild(wrapper)
+
+  input
+}

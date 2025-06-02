@@ -31,8 +31,8 @@ object RegisterPage {
     val dobInput = createFormField(container, "", "date")
     // TODO ADDRESSES!
     val emailInput = createFormField(container, "Email")
-    val passwordInput = createFormField(container, "Password", "password")
-    val confirmPasswordInput = createFormField(container, "Confirm Password", "password")
+    val passwordInput = createPasswordInput(container, "Password")
+    val confirmPasswordInput = createPasswordInput(container, "Confirm Password")
 
     // Append inputs to the container
 
