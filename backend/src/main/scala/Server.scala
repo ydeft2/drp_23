@@ -53,6 +53,15 @@ object Server extends IOApp.Simple {
                         case Left(error)  => BadRequest(Json.obj("error" -> Json.fromString(error)))
                       }
         } yield response
+      case req @ POST -> Root / "deleteAccount" =>
+        for {
+          authReq <- req.as[AuthRequest]
+          deleteRes <- deleteAccount(authReq)
+          response <- deleteRes match {
+                        case Right(_) => Ok(Json.obj("message" -> Json.fromString("Account deleted successfully")))
+                        case Left(error) => BadRequest(Json.obj("error" -> Json.fromString(error)))
+                      }
+        } yield response
     }
 
   val staticRoutes = fileService[IO](FileService.Config("public", pathPrefix = ""))
