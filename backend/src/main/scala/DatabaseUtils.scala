@@ -127,8 +127,13 @@ def registerUserWithSupabase(reg: RegisterRequest): IO[Response[IO]] = {
                       case Right(_) => IO.pure(Response[IO](Status.Ok))
                       case Left(err) => BadRequest(s"Error inserting user role: $err")
                     }
+
                   }
                   case Left(err) => BadRequest(s"Error creating patient entry: $err")
+                }
+                notifyUser(uid, s"Welcome ${reg.firstName}, your account has been created successfully.").flatMap {
+                  case Right(_) => IO.pure(Response[IO](Status.Ok))
+                  case Left(err) => BadRequest(s"Error sending notification: $err")
                 }
             }
           }
@@ -271,6 +276,40 @@ def deleteAccount(authReq: AuthRequest): IO[Either[String, Unit]] = {
         case _ =>
           response.as[String].flatMap { body =>
             IO.pure(Left(s"Error deleting account: ${response.status.code} - $body"))
+          }
+      }
+    }
+  }
+}
+
+def notifyUser(uid: String, message: String): IO[Either[String, Unit]] = {
+  val payload = Json.obj(
+    "uid" := uid,
+    "message" := message
+  )
+
+  val notifyUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/notifications")
+
+  val notifyRequest = Request[IO](
+    method = Method.POST,
+    uri = notifyUri,
+    headers = Headers(
+      Header.Raw(ci"Authorization", s"Bearer $supabaseKey"),
+      Header.Raw(ci"apikey", s"$supabaseKey"),
+      Header.Raw(ci"Content-Type", "application/json"),
+      Header.Raw(ci"Prefer", "return=minimal")
+    )
+  ).withEntity(payload)
+
+  EmberClientBuilder.default[IO].build.use { httpClient =>
+    httpClient.fetch(notifyRequest) { response =>
+      response.status match {
+        case Status.Created | Status.Ok =>
+          IO.println("Notification sent successfully") *> IO.pure(Right(()))
+        case _ =>
+          response.as[String].flatMap { body =>
+            IO.println(s"Error response: Status ${response.status.code}, Body: $body") *>
+            IO.pure(Left(s"Error sending notification: ${response.status.code} - $body"))
           }
       }
     }
