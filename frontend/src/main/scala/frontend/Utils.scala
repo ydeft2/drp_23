@@ -8,6 +8,20 @@ import scala.scalajs.js.Dynamic.literal
 import scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalajs.dom.experimental.RequestInit
+import org.scalajs.dom.experimental.Fetch
+import org.scalajs.dom.experimental.Headers
+import scala.concurrent.Future
+import scala.scalajs.js.JSON
+import scala.scalajs.js
+import scala.scalajs.js.annotation.JSGlobal
+
+@js.native
+trait Role extends js.Object {
+  val uid: String
+  val is_patient: Boolean
+}
+
+
 
 
 
@@ -101,7 +115,9 @@ def createFormButton(container: org.scalajs.dom.Element, text: String): Button =
 
 val SUPABASE_ANON_KEY: String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqa3JyeXphZnVvZnlldmdjeWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0ODM1OTAsImV4cCI6MjA2NDA1OTU5MH0.s53JxFGfcdKELvKvjs7qqFbPK6DFwqt4k5GMTXFD1Vc"
 val supabaseAuthUrl: String = "https://djkrryzafuofyevgcyic.supabase.co/auth/v1/token?grant_type=password"
-val supabaseUserUrl: String = "https://djkrryzafuofyevgcyic.supabase.co/auth/v1/user"
+lazy val supabaseUrl: String = "https://djkrryzafuofyevgcyic.supabase.co/auth/v1"
+val supabaseUserUrl: String = supabaseUrl + "/user"
+val supabaseRoleUrl: String = supabaseUrl + "/role"
 
 def verifyToken(accessToken: String): scala.concurrent.Future[Boolean] = {
   val requestOptions = literal(
@@ -175,4 +191,56 @@ object Spinner {
     Option(dom.document.getElementById(spinnerId)).foreach(_.remove())
     Option(dom.document.getElementById(overlayId)).foreach(_.remove())
   }
+}
+
+def isPatient(): scala.concurrent.Future[Boolean] = {
+  //debugging print
+  dom.console.log("Checking if user is a patient...")
+
+  val currentUid = dom.window.localStorage.getItem("userId") match {
+    case null => ""
+    case uid => uid
+  }
+
+  val accessToken = dom.window.localStorage.getItem("accessToken") match {
+    case null => ""
+    case token => token
+  }
+
+  if (currentUid.isEmpty || accessToken.isEmpty) {
+    return Future.successful(false)
+  }
+
+  val requestBody = js.Dynamic.literal(
+    "uid" -> currentUid,
+    "accessToken" -> accessToken
+  )
+
+  val requestHeaders = js.Dictionary(
+      "Content-Type" -> "application/json",
+      "apikey" -> SUPABASE_ANON_KEY
+  )
+
+  val requestInit = new dom.RequestInit {
+      method = dom.HttpMethod.POST
+      headers = requestHeaders
+      body = JSON.stringify(requestBody)
+  }
+
+
+
+  dom.fetch("/api/roles", requestInit)
+      .toFuture
+      .flatMap(_.json().toFuture)
+      .map { json =>
+        val roleInfo = json.asInstanceOf[js.Dynamic]
+        val isPatient = roleInfo.is_patient.asInstanceOf[String] == "true"
+        isPatient
+      }
+      .recover {
+        case e =>
+          dom.window.alert(s"Error: ${e.getMessage}")
+          false
+      }
+
 }

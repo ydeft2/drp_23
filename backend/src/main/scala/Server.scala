@@ -42,6 +42,17 @@ object Server extends IOApp.Simple {
                           case Left(error)    => BadRequest(Json.obj("error" -> Json.fromString(error)))
                         }
         } yield response
+      case req @ POST -> Root / "roles" =>
+        //debug printing
+        println(s"Received request for role check")
+        for {
+          authReq <- req.as[AuthRequest]
+          rolesRes <- getUserRoles(authReq)
+          response <- rolesRes match {
+                        case Right(roles) => Ok(roles.asJson)
+                        case Left(error)  => BadRequest(Json.obj("error" -> Json.fromString(error)))
+                      }
+        } yield response
     }
 
   val staticRoutes = fileService[IO](FileService.Config("public", pathPrefix = ""))

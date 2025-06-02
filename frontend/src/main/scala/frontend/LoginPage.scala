@@ -78,7 +78,15 @@ object LoginPage {
             dom.window.localStorage.setItem("accessToken", accessToken)
             dom.window.localStorage.setItem("userId", userId)
             
-            HomePage.render()
+            isPatient().map { isPatient =>
+              if (isPatient) {
+                HomePage.render()
+              } else {
+                AdminPage.render()
+              }
+            }.recover {
+              case e: Throwable => dom.window.alert(s"An error occurred: ${e.getMessage}")
+            }
         }
       } else {
           response.text().toFuture.map { errorText =>

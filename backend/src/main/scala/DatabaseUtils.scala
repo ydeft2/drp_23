@@ -10,6 +10,10 @@ import org.typelevel.ci.CIStringSyntax
 import io.circe.Json
 import org.http4s.dsl.io._
 
+case class AuthRequest(
+    uid: String,
+    accessToken: String
+)
 
 case class RegisterRequest(
     firstName: String,
@@ -35,6 +39,11 @@ case class AccountDetailsResponse(
     first_name: String,
     last_name: String,
     dob: String
+)
+
+case class RoleResponse(
+    uid: String,
+    is_patient: String
 )
 
 val supabaseUrl: String = sys.env("SUPABASE_URL")
@@ -114,7 +123,7 @@ def registerUserWithSupabase(reg: RegisterRequest): IO[Response[IO]] = {
                   case Right(_) => {
                     Ok(s"User registered successfully with UID: $uid")
                     
-                    insertUserRole(uid, is_patient = true).flatMap {
+                    insertUserRole(uid, is_patient = "true").flatMap {
                       case Right(_) => IO.pure(Response[IO](Status.Ok))
                       case Left(err) => BadRequest(s"Error inserting user role: $err")
                     }
@@ -134,7 +143,7 @@ def registerUserWithSupabase(reg: RegisterRequest): IO[Response[IO]] = {
 
 def insertUserRole(
     uid: String,
-    is_patient: Boolean
+    is_patient: String
 ): IO[Either[String, Unit]] = {
   val payload = Json.obj(
     "uid" := uid,
@@ -201,6 +210,43 @@ def getAccountDetails(accountDetailsReq: AccountDetailsRequest): IO[Either[Strin
         case _ =>
           response.as[String].flatMap { body =>
             IO.pure(Left(s"Error fetching account details: ${response.status.code} - $body"))
+          }
+      }
+    }
+  }
+}
+
+def getUserRoles(authReq: AuthRequest): IO[Either[String, RoleResponse]] = {
+  val rolesUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/roles?uid=eq.${authReq.uid}")
+  println(s"Fetching roles for user: ${authReq.uid} from $rolesUri")
+  val rolesRequest = Request[IO](
+    method = Method.GET,
+    uri = rolesUri,
+    headers = Headers(
+      Header.Raw(ci"Authorization", s"Bearer ${authReq.accessToken}"),
+      Header.Raw(ci"apikey", s"${sys.env("SUPABASE_ANON_KEY")}"),
+      Header.Raw(ci"Content-Type", "application/json")
+    )
+  )
+  EmberClientBuilder.default[IO].build.use { httpClient =>
+    httpClient.fetch(rolesRequest) { response =>
+      response.status match {
+        case Status.Ok =>
+          response.as[Json].flatMap { json =>
+            println(s"Received roles response: $json")
+            json.asArray match {
+              case Some(arr) if arr.nonEmpty =>
+                arr.head.as[RoleResponse].fold(
+                  err => IO.pure(Left(s"Decoding error: $err")),
+                  role => IO.pure(Right(role))
+                )
+              case _ =>
+                IO.pure(Left("No roles found for the user"))
+            }
+          }
+        case _ =>
+          response.as[String].flatMap { body =>
+            IO.pure(Left(s"Error fetching user roles: ${response.status.code} - $body"))
           }
       }
     }
