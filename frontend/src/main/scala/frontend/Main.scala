@@ -12,8 +12,17 @@ object Main {
         println("Token found: " + token)
         verifyToken(token).foreach { valid =>
           println(s"Token valid? $valid")
-          if (valid) HomePage.render()
-          else {
+          if (valid) {
+            isPatient().map { isPatient =>
+              if (isPatient) {
+                HomePage.render()
+              } else {
+                AdminPage.render()
+              }
+            }.recover {
+              case e: Throwable => dom.window.alert(s"An error occurred: ${e.getMessage}")
+            }
+          } else {
             println("Invalid token, removing and rendering login")
             dom.window.localStorage.removeItem("accessToken")
             dom.window.localStorage.removeItem("userId")

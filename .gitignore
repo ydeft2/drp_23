@@ -4,8 +4,7 @@
 backend/target
 frontend/target
 # ignore project directories
-project/project
-project/target
+project/
 # ignore target directories
 target/
 #ignore vscode directories

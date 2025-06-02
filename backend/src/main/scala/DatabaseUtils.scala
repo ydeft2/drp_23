@@ -10,6 +10,10 @@ import org.typelevel.ci.CIStringSyntax
 import io.circe.Json
 import org.http4s.dsl.io._
 
+case class AuthRequest(
+    uid: String,
+    accessToken: String
+)
 
 case class RegisterRequest(
     firstName: String,
@@ -201,6 +205,41 @@ def getAccountDetails(accountDetailsReq: AccountDetailsRequest): IO[Either[Strin
         case _ =>
           response.as[String].flatMap { body =>
             IO.pure(Left(s"Error fetching account details: ${response.status.code} - $body"))
+          }
+      }
+    }
+  }
+}
+
+def getUserRoles(authReq: AuthRequest): IO[Either[String, List[String]]] = {
+  val rolesUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/roles?uid=eq.${authReq.uid}")
+  println(s"Fetching roles for user: ${authReq.uid} from $rolesUri")
+  val rolesRequest = Request[IO](
+    method = Method.GET,
+    uri = rolesUri,
+    headers = Headers(
+      Header.Raw(ci"Authorization", s"Bearer ${authReq.accessToken}"),
+      Header.Raw(ci"apikey", s"${sys.env("SUPABASE_ANON_KEY")}"),
+      Header.Raw(ci"Content-Type", "application/json")
+    )
+  )
+  EmberClientBuilder.default[IO].build.use { httpClient =>
+    httpClient.fetch(rolesRequest) { response =>
+      response.status match {
+        case Status.Ok =>
+          response.as[Json].flatMap { json =>
+            println(s"Received roles response: $json")
+            json.asArray match {
+              case Some(arr) if arr.nonEmpty =>
+                val roles = arr.flatMap(_.hcursor.get[String]("is_patient").toOption).toList
+                IO.pure(Right(roles))
+              case _ =>
+                IO.pure(Left("No roles found for the user"))
+            }
+          }
+        case _ =>
+          response.as[String].flatMap { body =>
+            IO.pure(Left(s"Error fetching user roles: ${response.status.code} - $body"))
           }
       }
     }
