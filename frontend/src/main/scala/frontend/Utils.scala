@@ -24,6 +24,7 @@ trait Role extends js.Object {
 
 
 
+
 def createHeaderButton(name : String) : Button = {
   val button = document.createElement("button").asInstanceOf[Button]
     button.textContent = name
@@ -228,25 +229,18 @@ def isPatient(): scala.concurrent.Future[Boolean] = {
 
 
 
-  dom.fetch("/api/roles", requestInit).toFuture.flatMap { response =>
-    if (response.ok) {
-      response.json().toFuture.map { json =>
-        val roles = json.asInstanceOf[js.Array[Role]]
-        val isPatient = roles.headOption.exists(_.is_patient)
-        dom.console.log(s"User is patient: $isPatient")
+  dom.fetch("/api/roles", requestInit)
+      .toFuture
+      .flatMap(_.json().toFuture)
+      .map { json =>
+        val roleInfo = json.asInstanceOf[js.Dynamic]
+        val isPatient = roleInfo.is_patient.asInstanceOf[String] == "true"
         isPatient
-      }.recover {
-        case e: Throwable =>
-          dom.console.error(s"Error parsing response: ${e.getMessage}")
+      }
+      .recover {
+        case e =>
+          dom.window.alert(s"Error: ${e.getMessage}")
           false
       }
-    } else {
-      Future.successful(false)
-    }
-  }.recover {
-    case e: Throwable =>
-      dom.console.error(s"Error checking patient status: ${e.getMessage}")
-      false
-  }
 
 }

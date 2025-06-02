@@ -41,6 +41,11 @@ case class AccountDetailsResponse(
     dob: String
 )
 
+case class RoleResponse(
+    uid: String,
+    is_patient: String
+)
+
 val supabaseUrl: String = sys.env("SUPABASE_URL")
 val supabaseKey: String = sys.env("SUPABASE_API_KEY")
 
@@ -118,7 +123,7 @@ def registerUserWithSupabase(reg: RegisterRequest): IO[Response[IO]] = {
                   case Right(_) => {
                     Ok(s"User registered successfully with UID: $uid")
                     
-                    insertUserRole(uid, is_patient = true).flatMap {
+                    insertUserRole(uid, is_patient = "true").flatMap {
                       case Right(_) => IO.pure(Response[IO](Status.Ok))
                       case Left(err) => BadRequest(s"Error inserting user role: $err")
                     }
@@ -138,7 +143,7 @@ def registerUserWithSupabase(reg: RegisterRequest): IO[Response[IO]] = {
 
 def insertUserRole(
     uid: String,
-    is_patient: Boolean
+    is_patient: String
 ): IO[Either[String, Unit]] = {
   val payload = Json.obj(
     "uid" := uid,
@@ -211,7 +216,7 @@ def getAccountDetails(accountDetailsReq: AccountDetailsRequest): IO[Either[Strin
   }
 }
 
-def getUserRoles(authReq: AuthRequest): IO[Either[String, List[String]]] = {
+def getUserRoles(authReq: AuthRequest): IO[Either[String, RoleResponse]] = {
   val rolesUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/roles?uid=eq.${authReq.uid}")
   println(s"Fetching roles for user: ${authReq.uid} from $rolesUri")
   val rolesRequest = Request[IO](
@@ -231,8 +236,10 @@ def getUserRoles(authReq: AuthRequest): IO[Either[String, List[String]]] = {
             println(s"Received roles response: $json")
             json.asArray match {
               case Some(arr) if arr.nonEmpty =>
-                val roles = arr.flatMap(_.hcursor.get[String]("is_patient").toOption).toList
-                IO.pure(Right(roles))
+                arr.head.as[RoleResponse].fold(
+                  err => IO.pure(Left(s"Decoding error: $err")),
+                  role => IO.pure(Right(role))
+                )
               case _ =>
                 IO.pure(Left("No roles found for the user"))
             }
