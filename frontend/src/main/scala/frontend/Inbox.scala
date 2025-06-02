@@ -7,10 +7,17 @@ import scala.scalajs.js
 import scala.scalajs.js.JSON
 import scala.scalajs.js.annotation._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import org.scalajs.dom.HTMLSpanElement
+
+@js.native
+trait NotificationResponse extends js.Object {
+  val message: String
+  val created_at: String
+}
 
 object Inbox {
 
-  var notifications: List[String] = List()
+  var notifications: List[NotificationResponse] = List()
 
 
   def fetchNotifications(onSuccess: () => Unit): Unit = {
@@ -41,7 +48,7 @@ object Inbox {
       .toFuture
       .flatMap(_.json().toFuture)
       .map { json =>
-        notifications = json.asInstanceOf[js.Array[String]].toList
+        notifications = json.asInstanceOf[js.Array[NotificationResponse]].toList
         onSuccess()
       }
       .recover {
@@ -51,10 +58,12 @@ object Inbox {
       }
   }
 
-  def renderNotifications(notificationsBox: Div, notifications: List[String]): Unit = {
+  def renderNotifications(notificationsBox: Div, notifications: List[NotificationResponse]): Unit = {
     notificationsBox.innerHTML = ""
 
-    if (notifications.isEmpty) {
+    val sortedNotifications = notifications.sortBy(n => new js.Date(n.created_at).getTime())(Ordering[Double].reverse)
+
+    if (sortedNotifications.isEmpty) {
       val noNotifications = document.createElement("p")
       noNotifications.textContent = "No notifications available."
       notificationsBox.appendChild(noNotifications)
@@ -62,11 +71,34 @@ object Inbox {
       val notificationsTitle = document.createElement("h2")
       notificationsTitle.textContent = "Notifications"
       notificationsBox.appendChild(notificationsTitle)
-      notifications.foreach { notification =>
+      sortedNotifications.foreach { notification =>
         val notificationItem = document.createElement("div").asInstanceOf[Div]
-        notificationItem.textContent = notification
-        notificationItem.style.padding = "10px"
-        notificationItem.style.borderBottom = "1px solid #ddd"
+        val itemStyle = notificationItem.style
+        itemStyle.display = "flex"
+        itemStyle.setProperty("justify-content", "space-between")
+        itemStyle.setProperty("align-items", "center")
+        itemStyle.padding = "10px"
+        itemStyle.borderBottom = "1px solid #ddd"
+
+        val messageDiv = document.createElement("span").asInstanceOf[HTMLSpanElement]
+        messageDiv.textContent = notification.message
+
+        val timeDiv = document.createElement("span").asInstanceOf[HTMLSpanElement]
+        val date = new js.Date(notification.created_at)
+        val months = Array("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+        val month = months(date.getMonth().toInt)
+        val day = f"${date.getDate().toInt}%02d"
+        val hour = f"${date.getHours().toInt}%02d"
+        val minute = f"${date.getMinutes().toInt}%02d"
+        timeDiv.textContent = s"$month $day - $hour:$minute"
+
+        val timeStyle = timeDiv.style
+        timeStyle.fontSize = "0.9em"
+        timeStyle.color = "#888"
+        timeStyle.marginLeft = "20px"
+
+        notificationItem.appendChild(messageDiv)
+        notificationItem.appendChild(timeDiv)
         notificationsBox.appendChild(notificationItem)
       }
     }

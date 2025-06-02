@@ -46,6 +46,11 @@ case class RoleResponse(
     is_patient: String
 )
 
+case class NotificationResponse(
+    message: String,
+    created_at: String
+)
+
 val supabaseUrl: String = sys.env("SUPABASE_URL")
 val supabaseKey: String = sys.env("SUPABASE_API_KEY")
 
@@ -312,7 +317,7 @@ def notifyUser(uid: String, message: String): IO[Either[String, Unit]] = {
   }
 }
 
-def getNotifications(authReq: AuthRequest): IO[Either[String, List[String]]] = {
+def getNotifications(authReq: AuthRequest): IO[Either[String, List[NotificationResponse]]] = {
   val notificationsUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/notifications?uid=eq.${authReq.uid}")
 
   val notificationsRequest = Request[IO](
@@ -331,10 +336,10 @@ def getNotifications(authReq: AuthRequest): IO[Either[String, List[String]]] = {
           response.as[Json].flatMap { json =>
             json.asArray match {
               case Some(arr) if arr.nonEmpty =>
-                val notifications = arr.map(_.hcursor.get[String]("message").getOrElse("")).toList
+                val notifications = arr.flatMap(_.as[NotificationResponse].toOption).toList
                 IO.pure(Right(notifications))
               case _ =>
-                IO.pure(Left("No notifications found"))
+                IO.pure(Right(Nil))
             }
           }
         case _ =>
