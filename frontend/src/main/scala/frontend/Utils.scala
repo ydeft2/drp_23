@@ -117,3 +117,62 @@ def verifyToken(accessToken: String): scala.concurrent.Future[Boolean] = {
     else scala.concurrent.Future.successful(false)
   }.recover { case _ => false }
 }
+
+object Spinner {
+
+  private val spinnerId = "global-loading-spinner"
+  private val overlayId = "global-spinner-overlay"
+
+  def show(): Unit = {
+    if (dom.document.getElementById(spinnerId) != null) return
+
+    // Overlay to dim background
+    val overlay = dom.document.createElement("div").asInstanceOf[Div]
+    overlay.id = overlayId
+    overlay.style.position = "fixed"
+    overlay.style.top = "0"
+    overlay.style.left = "0"
+    overlay.style.width = "100%"
+    overlay.style.height = "100%"
+    overlay.style.backgroundColor = "rgba(255, 255, 255, 0.7)"
+    overlay.style.zIndex = "9998"
+
+    // Spinner
+    val spinner = dom.document.createElement("div").asInstanceOf[Div]
+    spinner.id = spinnerId
+    spinner.style.position = "fixed"
+    spinner.style.top = "50%"
+    spinner.style.left = "50%"
+    spinner.style.width = "60px"
+    spinner.style.height = "60px"
+    spinner.style.marginLeft = "-30px"
+    spinner.style.marginTop = "-30px"
+    spinner.style.border = "6px solid #f3f3f3"
+    spinner.style.borderTop = "6px solid #3498db"
+    spinner.style.borderRadius = "50%"
+    spinner.style.animation = "spin 1s linear infinite"
+    spinner.style.zIndex = "9999"
+
+    // Add @keyframes if not already present
+    if (dom.document.getElementById("spinner-style") == null) {
+      val styleTag = dom.document.createElement("style")
+      styleTag.id = "spinner-style"
+      styleTag.innerHTML =
+        """
+          |@keyframes spin {
+          |  0% { transform: rotate(0deg); }
+          |  100% { transform: rotate(360deg); }
+          |}
+        """.stripMargin
+      dom.document.head.appendChild(styleTag)
+    }
+
+    dom.document.body.appendChild(overlay)
+    dom.document.body.appendChild(spinner)
+  }
+
+  def hide(): Unit = {
+    Option(dom.document.getElementById(spinnerId)).foreach(_.remove())
+    Option(dom.document.getElementById(overlayId)).foreach(_.remove())
+  }
+}

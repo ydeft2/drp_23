@@ -50,7 +50,9 @@ object Account {
         onSuccess()
       }
       .recover {
-        case e => dom.window.alert(s"Error: ${e.getMessage}")
+        case e =>
+          Spinner.hide()
+          dom.window.alert(s"Error: ${e.getMessage}")
       }
   }
 
@@ -59,7 +61,11 @@ object Account {
   def render(): Unit = {
     clearPage()
     document.body.appendChild(createSubpageHeader("Dentana Account"))
+
+    Spinner.show()
+
     fetchPatientDetails { () =>
+      Spinner.hide()
       val card = buildProfileCard(currentUser)
       document.body.appendChild(card)
     }
@@ -107,6 +113,16 @@ object Account {
     editBtn.style.margin  = "20px auto 0"
     editBtn.onclick = _ => dom.window.alert("Please contact your dental practice in order to edit your profile.")
     card.appendChild(editBtn)
+
+    val logOutButton = document.createElement("button").asInstanceOf[Button]
+    logOutButton.textContent = "Log Out"
+    styleButton(logOutButton, background = "red", color = "white", border = "none")
+    logOutButton.onclick = (_: dom.MouseEvent) => {
+      dom.window.localStorage.removeItem("accessToken")
+      dom.window.localStorage.removeItem("userId")
+      dom.window.location.href = "/"
+    }
+    card.appendChild(logOutButton)
 
     card
   }
