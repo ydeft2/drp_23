@@ -290,3 +290,51 @@ def createPasswordInput(container: dom.Element, placeholder: String): Input = {
 
   input
 }
+
+def createModal(): Unit = {
+  if (document.getElementById("modal-overlay") != null) return
+
+  val overlay = document.createElement("div")
+  overlay.id = "modal-overlay"
+  overlay.asInstanceOf[dom.html.Element].className = "hidden"
+  overlay.setAttribute("style",
+    """position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      |background: rgba(0,0,0,0.4); display: flex;
+      |align-items: center; justify-content: center;
+      |z-index: 1000;""".stripMargin)
+
+  overlay.innerHTML =
+    """<div id="modal-window" style="background: white; border-radius: 10px; padding: 20px; width: 90%; max-width: 500px; max-height: 80%; overflow-y: auto; position: relative;">
+      |  <button id="modal-close" style="position: absolute; top: 10px; right: 10px;">Back</button>
+      |  <div id="modal-content"></div>
+      |</div>""".stripMargin
+
+  document.body.appendChild(overlay)
+
+  val modalWindow = document.getElementById("modal-window")
+  overlay.addEventListener("click", (e: dom.MouseEvent) => {
+    if (!modalWindow.contains(e.target.asInstanceOf[dom.Node])) {
+      hideModal()
+    }
+  })
+
+
+  val closeBtn = document.getElementById("modal-close")
+  if (closeBtn != null) {
+    closeBtn.addEventListener("click", (_: dom.Event) => hideModal())
+  }
+}
+
+def showModal(contentHtml: String): Unit = {
+  createModal()
+  val overlay = document.getElementById("modal-overlay")
+  val content = document.getElementById("modal-content")
+  content.innerHTML = contentHtml
+  overlay.classList.remove("hidden")
+}
+
+def hideModal(): Unit = {
+  val overlay = document.getElementById("modal-overlay")
+  if (overlay != null) overlay.classList.add("hidden")
+}
+

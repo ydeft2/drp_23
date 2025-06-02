@@ -97,6 +97,16 @@ object Inbox {
         timeStyle.color = "#888"
         timeStyle.marginLeft = "20px"
 
+        notificationItem.addEventListener("click", (_: dom.MouseEvent) => {
+          val contentHtml =
+            s"""
+              |<p><strong>Received:</strong> ${timeDiv.textContent}</p>
+              |<hr/>
+              |<p>${notification.message}</p>
+            """.stripMargin
+          showModal(contentHtml)
+        })
+
         notificationItem.appendChild(messageDiv)
         notificationItem.appendChild(timeDiv)
         notificationsBox.appendChild(notificationItem)
