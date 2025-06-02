@@ -22,7 +22,7 @@ trait Role extends js.Object {
 }
 
 
-
+def clearPage(): Unit = document.body.innerHTML = ""
 
 
 def createHeaderButton(name : String) : Button = {

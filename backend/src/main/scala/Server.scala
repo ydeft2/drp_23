@@ -62,6 +62,16 @@ object Server extends IOApp.Simple {
                         case Left(error) => BadRequest(Json.obj("error" -> Json.fromString(error)))
                       }
         } yield response
+
+      case req @ POST -> Root / "notifications" =>
+        for {
+          authReq <- req.as[AuthRequest]
+          notificationsRes <- getNotifications(authReq)
+          response <- notificationsRes match {
+                        case Right(notifications) => Ok(notifications.asJson)
+                        case Left(error) => BadRequest(Json.obj("error" -> Json.fromString(error)))
+                      }
+        } yield response
     }
 
   val staticRoutes = fileService[IO](FileService.Config("public", pathPrefix = ""))

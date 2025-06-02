@@ -128,8 +128,6 @@ object Account {
     card
   }
 
-  private def clearPage(): Unit = document.body.innerHTML = ""
-
   private def styledDiv(styles: (String, String)*): Div = {
     val d = document.createElement("div").asInstanceOf[Div]
     styles.foreach { case (k, v) => d.style.setProperty(k, v) }

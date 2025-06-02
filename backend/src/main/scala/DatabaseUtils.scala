@@ -120,20 +120,16 @@ def registerUserWithSupabase(reg: RegisterRequest): IO[Response[IO]] = {
                 BadRequest(s"Error parsing user id: $err")
               case Right(uid) =>
                 createPatientEntry(uid, reg).flatMap {
-                  case Right(_) => {
-                    Ok(s"User registered successfully with UID: $uid")
-                    
+                  case Right(_) =>
                     insertUserRole(uid, is_patient = "true").flatMap {
-                      case Right(_) => IO.pure(Response[IO](Status.Ok))
+                      case Right(_) =>
+                        notifyUser(uid, s"Welcome ${reg.firstName}, your account has been created successfully.").flatMap {
+                          case Right(_) => Ok(s"User registered successfully with UID: $uid")
+                          case Left(err) => BadRequest(s"Error sending notification: $err")
+                        }
                       case Left(err) => BadRequest(s"Error inserting user role: $err")
                     }
-
-                  }
                   case Left(err) => BadRequest(s"Error creating patient entry: $err")
-                }
-                notifyUser(uid, s"Welcome ${reg.firstName}, your account has been created successfully.").flatMap {
-                  case Right(_) => IO.pure(Response[IO](Status.Ok))
-                  case Left(err) => BadRequest(s"Error sending notification: $err")
                 }
             }
           }
@@ -310,6 +306,40 @@ def notifyUser(uid: String, message: String): IO[Either[String, Unit]] = {
           response.as[String].flatMap { body =>
             IO.println(s"Error response: Status ${response.status.code}, Body: $body") *>
             IO.pure(Left(s"Error sending notification: ${response.status.code} - $body"))
+          }
+      }
+    }
+  }
+}
+
+def getNotifications(authReq: AuthRequest): IO[Either[String, List[String]]] = {
+  val notificationsUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/notifications?uid=eq.${authReq.uid}")
+
+  val notificationsRequest = Request[IO](
+    method = Method.GET,
+    uri = notificationsUri,
+    headers = Headers(
+      Header.Raw(ci"Authorization", s"Bearer ${authReq.accessToken}"),
+      Header.Raw(ci"apikey", s"${sys.env("SUPABASE_ANON_KEY")}"),
+      Header.Raw(ci"Content-Type", "application/json")
+    )
+  )
+  EmberClientBuilder.default[IO].build.use { httpClient =>
+    httpClient.fetch(notificationsRequest) { response =>
+      response.status match {
+        case Status.Ok =>
+          response.as[Json].flatMap { json =>
+            json.asArray match {
+              case Some(arr) if arr.nonEmpty =>
+                val notifications = arr.map(_.hcursor.get[String]("message").getOrElse("")).toList
+                IO.pure(Right(notifications))
+              case _ =>
+                IO.pure(Left("No notifications found"))
+            }
+          }
+        case _ =>
+          response.as[String].flatMap { body =>
+            IO.pure(Left(s"Error fetching notifications: ${response.status.code} - $body"))
           }
       }
     }
