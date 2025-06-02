@@ -35,7 +35,7 @@ object BookingPage {
     homeBtn.style.border = "none"
     homeBtn.style.cursor = "pointer"
     homeBtn.style.fontSize = "16px"
-    homeBtn.onclick = (_: dom.MouseEvent) => Main.render()
+    homeBtn.onclick = (_: dom.MouseEvent) => HomePage.render()
 
     val titleHeader = document.createElement("div")
     titleHeader.textContent = "Booking Calendar"
