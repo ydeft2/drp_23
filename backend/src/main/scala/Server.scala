@@ -18,83 +18,14 @@ import org.http4s.implicits._
 import org.typelevel.ci.CIStringSyntax 
 import com.comcast.ip4s._
 import org.http4s.ember.server.EmberServerBuilder
-
+import backend.database._
+import backend.http.HttpApi
 
 object Server extends IOApp.Simple {
 
-  def apiRoutes(): HttpRoutes[IO] =
-    HttpRoutes.of[IO] {
-      case GET -> Root / "hello" =>
-        Ok("Hello, World!")
+  override def run = {
 
-      case req @ POST -> Root / "register" =>
-        for {
-          regReq <- req.as[RegisterRequest]
-          response <- registerUserWithSupabase(regReq)
-        } yield response
-
-      case req @ POST -> Root / "accountDetails" =>
-        for {
-          authReq    <- req.as[AccountDetailsRequest]
-          patientRes <- getAccountDetails(authReq)
-          response   <- patientRes match {
-                          case Right(details) => Ok(details.asJson)
-                          case Left(error)    => BadRequest(Json.obj("error" -> Json.fromString(error)))
-                        }
-        } yield response
-      case req @ POST -> Root / "roles" =>
-        //debug printing
-        println(s"Received request for role check")
-        for {
-          authReq <- req.as[AuthRequest]
-          rolesRes <- getUserRoles(authReq)
-          response <- rolesRes match {
-                        case Right(roles) => Ok(roles.asJson)
-                        case Left(error)  => BadRequest(Json.obj("error" -> Json.fromString(error)))
-                      }
-        } yield response
-      case req @ POST -> Root / "deleteAccount" =>
-        for {
-          authReq <- req.as[AuthRequest]
-          deleteRes <- deleteAccount(authReq)
-          response <- deleteRes match {
-                        case Right(_) => Ok(Json.obj("message" -> Json.fromString("Account deleted successfully")))
-                        case Left(error) => BadRequest(Json.obj("error" -> Json.fromString(error)))
-                      }
-        } yield response
-
-      case req @ POST -> Root / "notifications" =>
-        for {
-          authReq <- req.as[AuthRequest]
-          notificationsRes <- getNotifications(authReq)
-          response <- notificationsRes match {
-                        case Right(notifications) => Ok(notifications.asJson)
-                        case Left(error) => BadRequest(Json.obj("error" -> Json.fromString(error)))
-                      }
-        } yield response
-      case req @ POST -> Root / "markNotificationRead" =>
-        for {
-          json <- req.as[io.circe.Json]
-          uid = json.hcursor.get[String]("uid").getOrElse("")
-          id = json.hcursor.get[Int]("id").getOrElse(-1)
-          res <- if (uid.nonEmpty && id != -1)
-                  markNotificationRead(uid, id).flatMap {
-                    case Right(_) => Ok(io.circe.Json.obj("success" := true))
-                    case Left(err) => BadRequest(io.circe.Json.obj("error" := err))
-                  }
-                else BadRequest(io.circe.Json.obj("error" := "Missing uid or id"))
-        } yield res
-    }
-
-  val staticRoutes = fileService[IO](FileService.Config("public", pathPrefix = ""))
-
-  val run = {
-    val httpApp = Router[IO](
-      "/api" -> apiRoutes(),
-      "/" -> staticRoutes
-    ).orNotFound
-
-    val corsHttpApp = CORS(httpApp)
+    val corsHttpApp = CORS(HttpApi().endpoints.orNotFound)
 
     val port = sys.env.get("PORT").flatMap(p => scala.util.Try(p.toInt).toOption).getOrElse(8080)
 
