@@ -28,7 +28,7 @@ object LoginPage {
     val emailInput = createFormField(container, "Email")
     
     // Create a password input field
-    val passwordInput = createFormField(container, "Password", "password")
+    val passwordInput = createPasswordInput(container, "Password")
     
     val errorMessage = document.createElement("div")
     errorMessage.setAttribute("style", "color: red; text-align: center; margin-bottom: 10px; display: none;")

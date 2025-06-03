@@ -68,6 +68,7 @@ object Account {
       Spinner.hide()
       val card = buildProfileCard(currentUser)
       document.body.appendChild(card)
+      document.body.appendChild(buildDeleteAccountButton())
     }
   }
 
@@ -127,8 +128,6 @@ object Account {
     card
   }
 
-  private def clearPage(): Unit = document.body.innerHTML = ""
-
   private def styledDiv(styles: (String, String)*): Div = {
     val d = document.createElement("div").asInstanceOf[Div]
     styles.foreach { case (k, v) => d.style.setProperty(k, v) }
@@ -143,5 +142,56 @@ object Account {
     b.style.cursor       = "pointer"
     b.style.borderRadius = "4px"
     b.style.fontSize     = "16px"
+  }
+
+  private def buildDeleteAccountButton(): Button = {
+    val deleteBtn = document.createElement("button").asInstanceOf[Button]
+    deleteBtn.textContent = "Delete Account"
+    styleButton(deleteBtn, background = "red", color = "white", border = "none")
+    deleteBtn.onclick = (_: dom.MouseEvent) => {
+      // Ask for confirmation before deleting
+      val confirmed = dom.window.confirm("Are you sure you want to delete your account? This action cannot be undone.")
+      if (confirmed) {
+        val accessToken = dom.window.localStorage.getItem("accessToken")
+        val uid = dom.window.localStorage.getItem("userId")
+
+        if (accessToken == null || uid == null) {
+          dom.window.alert("You are not logged in.")
+        }
+
+        val requestHeaders = new dom.Headers()
+        requestHeaders.append("Content-Type", "application/json")
+        requestHeaders.append("Authorization", s"Bearer $accessToken")
+
+        val requestBody = js.Dynamic.literal(
+          "uid" -> uid,
+          "accessToken" -> accessToken
+        )
+
+        val requestInit = new dom.RequestInit {
+          method = dom.HttpMethod.POST
+          headers = requestHeaders
+          body = JSON.stringify(requestBody)
+        }
+
+        dom.fetch("/api/deleteAccount", requestInit)
+          .toFuture
+          .flatMap(_.json().toFuture)
+          .map { json =>
+            dom.window.alert("Your account has been successfully deleted.")
+            dom.window.localStorage.removeItem("accessToken")
+            dom.window.localStorage.removeItem("userId")
+            dom.window.location.href = "/"
+          }
+          .recover {
+            case e =>
+              dom.window.alert(s"Error: ${e.getMessage}")
+          }
+      }
+      else {
+        dom.window.alert("Account deletion cancelled.")
+      }
+    }
+    deleteBtn
   }
 }

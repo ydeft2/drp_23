@@ -1,0 +1,12 @@
+/* styles.css */
+.hidden {
+  display: none !important;
+}
+
+#modal-overlay {
+  transition: opacity 0.2s ease;
+}
+
+body {
+  font-family: Tahoma, sans-serif;
+}

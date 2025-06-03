@@ -46,6 +46,13 @@ case class RoleResponse(
     is_patient: String
 )
 
+case class NotificationResponse(
+    id: Int,
+    message: String,
+    created_at: String,
+    is_read: Boolean
+)
+
 val supabaseUrl: String = sys.env("SUPABASE_URL")
 val supabaseKey: String = sys.env("SUPABASE_API_KEY")
 
@@ -120,14 +127,15 @@ def registerUserWithSupabase(reg: RegisterRequest): IO[Response[IO]] = {
                 BadRequest(s"Error parsing user id: $err")
               case Right(uid) =>
                 createPatientEntry(uid, reg).flatMap {
-                  case Right(_) => {
-                    Ok(s"User registered successfully with UID: $uid")
-                    
+                  case Right(_) =>
                     insertUserRole(uid, is_patient = "true").flatMap {
-                      case Right(_) => IO.pure(Response[IO](Status.Ok))
+                      case Right(_) =>
+                        notifyUser(uid, s"Welcome ${reg.firstName}, your account has been created successfully.").flatMap {
+                          case Right(_) => Ok(s"User registered successfully with UID: $uid")
+                          case Left(err) => BadRequest(s"Error sending notification: $err")
+                        }
                       case Left(err) => BadRequest(s"Error inserting user role: $err")
                     }
-                  }
                   case Left(err) => BadRequest(s"Error creating patient entry: $err")
                 }
             }
@@ -218,7 +226,6 @@ def getAccountDetails(accountDetailsReq: AccountDetailsRequest): IO[Either[Strin
 
 def getUserRoles(authReq: AuthRequest): IO[Either[String, RoleResponse]] = {
   val rolesUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/roles?uid=eq.${authReq.uid}")
-  println(s"Fetching roles for user: ${authReq.uid} from $rolesUri")
   val rolesRequest = Request[IO](
     method = Method.GET,
     uri = rolesUri,
@@ -233,7 +240,6 @@ def getUserRoles(authReq: AuthRequest): IO[Either[String, RoleResponse]] = {
       response.status match {
         case Status.Ok =>
           response.as[Json].flatMap { json =>
-            println(s"Received roles response: $json")
             json.asArray match {
               case Some(arr) if arr.nonEmpty =>
                 arr.head.as[RoleResponse].fold(
@@ -248,6 +254,123 @@ def getUserRoles(authReq: AuthRequest): IO[Either[String, RoleResponse]] = {
           response.as[String].flatMap { body =>
             IO.pure(Left(s"Error fetching user roles: ${response.status.code} - $body"))
           }
+      }
+    }
+  }
+}
+
+def deleteAccount(authReq: AuthRequest): IO[Either[String, Unit]] = {
+  val deleteUri = Uri.unsafeFromString(s"$supabaseUrl/auth/v1/admin/users/${authReq.uid}")
+
+  val deleteRequest = Request[IO](
+    method = Method.DELETE,
+    uri = deleteUri,
+    headers = Headers(
+      Header.Raw(ci"Authorization", s"Bearer ${supabaseKey}"),
+      Header.Raw(ci"apikey", s"${supabaseKey}"),
+      Header.Raw(ci"Content-Type", "application/json")
+    )
+  )
+  EmberClientBuilder.default[IO].build.use { httpClient =>
+    httpClient.fetch(deleteRequest) { response =>
+      response.status match {
+        case Status.NoContent =>
+          IO.println("Account deleted successfully") *> IO.pure(Right(()))
+        case _ =>
+          response.as[String].flatMap { body =>
+            IO.pure(Left(s"Error deleting account: ${response.status.code} - $body"))
+          }
+      }
+    }
+  }
+}
+
+def notifyUser(uid: String, message: String): IO[Either[String, Unit]] = {
+  val payload = Json.obj(
+    "uid" := uid,
+    "message" := message
+  )
+
+  val notifyUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/notifications")
+
+  val notifyRequest = Request[IO](
+    method = Method.POST,
+    uri = notifyUri,
+    headers = Headers(
+      Header.Raw(ci"Authorization", s"Bearer $supabaseKey"),
+      Header.Raw(ci"apikey", s"$supabaseKey"),
+      Header.Raw(ci"Content-Type", "application/json"),
+      Header.Raw(ci"Prefer", "return=minimal")
+    )
+  ).withEntity(payload)
+
+  EmberClientBuilder.default[IO].build.use { httpClient =>
+    httpClient.fetch(notifyRequest) { response =>
+      response.status match {
+        case Status.Created | Status.Ok =>
+          IO.println("Notification sent successfully") *> IO.pure(Right(()))
+        case _ =>
+          response.as[String].flatMap { body =>
+            IO.println(s"Error response: Status ${response.status.code}, Body: $body") *>
+            IO.pure(Left(s"Error sending notification: ${response.status.code} - $body"))
+          }
+      }
+    }
+  }
+}
+
+def getNotifications(authReq: AuthRequest): IO[Either[String, List[NotificationResponse]]] = {
+  val notificationsUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/notifications?uid=eq.${authReq.uid}")
+
+  val notificationsRequest = Request[IO](
+    method = Method.GET,
+    uri = notificationsUri,
+    headers = Headers(
+      Header.Raw(ci"Authorization", s"Bearer ${authReq.accessToken}"),
+      Header.Raw(ci"apikey", s"${sys.env("SUPABASE_ANON_KEY")}"),
+      Header.Raw(ci"Content-Type", "application/json")
+    )
+  )
+  EmberClientBuilder.default[IO].build.use { httpClient =>
+    httpClient.fetch(notificationsRequest) { response =>
+      response.status match {
+        case Status.Ok =>
+          response.as[Json].flatMap { json =>
+            json.asArray match {
+              case Some(arr) if arr.nonEmpty =>
+                val notifications = arr.flatMap(_.as[NotificationResponse].toOption).toList
+                IO.pure(Right(notifications))
+              case _ =>
+                IO.pure(Right(Nil))
+            }
+          }
+        case _ =>
+          response.as[String].flatMap { body =>
+            IO.pure(Left(s"Error fetching notifications: ${response.status.code} - $body"))
+          }
+      }
+    }
+  }
+}
+
+def markNotificationRead(uid: String, notificationId: Int): IO[Either[String, Unit]] = {
+  val updateUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/notifications?id=eq.$notificationId&uid=eq.$uid")
+  val payload = io.circe.Json.obj("is_read" := true)
+  val request = Request[IO](
+    method = Method.PATCH,
+    uri = updateUri,
+    headers = Headers(
+      Header.Raw(ci"Authorization", s"Bearer $supabaseKey"),
+      Header.Raw(ci"apikey", s"$supabaseKey"),
+      Header.Raw(ci"Content-Type", "application/json"),
+      Header.Raw(ci"Prefer", "return=minimal")
+    )
+  ).withEntity(payload)
+  EmberClientBuilder.default[IO].build.use { httpClient =>
+    httpClient.fetch(request) { response =>
+      response.status match {
+        case Status.Ok | Status.NoContent => IO.pure(Right(()))
+        case _ => response.as[String].flatMap(body => IO.pure(Left(s"Error: ${response.status.code} - $body")))
       }
     }
   }
