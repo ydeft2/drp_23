@@ -46,7 +46,7 @@ object Inbox {
       body = JSON.stringify(requestBody)
     }
 
-    dom.fetch("/api/notifications", requestInit)
+    dom.fetch("/api/notifications/fetch", requestInit)
       .toFuture
       .flatMap(_.json().toFuture)
       .map { json =>
@@ -91,7 +91,7 @@ object Inbox {
     }
     renderNotifications(notificationsBox, notifications)
 
-    dom.fetch("/api/markNotificationRead", requestInit)
+    dom.fetch("/api/notifications/markNotificationRead", requestInit)
       .toFuture
       .map(_ => onSuccess())
   }

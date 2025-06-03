@@ -1,4 +1,4 @@
-package backend
+package backend.database
 
 import cats.effect.IO
 import org.http4s._

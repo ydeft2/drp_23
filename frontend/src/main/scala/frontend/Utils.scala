@@ -229,7 +229,7 @@ def isPatient(): scala.concurrent.Future[Boolean] = {
 
 
 
-  dom.fetch("/api/roles", requestInit)
+  dom.fetch("/api/auth/roles", requestInit)
       .toFuture
       .flatMap(_.json().toFuture)
       .map { json =>
