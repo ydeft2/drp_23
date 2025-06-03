@@ -39,7 +39,7 @@ object Account {
       body = JSON.stringify(requestBody)
     }
 
-    dom.fetch("/api/accountDetails", requestInit)
+    dom.fetch("/api/auth/accountDetails", requestInit)
       .toFuture
       .flatMap(_.json().toFuture)
       .map { json =>
@@ -174,7 +174,7 @@ object Account {
           body = JSON.stringify(requestBody)
         }
 
-        dom.fetch("/api/deleteAccount", requestInit)
+        dom.fetch("/api/auth/deleteAccount", requestInit)
           .toFuture
           .flatMap(_.json().toFuture)
           .map { json =>

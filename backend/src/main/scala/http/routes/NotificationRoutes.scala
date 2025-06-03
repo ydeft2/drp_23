@@ -20,7 +20,7 @@ import backend.database.*
 class NotificationRoutes private extends Http4sDsl[IO] {
 
   private val getNotificationsRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
-    case req @ POST -> Root / "notifications" =>
+    case req @ POST -> Root / "fetch" =>
       for {
         authReq <- req.as[AuthRequest]
         notificationsRes <- getNotifications(authReq)
