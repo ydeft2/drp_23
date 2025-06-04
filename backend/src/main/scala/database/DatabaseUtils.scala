@@ -43,7 +43,7 @@ case class AccountDetailsResponse(
 
 case class RoleResponse(
     uid: String,
-    is_patient: String
+    is_patient: Boolean
 )
 
 case class NotificationResponse(
@@ -128,7 +128,7 @@ def registerUserWithSupabase(reg: RegisterRequest): IO[Response[IO]] = {
               case Right(uid) =>
                 createPatientEntry(uid, reg).flatMap {
                   case Right(_) =>
-                    insertUserRole(uid, is_patient = "true").flatMap {
+                    insertUserRole(uid, is_patient = true).flatMap {
                       case Right(_) =>
                         notifyUser(uid, s"Welcome ${reg.firstName}, your account has been created successfully.").flatMap {
                           case Right(_) => Ok(s"User registered successfully with UID: $uid")
@@ -151,7 +151,7 @@ def registerUserWithSupabase(reg: RegisterRequest): IO[Response[IO]] = {
 
 def insertUserRole(
     uid: String,
-    is_patient: String
+    is_patient: Boolean
 ): IO[Either[String, Unit]] = {
   val payload = Json.obj(
     "uid" := uid,
