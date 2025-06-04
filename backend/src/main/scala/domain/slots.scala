@@ -2,12 +2,12 @@ package backend.domain
 
 import java.util.UUID
 import java.time.Instant
-import io.circe.{Encoder, Json}
+import io.circe.{Decoder, Encoder, Json}
 import io.circe.syntax.EncoderOps
 
 object slots {
 
-  case class Slot(
+  final case class Slot(
     slotId: UUID,
     bookingId: UUID,
     clinicId: UUID,
@@ -18,7 +18,26 @@ object slots {
     createdAt: Instant
   )
 
-  case class SlotRequest(
+  object Slot {
+
+    given decoder: Decoder[Slot] = Decoder.forProduct8(
+      "slot_id", "booking_id", "clinic_id", "is_taken",
+      "slot_time", "slot_length", "clinic_info", "created_at"
+    )(Slot.apply)
+
+    // Encoder for Slot -> JSON (in case we need it)
+    // todo: can refactor to use .instance instead
+    given encoder: Encoder[Slot] = Encoder.forProduct8(
+      "slot_id", "booking_id", "clinic_id", "is_taken",
+      "slot_time", "slot_length", "clinic_info", "created_at"
+    )(s => (
+      s.slotId, s.bookingId, s.clinicId, s.isTaken,
+      s.slotTime, s.slotLength, s.clinicInfo, s.createdAt
+    ))
+
+  }
+
+  final case class SlotRequest(
     clinicId: UUID,
     slotTime: Instant,
     slotLength: Long
@@ -34,6 +53,7 @@ object slots {
       )
     }
 
+
     def create(clinicId: UUID, slotTime: Instant, slotLength: Long) = 
       SlotRequest(
         clinicId = clinicId,
@@ -41,4 +61,23 @@ object slots {
         slotLength = slotLength
       )
   }
+
+  final case class PatientSlotResponse(
+      slotTime: Instant,
+      slotLength: Long,
+      clinicInfo: String,
+      isTaken: Boolean
+  )
+
+  object PatientSlotResponse {
+
+    given decoder: Decoder[PatientSlotResponse] = Decoder.forProduct4(
+      "slot_time", "slot_length", "clinic_info", "is_taken"
+    )(PatientSlotResponse)
+
+  }
+
+
+
+
 }
