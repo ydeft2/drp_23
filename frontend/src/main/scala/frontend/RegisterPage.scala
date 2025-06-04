@@ -63,7 +63,7 @@ object RegisterPage {
       if (isInvalid) {
         dom.window.alert("Please fill in all fields correctly, ensure passwords are at least 6 characters and match.")
       } else {
-        dom.window.fetch("/api/register", literal(
+        dom.window.fetch("/api/auth/register", literal(
           method = "POST",
           body = js.JSON.stringify(data),
           headers = js.Dictionary("Content-Type" -> "application/json")
