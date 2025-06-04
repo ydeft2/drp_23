@@ -82,7 +82,7 @@ object BookingDashboard {
     container.appendChild(createRow("Clinic:", clinicSelect))
 
     // Slot Length input
-    val lengthInput = document.createElement("input").asInstanceOf[Input]
+    lengthInput = document.createElement("input").asInstanceOf[Input]
     lengthInput.setAttribute("type", "number")
     lengthInput.setAttribute("min", "5")
     lengthInput.setAttribute("value", "30")
