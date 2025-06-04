@@ -41,11 +41,6 @@ case class AccountDetailsResponse(
     dob: String
 )
 
-case class RoleResponse(
-    uid: String,
-    is_patient: String
-)
-
 case class NotificationResponse(
     id: Int,
     message: String,
@@ -219,67 +214,6 @@ def getAccountDetails(accountDetailsReq: AccountDetailsRequest): IO[Either[Strin
         case _ =>
           response.as[String].flatMap { body =>
             IO.pure(Left(s"Error fetching account details: ${response.status.code} - $body"))
-          }
-      }
-    }
-  }
-}
-
-def getUserRoles(authReq: AuthRequest): IO[Either[String, RoleResponse]] = {
-  val rolesUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/roles?uid=eq.${authReq.uid}")
-  val rolesRequest = Request[IO](
-    method = Method.GET,
-    uri = rolesUri,
-    headers = Headers(
-      Header.Raw(ci"Authorization", s"Bearer ${authReq.accessToken}"),
-      Header.Raw(ci"apikey", s"${sys.env("SUPABASE_ANON_KEY")}"),
-      Header.Raw(ci"Content-Type", "application/json")
-    )
-  )
-  EmberClientBuilder.default[IO].build.use { httpClient =>
-    httpClient.fetch(rolesRequest) { response =>
-      response.status match {
-        case Status.Ok =>
-          response.as[Json].flatMap { json =>
-            json.asArray match {
-              case Some(arr) if arr.nonEmpty =>
-                arr.head.as[RoleResponse].fold(
-                  err => IO.pure(Left(s"Decoding error: $err")),
-                  role => IO.pure(Right(role))
-                )
-              case _ =>
-                IO.pure(Left("No roles found for the user"))
-            }
-          }
-        case _ =>
-          response.as[String].flatMap { body =>
-            IO.pure(Left(s"Error fetching user roles: ${response.status.code} - $body"))
-          }
-      }
-    }
-  }
-}
-
-def deleteAccount(authReq: AuthRequest): IO[Either[String, Unit]] = {
-  val deleteUri = Uri.unsafeFromString(s"$supabaseUrl/auth/v1/admin/users/${authReq.uid}")
-
-  val deleteRequest = Request[IO](
-    method = Method.DELETE,
-    uri = deleteUri,
-    headers = Headers(
-      Header.Raw(ci"Authorization", s"Bearer ${supabaseKey}"),
-      Header.Raw(ci"apikey", s"${supabaseKey}"),
-      Header.Raw(ci"Content-Type", "application/json")
-    )
-  )
-  EmberClientBuilder.default[IO].build.use { httpClient =>
-    httpClient.fetch(deleteRequest) { response =>
-      response.status match {
-        case Status.NoContent =>
-          IO.println("Account deleted successfully") *> IO.pure(Right(()))
-        case _ =>
-          response.as[String].flatMap { body =>
-            IO.pure(Left(s"Error deleting account: ${response.status.code} - $body"))
           }
       }
     }

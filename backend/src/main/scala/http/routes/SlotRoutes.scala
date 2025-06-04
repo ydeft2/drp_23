@@ -41,6 +41,7 @@ class SlotRoutes private extends Http4sDsl[IO] {
       Ok("Fetching slots...")
   }
 
+  // Expects a JSON encoded SlotRequest in the body
   private val createSlotRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case req @ POST -> Root / "create" =>
       for {
