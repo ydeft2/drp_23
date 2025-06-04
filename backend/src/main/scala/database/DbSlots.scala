@@ -16,11 +16,7 @@ def addSlot(slotReq: SlotRequest):IO[Either[String, Unit]]= {
 
   val payload = slotReq.asJson
 
-  println(s"Payload: $payload")
-
   val slotUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/slots")
-  println(s"Supabase URL: $supabaseUrl")
-  println(s"Supabase Key: $supabaseKey")
 
   val slotRequest = Request[IO](
     method = Method.POST,
@@ -36,7 +32,7 @@ def addSlot(slotReq: SlotRequest):IO[Either[String, Unit]]= {
     httpClient.fetch(slotRequest) { response =>
       response.status match {
         case Status.Ok | Status.Created =>
-          IO.println(s"Slot added successfully") *> IO.pure(Right(()))
+          IO.println("Slot added successfully") *> IO.pure(Right(()))
         case _ =>
           IO.pure(Left(s"Failed to add slot: ${response.status}"))
       }
