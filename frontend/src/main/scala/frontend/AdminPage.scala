@@ -10,7 +10,7 @@ object AdminPage {
   def render(): Unit = {
     document.body.innerHTML = ""
 
-    document.body.appendChild(createBlankHeaderWithTitle())
+    document.body.appendChild(createAdminPageHeader())
 
     // Create a grey box container for the admin page
     val container = document.createElement("div")

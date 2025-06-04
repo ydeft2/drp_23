@@ -6,6 +6,7 @@ import scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 object Main {
   def main(args: Array[String]): Unit = {
+    //BookingDashboard.render()
     val tokenOpt = Option(dom.window.localStorage.getItem("accessToken"))
     tokenOpt match {
       case Some(token) =>
@@ -16,6 +17,7 @@ object Main {
             isPatient().map { isPatient =>
               if (isPatient) {
                 HomePage.render()
+                
               } else {
                 AdminPage.render()
               }
@@ -27,6 +29,7 @@ object Main {
             dom.window.localStorage.removeItem("accessToken")
             dom.window.localStorage.removeItem("userId")
             LoginPage.render()
+            
           }
         }
       case None =>
