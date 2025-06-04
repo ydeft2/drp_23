@@ -234,7 +234,7 @@ def isPatient(): scala.concurrent.Future[Boolean] = {
       .flatMap(_.json().toFuture)
       .map { json =>
         val roleInfo = json.asInstanceOf[js.Dynamic]
-        val isPatient = roleInfo.is_patient.asInstanceOf[String] == "true"
+        val isPatient = roleInfo.is_patient.asInstanceOf[Boolean] == true
         isPatient
       }
       .recover {
