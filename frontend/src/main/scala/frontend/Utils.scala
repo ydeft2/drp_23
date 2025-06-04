@@ -94,6 +94,28 @@ def createBlankHeaderWithTitle(): Div = {
     header
 }
 
+def createBlankHeader(name: String): Div = {
+    val header = document.createElement("div").asInstanceOf[Div]
+    header.style.backgroundColor = "purple"
+    header.style.color = "white"
+    header.style.padding = "10px"
+    header.style.textAlign = "center"
+    header.style.position = "fixed"
+    header.style.top = "0"
+    header.style.left = "0"
+    header.style.right = "0"
+    header.style.height = "50px"
+    header.style.zIndex = "1"
+
+    val title = document.createElement("div")
+    title.textContent = name
+    title.asInstanceOf[Div].style.fontSize = "20px"
+    title.asInstanceOf[Div].style.fontWeight = "bold"
+    header.appendChild(title)
+
+    header
+  }
+
 // Helper function to create input fields
 def createFormField(container: org.scalajs.dom.Element, placeholder: String, inputType: String = "text"): Input = {
   val input = document.createElement("input").asInstanceOf[Input]
