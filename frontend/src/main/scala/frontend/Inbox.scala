@@ -96,30 +96,33 @@ object Inbox {
     notifications: List[NotificationResponse],
     onSuccess: () => Unit
   ): Unit = {
+
     val accessToken = dom.window.localStorage.getItem("accessToken")
     val uid = dom.window.localStorage.getItem("userId")
+
     if (accessToken == null || uid == null) return
 
     val requestHeaders = new dom.Headers()
     requestHeaders.append("Content-Type", "application/json")
     requestHeaders.append("Authorization", s"Bearer $accessToken")
 
-    val requestBody = js.Dynamic.literal(
-      "uid" -> uid.toString,
-      "id" -> notificationId.toString
-    )
-
     val requestInit = new dom.RequestInit {
       method = dom.HttpMethod.POST
       headers = requestHeaders
-      body = JSON.stringify(requestBody)
+      body = JSON.stringify(notificationId.toString)
     }
 
     // Optimistically update local state
-    notifications.find(_.notificationId == notificationId).foreach { n =>
-      n.asInstanceOf[js.Dynamic].updateDynamic("is_read")(true)
+    val updatedNotifications = notifications.map { n =>
+      if (n.notificationId == notificationId) n.copy(isRead = true)
+      else n
     }
-    renderNotifications(notificationsBox, notifications)
+
+    Inbox.notifications = Inbox.notifications.map { n =>
+      if (n.notificationId == notificationId) n.copy(isRead = true) else n
+    }
+    renderNotifications(notificationsBox, Inbox.notifications)
+
 
     dom.fetch("/api/notifications/markNotificationRead", requestInit)
       .toFuture

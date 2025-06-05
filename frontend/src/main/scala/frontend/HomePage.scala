@@ -3,6 +3,11 @@ package frontend
 import org.scalajs.dom
 import org.scalajs.dom.document
 import org.scalajs.dom.html._
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.scalajs.js
+import scala.scalajs.js.JSON
+
+
 
 object HomePage {
   case class Booking(name: String, time: String, location: String)
@@ -13,13 +18,19 @@ object HomePage {
     Booking("Checkup", "9:15 AM", "Northview Dental Office")
   )
 
+  private var unreadNotifications: Int = 0
+
   // def main(args: Array[String]): Unit = render()
 
   def render(): Unit = {
     document.body.innerHTML = ""
-    document.body.appendChild(buildHeader())
-    document.body.appendChild(buildBookingsBox())
-    document.body.appendChild(createBookingButton())
+    Spinner.show()
+    fetchUnreadCount { () =>
+        document.body.appendChild(buildHeader())
+        document.body.appendChild(buildBookingsBox())
+        document.body.appendChild(createBookingButton())
+        Spinner.hide()
+      }
   }
 
   private def buildHeader(): Div = {
@@ -28,7 +39,8 @@ object HomePage {
     val accountBtn = createHeaderButton("Account")
     accountBtn.addEventListener("click", (_: dom.MouseEvent) => Account.render())
 
-    val inboxBtn = createHeaderButton("Inbox")
+    val inboxLabel = if (unreadNotifications > 0) s"Inbox ($unreadNotifications)" else "Inbox"
+    val inboxBtn = createHeaderButton(inboxLabel)
     inboxBtn.addEventListener("click", (_: dom.MouseEvent) => Inbox.render())
 
 
@@ -142,5 +154,49 @@ object HomePage {
 
     button
   }
+
+  private def fetchUnreadCount(onDone: () => Unit): Unit = {
+    val accessToken = dom.window.localStorage.getItem("accessToken")
+    val uid = dom.window.localStorage.getItem("userId")
+
+    if (accessToken == null || uid == null) {
+      dom.window.alert("You are not logged in.")
+      onDone() // still call it to allow partial rendering if needed
+      return
+    }
+
+    val requestHeaders = new dom.Headers()
+    requestHeaders.append("Content-Type", "application/json")
+    requestHeaders.append("Authorization", s"Bearer $accessToken")
+
+    val requestBody = js.Dynamic.literal(
+      "user_id" -> uid,
+      "message" -> ""
+    )
+
+    val requestInit = new dom.RequestInit {
+      method = dom.HttpMethod.POST
+      headers = requestHeaders
+      body = JSON.stringify(requestBody)
+    }
+
+    dom.fetch("/api/notifications/fetch", requestInit)
+      .toFuture
+      .flatMap(_.json().toFuture)
+      .map { jsValue =>
+        if (js.Array.isArray(jsValue)) {
+          val arr = jsValue.asInstanceOf[js.Array[js.Dynamic]]
+          val parsed = Inbox.parseNotifications(arr)
+          unreadNotifications = parsed.count(!_.isRead)
+        } else {
+          println("Unexpected response format")
+        }
+      }
+      .recover {
+        case e => println(s"Failed to fetch unread notifications: ${e.getMessage}")
+      }
+      .foreach(_ => onDone())
+  }
+
 }
 
