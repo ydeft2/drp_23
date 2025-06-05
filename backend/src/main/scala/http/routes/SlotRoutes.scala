@@ -1,8 +1,7 @@
 package backend.http.routes
 
 
-import backend.database.DbSlots
-import backend.database.DbSlots.DbError
+import backend.database.{DbError, DbSlots}
 import io.circe.generic.auto.*
 import org.http4s.circe.CirceEntityCodec.*
 import org.http4s.circe.CirceEntityEncoder.*
