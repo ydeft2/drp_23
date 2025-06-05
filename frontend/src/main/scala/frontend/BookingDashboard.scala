@@ -25,7 +25,7 @@ object BookingDashboard {
   
   def render(): Unit = {
     clearPage()
-    document.body.appendChild(createBlankHeader("Booking Dashboard"))
+    document.body.appendChild(createSubpageHeader("Booking Dashboard"))
 
     // Outer container
     val container = document.createElement("div").asInstanceOf[Div]
@@ -162,7 +162,7 @@ object BookingDashboard {
 
 
   def fetchAndDisplaySlots(): Unit = {
-    val slotsApiUrl = s"$SUPABASE_URL/rest/v1/slots?select=slot_id,slot_time,clinic_id,slot_length"
+    val slotsApiUrl = s"$SUPABASE_URL/rest/v1/slots?select=slot_id,slot_time,clinic_id,slot_length,is_taken"
 
     val requestHeaders = new dom.Headers()
     requestHeaders.append("apikey", SUPABASE_ANON_KEY)
@@ -226,7 +226,15 @@ object BookingDashboard {
             lengthP.textContent = s"Length: ${slot.slot_length} minutes"
             slotDiv.appendChild(lengthP)
 
-            slotsContainer.appendChild(slotDiv)
+            val isTaken = slot.is_taken.asInstanceOf[Boolean]
+            val statusP = document.createElement("p")
+            statusP.textContent = if (!isTaken) "Status: Currently Available" else "Status: Booked"
+            slotDiv.appendChild(statusP)
+
+            slotDiv.addEventListener("click", { (_: dom.MouseEvent) =>
+                showSlotDetails(slot)
+              })
+              slotsContainer.appendChild(slotDiv)
           }
         }
       }
@@ -293,6 +301,115 @@ object BookingDashboard {
         }
     }
   }
+
+  def showSlotDetails(slot: js.Dynamic): Unit = {
+    slotsContainer.innerHTML = ""  // Clear the container for details view
+
+    val detailsDiv = document.createElement("div").asInstanceOf[Div]
+    detailsDiv.setAttribute("style",
+      """
+        |padding: 20px;
+        |border: 1px solid #ccc;
+        |border-radius: 8px;
+        |background-color: #f9f9f9;
+        |box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        |margin-top: 20px;
+        |text-align: left;
+        """.stripMargin)
+
+    val clinicName = clinicMap.getOrElse(slot.clinic_id.asInstanceOf[String], "Unknown Clinic")
+    val formattedTime = formatSlotTime(slot.slot_time.asInstanceOf[String])
+
+    val title = document.createElement("h2")
+    title.textContent = s"$clinicName"
+    detailsDiv.appendChild(title)
+
+    val timeP = document.createElement("p")
+    timeP.textContent = s"Time: $formattedTime"
+    detailsDiv.appendChild(timeP)
+
+    val lengthP = document.createElement("p")
+    lengthP.textContent = s"Length: ${slot.slot_length} minutes"
+    detailsDiv.appendChild(lengthP)
+
+    val statusP = document.createElement("p")
+    statusP.textContent = if (!slot.is_taken.asInstanceOf[Boolean]) "Status: Available" else "Status: Booked"
+    detailsDiv.appendChild(statusP)
+
+    // Delete button
+    val deleteButton = document.createElement("button").asInstanceOf[Button]
+    deleteButton.textContent = "Delete Slot"
+    deleteButton.setAttribute("style",
+      """
+        |margin-right: 10px;
+        |padding: 8px 16px;
+        |background-color: #b22222;
+        |color: white;
+        |border: none;
+        |border-radius: 6px;
+        |cursor: pointer;
+        """.stripMargin)
+
+    deleteButton.addEventListener("click", { (_: dom.MouseEvent) =>
+      deleteSlot(slot.slot_id.asInstanceOf[String])
+    })
+    detailsDiv.appendChild(deleteButton)
+
+    // Back button
+    val backButton = document.createElement("button").asInstanceOf[Button]
+    backButton.textContent = "Back"
+    backButton.setAttribute("style",
+      """
+        |padding: 8px 16px;
+        |background-color: #333;
+        |color: white;
+        |border: none;
+        |border-radius: 6px;
+        |cursor: pointer;
+        """.stripMargin)
+
+    backButton.addEventListener("click", { (_: dom.MouseEvent) =>
+      fetchAndDisplaySlots()
+    })
+    detailsDiv.appendChild(backButton)
+
+    slotsContainer.appendChild(detailsDiv)
+  }
+
+  def deleteSlot(slotId: String): Unit = {
+    val confirmed = dom.window.confirm("Are you sure you want to delete this slot?")
+    if (confirmed) {
+      val headers = js.Dictionary(
+        "apikey" -> SUPABASE_ANON_KEY,
+        "Authorization" -> s"Bearer $SUPABASE_ANON_KEY"
+      )
+
+      val requestOptions = literal(
+        method = "DELETE",
+        headers = headers
+      ).asInstanceOf[dom.RequestInit]
+
+      dom.fetch(s"$SUPABASE_URL/rest/v1/slots?slot_id=eq.$slotId", requestOptions)
+        .toFuture
+        .flatMap { response =>
+          if (response.ok) {
+            dom.window.alert("Slot deleted successfully.")
+            fetchAndDisplaySlots()
+            response.text().toFuture
+          } else {
+            response.text().toFuture.map { errorText =>
+              dom.window.alert(s"Failed to delete slot: $errorText")
+            }
+          }
+        }
+        .recover {
+          case e: Throwable =>
+            dom.window.alert(s"Error deleting slot: ${e.getMessage}")
+        }
+    }
+  }
+
+
 
 
   def validateDateTime(time: String, date: String): Boolean = {
