@@ -116,11 +116,6 @@ object BookingDashboard {
         """.stripMargin)
     document.body.appendChild(slotsContainer)
 
-    // // Fetch clinics dynamically and populate clinicSelect
-    // fetchClinics(clinicSelect)
-
-    // // Fetch and display existing slots
-    // fetchAndDisplaySlots()
     fetchClinics(clinicSelect).foreach { _ =>
       fetchAndDisplaySlots()
     }
@@ -166,43 +161,6 @@ object BookingDashboard {
   }
 
 
-  // def fetchClinics(clinicSelect: Select): Unit = {
-  //   val clinicsApiUrl = s"$SUPABASE_URL/rest/v1/clinics?select=clinic_id,name" // your Supabase clinics endpoint
-
-  //   val requestHeaders = new dom.Headers()
-  //   requestHeaders.append("apikey", SUPABASE_ANON_KEY)
-  //   requestHeaders.append("Authorization", s"Bearer $SUPABASE_ANON_KEY")
-  //   requestHeaders.append("Content-Type", "application/json")
-
-  //   val requestInit = new dom.RequestInit {
-  //     method = dom.HttpMethod.GET
-  //     headers = requestHeaders
-  //   }
-
-  //   dom.fetch(clinicsApiUrl, requestInit).toFuture
-  //     .flatMap { response =>
-  //       if (response.ok) response.json().toFuture
-  //       else {
-  //         dom.window.alert(s"Failed to fetch clinics: ${response.statusText}")
-  //         scala.concurrent.Future.failed(new Exception("Fetch clinics failed"))
-  //       }
-  //     }
-  //     .foreach { json =>
-  //       val clinics = json.asInstanceOf[js.Array[js.Dynamic]]
-  //       clinicSelect.innerHTML = "" // Clear old options
-  //       clinics.foreach { clinic =>
-  //         val clinicId = clinic.clinic_id.asInstanceOf[String]
-  //         val clinicName = clinic.name.asInstanceOf[String]
-   
-  //         val option = document.createElement("option").asInstanceOf[Option]
-  //         option.textContent = clinic.name.asInstanceOf[String]
-  //         option.value = clinic.clinic_id.asInstanceOf[String]
-  //         clinicSelect.appendChild(option)
-  //         clinicMap += (clinicId -> clinicName)
-  //       }
-  //     }
-  // }
-
   def fetchAndDisplaySlots(): Unit = {
     val slotsApiUrl = s"$SUPABASE_URL/rest/v1/slots?select=slot_id,slot_time,clinic_id,slot_length"
 
@@ -225,6 +183,7 @@ object BookingDashboard {
       }
       .foreach { json =>
         val slots = json.asInstanceOf[js.Array[js.Dynamic]]
+
         slotsContainer.innerHTML = "" // Clear previous list
 
         if (slots.isEmpty) {
@@ -232,30 +191,47 @@ object BookingDashboard {
           noSlotsMsg.textContent = "No slots available."
           slotsContainer.appendChild(noSlotsMsg)
         } else {
-          slots.foreach { slot =>
+          // sorting slots by date 
+          val sortedSlots = slots.sort((a, b) => {
+            val timeA = js.Date.parse(a.slot_time.asInstanceOf[String])
+            val timeB = js.Date.parse(b.slot_time.asInstanceOf[String])
+            if (timeA < timeB) -1
+            else if (timeA > timeB) 1
+            else 0
+          })
+          sortedSlots.foreach { slot =>
             val slotDiv = document.createElement("div").asInstanceOf[Div]
-            slotDiv.setAttribute("style", 
-              """
-                |padding: 10px;
-                |border: 1px solid #ddd;
-                |border-radius: 6px;
-                |margin-bottom: 10px;
-                """.stripMargin)
+            slotDiv.style.marginTop = "20px"
+            slotDiv.style.marginLeft = "auto"
+            slotDiv.style.marginRight = "auto"
+            slotDiv.style.width = "80%"
+            slotDiv.style.padding = "20px"
+            slotDiv.style.border = "1px solid #ccc"
+            slotDiv.style.borderRadius = "8px"
+            slotDiv.style.backgroundColor = "#f9f9f9"
+            slotDiv.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)"
 
             val clinicName = clinicMap.getOrElse(slot.clinic_id.asInstanceOf[String], "Unknown Clinic")
+            val formattedTime = formatSlotTime(slot.slot_time.asInstanceOf[String])
 
-            slotDiv.textContent =
-              s"Time: ${slot.slot_time}, Clinic: $clinicName, Length: ${slot.slot_length} min"
+            val title = document.createElement("h3")
+            title.textContent = s"$clinicName"
+            slotDiv.appendChild(title)
 
+            val timeP = document.createElement("p")
+            timeP.textContent = formattedTime
+            slotDiv.appendChild(timeP)
 
-            // slotDiv.textContent =
-            //   s"Time: ${slot.slot_time}, Clinic: ${slot.clinic_id}, Length: ${slot.slot_length} min"
+            val lengthP = document.createElement("p")
+            lengthP.textContent = s"Length: ${slot.slot_length} minutes"
+            slotDiv.appendChild(lengthP)
 
             slotsContainer.appendChild(slotDiv)
           }
         }
       }
   }
+
 
 
   def createSlot(date: String, time: String, clinicId: String, length: Long): Unit = {
@@ -265,7 +241,7 @@ object BookingDashboard {
     } else if (clinicId.isEmpty) {
       dom.window.alert("Please select a clinic.")
     } else {
-      if (!validateTime(time)) {
+      if (!validateDateTime(time, date)) {
         return
       }
 
@@ -318,18 +294,41 @@ object BookingDashboard {
     }
   }
 
-  def validateTime(time: String) : Boolean = {
+
+  def validateDateTime(time: String, date: String): Boolean = {
     val timeParts = time.split(":").map(_.toInt)
     val hours = timeParts(0)
     val minutes = timeParts(1)
 
-    if (hours < 9 || (hours >= 17 && minutes > 0)) {
+    val dateTime = new js.Date(s"${date}T${time}:00Z")
+    val dayOfWeek = dateTime.getUTCDay().toInt  // 0 = Sunday, 6 = Saturday
+    println(s"Day of the week is $dayOfWeek")
+
+    if (dayOfWeek == 0 || dayOfWeek == 6) {
+      dom.window.alert("Please select a weekday. Appointments can't be booked on weekends.")
+      false
+    } else if (hours < 9 || (hours >= 17 && minutes > 0)) {
       dom.window.alert("Please select a time between 09:00 and 17:00.")
       false 
     } else {
       true
-    }  
-
+    }
   }
+
+
+  def formatSlotTime(isoTime: String): String = {
+    val date = new js.Date(isoTime)
+
+    val day = f"${date.getUTCDate().toInt}%02d"
+    val month = f"${(date.getUTCMonth() + 1).toInt}%02d"  // Months are zero-based
+    val year = date.getUTCFullYear().toInt
+
+    val hours = f"${date.getUTCHours().toInt}%02d"
+    val minutes = f"${date.getUTCMinutes().toInt}%02d"
+
+    s"Date: $day/$month/$year Time: $hours:$minutes"
+  }
+
+
 
 }
