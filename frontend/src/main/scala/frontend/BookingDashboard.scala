@@ -25,7 +25,7 @@ object BookingDashboard {
   
   def render(): Unit = {
     clearPage()
-    document.body.appendChild(createBlankHeader("Booking Dashboard"))
+    document.body.appendChild(createSubpageHeader("Booking Dashboard"))
 
     // Outer container
     val container = document.createElement("div").asInstanceOf[Div]
