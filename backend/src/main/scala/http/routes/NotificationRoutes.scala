@@ -56,9 +56,25 @@ class NotificationRoutes private extends Http4sDsl[IO] {
                     }
       } yield response
   }
+
+  private val deleteNotificationRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case req @ POST -> Root / "delete" =>
+      for {
+        notificationId <- req.as[UUID]
+        res <- deleteNotification(notificationId)
+        response <- res match {
+                      case Right(_) =>
+                        IO.println(s"Notification $notificationId deleted") *>
+                        Ok()
+                      case Left(error) =>
+                        IO.println(s"Error deleting notification: $error") *>
+                        BadRequest(Json.obj("error" -> Json.fromString(error)))
+                    }
+      } yield response
+  }
   
   val routes = Router(
-    "/notifications" -> (getNotificationsRoute <+> markNotificationReadRoute)
+    "/notifications" -> (getNotificationsRoute <+> markNotificationReadRoute <+> deleteNotificationRoute)
     )
 
 }
