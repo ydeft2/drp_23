@@ -41,15 +41,12 @@ class BookingRoutes private extends Http4sDsl[IO] {
     case GET -> Root / "update" / UUIDVar(bookingId) =>
       Ok("updating my bookings")
   }
-
   
   private val cancelBookingRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root / "cancel" / UUIDVar(bookingId) =>
       Ok("cancelling mai bookings")
   }
-
-
-
+  
   val routes = Router(
     "/bookings" -> (
       listAllBookingsRoute <+>
