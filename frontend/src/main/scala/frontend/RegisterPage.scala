@@ -17,8 +17,13 @@ object RegisterPage {
   def render(): Unit = {
 
     document.body.innerHTML = ""
+    val header = createBlankHeaderWithTitle()
 
-    document.body.appendChild(createBlankHeaderWithTitle())
+    val returnBtn = createHeaderButton("Login")
+    returnBtn.addEventListener("click", (_: dom.MouseEvent) => LoginPage.render())
+    
+    header.appendChild(returnBtn)
+    document.body.appendChild(header)
   
     // Create a grey box container for the registration form
     val container = document.createElement("div")
@@ -35,6 +40,7 @@ object RegisterPage {
     val confirmPasswordInput = createPasswordInput(container, "Confirm Password")
 
     // Append inputs to the container
+
 
     val registerButton = createFormButton(container, "Register")
 
