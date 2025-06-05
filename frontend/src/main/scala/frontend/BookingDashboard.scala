@@ -1,15 +1,3 @@
-
-
-//   def createBooking(date: String, time: String): Unit = {
-//     if (date.isEmpty || time.isEmpty) {
-//       dom.window.alert("Please select both date and time")
-//     } else {  
-//       // Valid booking
-//     dom.window.alert(s"Booking created for $date at $time")
-//         // TODO: implement actual backend POST request here if needed
-//       }
-//     }
-  
 package frontend
 
 import org.scalajs.dom
@@ -19,6 +7,7 @@ import scala.scalajs.js
 import scala.scalajs.js.JSON
 import scala.scalajs.js.Dynamic.literal
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.collection.immutable.Map
 
 object BookingDashboard {
 
@@ -28,8 +17,12 @@ object BookingDashboard {
   var clinicSelect: Select = _
   var lengthInput: Input = _
 
-  
+  var slotsContainer: Div = _
+  // Mapping of clinic id to clinic 
+  var clinicMap: Map[String, String] = Map.empty
 
+
+  
   def render(): Unit = {
     clearPage()
     document.body.appendChild(createBlankHeader("Booking Dashboard"))
@@ -112,12 +105,31 @@ object BookingDashboard {
 
     document.body.appendChild(container)
 
-    // Fetch clinics dynamically and populate clinicSelect
-    fetchClinics(clinicSelect)
+        // Slots container
+    slotsContainer = document.createElement("div").asInstanceOf[Div]
+    slotsContainer.setAttribute("style",
+      """
+        |margin-top: 30px;
+        |max-width: 500px;
+        |border-top: 1px solid #ccc;
+        |padding-top: 20px;
+        """.stripMargin)
+    document.body.appendChild(slotsContainer)
+
+    // // Fetch clinics dynamically and populate clinicSelect
+    // fetchClinics(clinicSelect)
+
+    // // Fetch and display existing slots
+    // fetchAndDisplaySlots()
+    fetchClinics(clinicSelect).foreach { _ =>
+      fetchAndDisplaySlots()
+    }
+
+
   }
 
-  def fetchClinics(clinicSelect: Select): Unit = {
-    val clinicsApiUrl = s"$SUPABASE_URL/rest/v1/clinics?select=clinic_id,name" // your Supabase clinics endpoint
+  def fetchClinics(clinicSelect: Select): scala.concurrent.Future[Unit] = {
+    val clinicsApiUrl = s"$SUPABASE_URL/rest/v1/clinics?select=clinic_id,name"
 
     val requestHeaders = new dom.Headers()
     requestHeaders.append("apikey", SUPABASE_ANON_KEY)
@@ -137,17 +149,114 @@ object BookingDashboard {
           scala.concurrent.Future.failed(new Exception("Fetch clinics failed"))
         }
       }
-      .foreach { json =>
+      .map { json =>
         val clinics = json.asInstanceOf[js.Array[js.Dynamic]]
         clinicSelect.innerHTML = "" // Clear old options
         clinics.foreach { clinic =>
+          val clinicId = clinic.clinic_id.asInstanceOf[String]
+          val clinicName = clinic.name.asInstanceOf[String]
+
           val option = document.createElement("option").asInstanceOf[Option]
-          option.textContent = clinic.name.asInstanceOf[String]
-          option.value = clinic.clinic_id.asInstanceOf[String]
+          option.textContent = clinicName
+          option.value = clinicId
           clinicSelect.appendChild(option)
+          clinicMap += (clinicId -> clinicName)
         }
       }
   }
+
+
+  // def fetchClinics(clinicSelect: Select): Unit = {
+  //   val clinicsApiUrl = s"$SUPABASE_URL/rest/v1/clinics?select=clinic_id,name" // your Supabase clinics endpoint
+
+  //   val requestHeaders = new dom.Headers()
+  //   requestHeaders.append("apikey", SUPABASE_ANON_KEY)
+  //   requestHeaders.append("Authorization", s"Bearer $SUPABASE_ANON_KEY")
+  //   requestHeaders.append("Content-Type", "application/json")
+
+  //   val requestInit = new dom.RequestInit {
+  //     method = dom.HttpMethod.GET
+  //     headers = requestHeaders
+  //   }
+
+  //   dom.fetch(clinicsApiUrl, requestInit).toFuture
+  //     .flatMap { response =>
+  //       if (response.ok) response.json().toFuture
+  //       else {
+  //         dom.window.alert(s"Failed to fetch clinics: ${response.statusText}")
+  //         scala.concurrent.Future.failed(new Exception("Fetch clinics failed"))
+  //       }
+  //     }
+  //     .foreach { json =>
+  //       val clinics = json.asInstanceOf[js.Array[js.Dynamic]]
+  //       clinicSelect.innerHTML = "" // Clear old options
+  //       clinics.foreach { clinic =>
+  //         val clinicId = clinic.clinic_id.asInstanceOf[String]
+  //         val clinicName = clinic.name.asInstanceOf[String]
+   
+  //         val option = document.createElement("option").asInstanceOf[Option]
+  //         option.textContent = clinic.name.asInstanceOf[String]
+  //         option.value = clinic.clinic_id.asInstanceOf[String]
+  //         clinicSelect.appendChild(option)
+  //         clinicMap += (clinicId -> clinicName)
+  //       }
+  //     }
+  // }
+
+  def fetchAndDisplaySlots(): Unit = {
+    val slotsApiUrl = s"$SUPABASE_URL/rest/v1/slots?select=slot_id,slot_time,clinic_id,slot_length"
+
+    val requestHeaders = new dom.Headers()
+    requestHeaders.append("apikey", SUPABASE_ANON_KEY)
+    requestHeaders.append("Authorization", s"Bearer $SUPABASE_ANON_KEY")
+
+    val requestInit = new dom.RequestInit {
+      method = dom.HttpMethod.GET
+      this.headers = requestHeaders
+    }
+
+    dom.fetch(slotsApiUrl, requestInit).toFuture
+      .flatMap { response =>
+        if (response.ok) response.json().toFuture
+        else {
+          dom.window.alert(s"Failed to fetch slots: ${response.statusText}")
+          scala.concurrent.Future.failed(new Exception("Fetch slots failed"))
+        }
+      }
+      .foreach { json =>
+        val slots = json.asInstanceOf[js.Array[js.Dynamic]]
+        slotsContainer.innerHTML = "" // Clear previous list
+
+        if (slots.isEmpty) {
+          val noSlotsMsg = document.createElement("p")
+          noSlotsMsg.textContent = "No slots available."
+          slotsContainer.appendChild(noSlotsMsg)
+        } else {
+          slots.foreach { slot =>
+            val slotDiv = document.createElement("div").asInstanceOf[Div]
+            slotDiv.setAttribute("style", 
+              """
+                |padding: 10px;
+                |border: 1px solid #ddd;
+                |border-radius: 6px;
+                |margin-bottom: 10px;
+                """.stripMargin)
+
+            val clinicName = clinicMap.getOrElse(slot.clinic_id.asInstanceOf[String], "Unknown Clinic")
+
+            slotDiv.textContent =
+              s"Time: ${slot.slot_time}, Clinic: $clinicName, Length: ${slot.slot_length} min"
+
+
+            // slotDiv.textContent =
+            //   s"Time: ${slot.slot_time}, Clinic: ${slot.clinic_id}, Length: ${slot.slot_length} min"
+
+            slotsContainer.appendChild(slotDiv)
+          }
+        }
+      }
+  }
+
 
   def createSlot(date: String, time: String, clinicId: String, length: Long): Unit = {
     
@@ -192,6 +301,8 @@ object BookingDashboard {
             timeInput.value = ""
             clinicSelect.selectedIndex = 0
             lengthInput.value = "30"
+            
+            fetchAndDisplaySlots()
 
             response.text().toFuture
           } else {
