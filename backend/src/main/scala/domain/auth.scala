@@ -76,6 +76,16 @@ object auth {
       )
     }
 
+    given decoder: Decoder[RegisterRequest] = Decoder.instance { c =>
+      for {
+        firstName <- c.downField("first_name").as[String]
+        lastName  <- c.downField("last_name").as[String]
+        dob       <- c.downField("dob").as[String]
+        email     <- c.downField("email").as[String]
+        password  <- c.downField("password").as[String]
+      } yield RegisterRequest(firstName, lastName, dob, email, password)
+    }
+
     def create(
       firstName: String,
       lastName: String,

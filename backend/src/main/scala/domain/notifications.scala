@@ -42,6 +42,16 @@ object notifications {
       )
     }
 
+    given encoder: Encoder[Notification] = Encoder.instance { s =>
+      Json.obj(
+        "notification_id" -> s.notificationId.asJson,
+        "user_id" -> s.userId.asJson,
+        "is_read" -> s.isRead.asJson,
+        "created_at" -> s.createdAt.asJson,
+        "message" -> s.message.asJson,
+      )
+    }
+
 
 
     def create(
@@ -67,7 +77,11 @@ object notifications {
         "message" -> n.message.asJson
       )
     }
-    
+
+    given decoder: Decoder[NotificationRequest] = Decoder.forProduct2(
+      "user_id", "message"
+    )(NotificationRequest.apply)
+
     def create(userId: UUID, message: String) = 
       NotificationRequest(
         userId = userId,
