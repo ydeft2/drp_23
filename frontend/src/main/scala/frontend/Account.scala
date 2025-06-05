@@ -11,7 +11,6 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 
 object Account {
-  
   def render(): Unit = {
   clearPage()
 

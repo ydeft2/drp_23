@@ -25,6 +25,7 @@ object Server extends IOApp.Simple {
 
   override def run = {
 
+    // TODO: CORS warning...
     val corsHttpApp = CORS(HttpApi().endpoints.orNotFound)
 
     val port = sys.env.get("PORT").flatMap(p => scala.util.Try(p.toInt).toOption).getOrElse(8080)

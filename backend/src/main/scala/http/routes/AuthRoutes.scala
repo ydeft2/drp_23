@@ -15,7 +15,10 @@ import backend.http.routes.*
 import cats.*
 import cats.data.*
 import cats.syntax.*
+import java.util.UUID
 import backend.database.*
+import backend.domain.auth.*
+import backend.domain.auth.given
 
 class AuthRoutes private extends Http4sDsl[IO] {
   
@@ -30,30 +33,32 @@ class AuthRoutes private extends Http4sDsl[IO] {
   private val accountDetailsRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
       case req @ POST -> Root / "accountDetails" =>
         for {
-          authReq    <- req.as[AccountDetailsRequest]
-          patientRes <- getAccountDetails(authReq)
+          userId   <- req.as[UUID]
+          patientRes <- getAccountDetails(userId)
           response   <- patientRes match {
                           case Right(details) => Ok(details.asJson)
                           case Left(error)    => BadRequest(Json.obj("error" -> Json.fromString(error)))
                         }
         } yield response
   }
+  // Expects a JSON string of User ID in the request body
   private val rolesRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
       case req @ POST -> Root / "roles" =>
         for {
-          authReq <- req.as[AuthRequest]
-          rolesRes <- getUserRoles(authReq)
+          userId <- req.as[UUID]
+          rolesRes <- getUserRoles(userId)
           response <- rolesRes match {
                         case Right(roles) => Ok(roles.asJson)
                         case Left(error)  => BadRequest(Json.obj("error" -> Json.fromString(error)))
                       }
         } yield response
   }
+  // Expects a JSON string of User ID in the request body
   private val deleteAccountRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
       case req @ POST -> Root / "deleteAccount" =>
         for {
-          authReq <- req.as[AuthRequest]
-          deleteRes <- deleteAccount(authReq)
+          userId <- req.as[UUID]
+          deleteRes <- deleteAccount(userId)
           response <- deleteRes match {
                         case Right(_) => Ok(Json.obj("message" -> Json.fromString("Account deleted successfully")))
                         case Left(error) => BadRequest(Json.obj("error" -> Json.fromString(error)))

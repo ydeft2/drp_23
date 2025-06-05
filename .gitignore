@@ -13,3 +13,4 @@ target/
 .env
 .bloop
 .bsp
+.idea

@@ -16,14 +16,14 @@ class HttpApi private {
   private val healthRoutes = HealthRoutes().routes
   private val authRoutes = AuthRoutes().routes
   private val notificationRoutes = NotificationRoutes().routes
-  // private val slotRoutes = SlotRoutes[F].routes
+  private val slotRoutes = SlotRoutes().routes
   // private val bookingRoutes = BookingRoutes[F].routes
 
 
   val endpoints = Router(
     "/api" -> (
       healthRoutes <+>
-      // slotRoutes <+>
+      slotRoutes <+>
       // bookingRoutes <+>
       authRoutes <+>
       notificationRoutes

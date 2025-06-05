@@ -8,19 +8,42 @@ import scala.scalajs.js.JSON
 import scala.scalajs.js.annotation._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import org.scalajs.dom.HTMLSpanElement
+import java.util.UUID
+import java.time.Instant
 
-@js.native
-trait NotificationResponse extends js.Object {
-  val id: Int
-  val message: String
-  val created_at: String
-  val is_read: Boolean
-}
+
+
+case class NotificationResponse(
+  notificationId: UUID,
+  userId: UUID,
+  message: String,
+  createdAt: String,
+  isRead: Boolean
+)
 
 object Inbox {
 
   var notifications: List[NotificationResponse] = List()
 
+  def parseNotifications(jsArray: js.Array[js.Dynamic]): List[NotificationResponse] = {
+    jsArray.toList.flatMap { jsObj =>
+      try {
+
+        Some(NotificationResponse(
+          notificationId = UUID.fromString(jsObj.notification_id.asInstanceOf[String]),
+          userId = UUID.fromString(jsObj.user_id.asInstanceOf[String]),
+          message = jsObj.message.asInstanceOf[String],
+          createdAt = jsObj.created_at.asInstanceOf[String],
+          isRead = jsObj.is_read.asInstanceOf[Boolean]
+        ))
+
+      } catch {
+        case e: Throwable =>
+          println(s"Failed to parse notification: ${e.getMessage}")
+          None
+      }
+    }
+  }
 
   def fetchNotifications(onSuccess: () => Unit): Unit = {
     val accessToken = dom.window.localStorage.getItem("accessToken")
@@ -36,8 +59,8 @@ object Inbox {
     requestHeaders.append("Authorization", s"Bearer $accessToken")
 
     val requestBody = js.Dynamic.literal(
-      "uid" -> uid,
-      "accessToken" -> accessToken
+      "user_id" -> uid,
+      "message" -> ""
     )
 
     val requestInit = new dom.RequestInit {
@@ -48,10 +71,17 @@ object Inbox {
 
     dom.fetch("/api/notifications/fetch", requestInit)
       .toFuture
-      .flatMap(_.json().toFuture)
-      .map { json =>
-        notifications = json.asInstanceOf[js.Array[NotificationResponse]].toList
-        onSuccess()
+      .flatMap(_.json().toFuture) // get raw response text
+      .map { jsValue =>
+        println(s"Raw response: $jsValue")
+        if (js.Array.isArray(jsValue)) {
+          val arr = jsValue.asInstanceOf[js.Array[js.Dynamic]]
+          notifications = parseNotifications(arr)
+          onSuccess()
+        } else {
+          Spinner.hide()
+          dom.window.alert("Invalid response format.")
+        }
       }
       .recover {
         case e =>
@@ -61,7 +91,7 @@ object Inbox {
   }
 
   def markNotificationRead(
-    notificationId: Int,
+    notificationId: UUID,
     notificationsBox: Div,
     notifications: List[NotificationResponse],
     onSuccess: () => Unit
@@ -75,8 +105,8 @@ object Inbox {
     requestHeaders.append("Authorization", s"Bearer $accessToken")
 
     val requestBody = js.Dynamic.literal(
-      "uid" -> uid,
-      "id" -> notificationId
+      "uid" -> uid.toString,
+      "id" -> notificationId.toString
     )
 
     val requestInit = new dom.RequestInit {
@@ -86,7 +116,7 @@ object Inbox {
     }
 
     // Optimistically update local state
-    notifications.find(_.id == notificationId).foreach { n =>
+    notifications.find(_.notificationId == notificationId).foreach { n =>
       n.asInstanceOf[js.Dynamic].updateDynamic("is_read")(true)
     }
     renderNotifications(notificationsBox, notifications)
@@ -98,7 +128,7 @@ object Inbox {
   def renderNotifications(notificationsBox: Div, notifications: List[NotificationResponse]): Unit = {
     notificationsBox.innerHTML = ""
 
-    val sortedNotifications = notifications.sortBy(n => new js.Date(n.created_at).getTime())(Ordering[Double].reverse)
+    val sortedNotifications = notifications.sortBy(n => new js.Date(n.createdAt).getTime())(Ordering[Double].reverse)
 
     if (sortedNotifications.isEmpty) {
       val noNotifications = document.createElement("p")
@@ -114,8 +144,8 @@ object Inbox {
       markAllReadButton.style.marginBottom = "10px"
       markAllReadButton.addEventListener("click", (_: dom.MouseEvent) => {
         sortedNotifications.foreach { notification =>
-          if (!notification.is_read) {
-            markNotificationRead(notification.id, notificationsBox, notifications, () => ())
+          if (!notification.isRead) {
+            markNotificationRead(notification.notificationId, notificationsBox, notifications, () => ())
           }
         }
       })
@@ -142,7 +172,7 @@ object Inbox {
         dot.style.color = "#2196f3"
         dot.style.marginRight = "10px"
         dot.style.minWidth = "16px"
-        if (notification.is_read) {
+        if (notification.isRead) {
           dot.style.visibility = "hidden"
         }
 
@@ -155,7 +185,7 @@ object Inbox {
 
         // Right side: time
         val timeDiv = document.createElement("span").asInstanceOf[HTMLSpanElement]
-        val date = new js.Date(notification.created_at)
+        val date = new js.Date(notification.createdAt)
         val months = Array("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
         val month = months(date.getMonth().toInt)
         val day = f"${date.getDate().toInt}%02d"
@@ -170,8 +200,8 @@ object Inbox {
         timeStyle.whiteSpace = "nowrap"
 
         notificationItem.addEventListener("click", (_: dom.MouseEvent) => {
-          if (!notification.is_read) {
-            markNotificationRead(notification.id, notificationsBox, notifications, () => ())
+          if (!notification.isRead) {
+            markNotificationRead(notification.notificationId, notificationsBox, notifications, () => ())
           }
           val contentHtml =
             s"""

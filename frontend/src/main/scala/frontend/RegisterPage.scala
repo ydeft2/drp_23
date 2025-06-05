@@ -50,16 +50,16 @@ object RegisterPage {
       dom.console.log(dobInput.value)
 
       val data = js.Dynamic.literal(
-        "firstName" -> firstNameInput.value,
-        "lastName" -> lastNameInput.value,
+        "first_name" -> firstNameInput.value,
+        "last_name" -> lastNameInput.value,
         "dob" -> dobInput.value,
         "email" -> emailInput.value,
         "password" -> passwordInput.value
       )
 
       // Validate inputs
-      val isInvalid = data.firstName.asInstanceOf[String].isEmpty ||
-          data.lastName.asInstanceOf[String].isEmpty ||
+      val isInvalid = data.first_name.asInstanceOf[String].isEmpty ||
+          data.last_name.asInstanceOf[String].isEmpty ||
           data.dob.asInstanceOf[String].isEmpty ||
           data.email.asInstanceOf[String].isEmpty ||
           data.password.asInstanceOf[String].isEmpty ||

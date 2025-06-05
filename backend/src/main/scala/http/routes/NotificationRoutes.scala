@@ -1,6 +1,5 @@
 package backend.http.routes
 
-import io.circe.generic.auto.*
 import org.http4s.circe.CirceEntityCodec.*
 import io.circe.syntax.*
 import io.circe.Json
@@ -15,34 +14,47 @@ import backend.http.routes.*
 import cats.*
 import cats.data.*
 import cats.syntax.*
+import java.util.UUID
 import backend.database.*
+import backend.domain.notifications.*
+import backend.domain.notifications.given
 
 class NotificationRoutes private extends Http4sDsl[IO] {
 
+  // Expects JSON encoding of NotificationRequest in the request body
   private val getNotificationsRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case req @ POST -> Root / "fetch" =>
       for {
-        authReq <- req.as[AuthRequest]
-        notificationsRes <- getNotifications(authReq)
+        _ <- IO.println(s"Received request to fetch notifications $req")
+        notificationReq <- req.as[NotificationRequest]
+        _ <- IO.println(s"Fetching notifications for user: ${notificationReq.userId}")
+        notificationsRes <- getNotifications(notificationReq)
+        _ <- IO.println(s"Fetched notifications")
         response <- notificationsRes match {
-                      case Right(notifications) => Ok(notifications.asJson)
-                      case Left(error) => BadRequest(Json.obj("error" -> Json.fromString(error)))
+                      case Right(notifications) => 
+                        IO.println(s"Fetched notifications: ${notifications.length}") *>
+                        Ok(notifications.asJson)
+                      case Left(error) => 
+                        IO.println(s"Error fetching notifications: $error") *>
+                        BadRequest(Json.obj("error" -> Json.fromString(error)))
                     }
       } yield response
   }
+  // Expects JSON string of UUID in the request body
   private val markNotificationReadRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case req @ POST -> Root / "markNotificationRead" =>
       for {
-        json <- req.as[Json]
-        uid = json.hcursor.get[String]("uid").getOrElse("")
-        id = json.hcursor.get[Int]("id").getOrElse(-1)
-        res <- if (uid.nonEmpty && id != -1)
-                markNotificationRead(uid, id).flatMap {
-                  case Right(_) => Ok(Json.obj("success" := true))
-                  case Left(err) => BadRequest(Json.obj("error" := err))
-                }
-              else BadRequest(Json.obj("error" := "Missing uid or id"))
-      } yield res
+        notificationId <- req.as[UUID]
+        res <- markNotificationRead(notificationId)
+        response <- res match {
+                      case Right(_) => 
+                        IO.println(s"Notification $notificationId marked as read") *>
+                        Ok()
+                      case Left(error) => 
+                        IO.println(s"Error marking notification as read: $error") *>
+                        BadRequest(Json.obj("error" -> Json.fromString(error)))
+                    }
+      } yield response
   }
   
   val routes = Router(

@@ -455,10 +455,7 @@ def isPatient(): scala.concurrent.Future[Boolean] = {
     return Future.successful(false)
   }
 
-  val requestBody = js.Dynamic.literal(
-    "uid" -> currentUid,
-    "accessToken" -> accessToken
-  )
+  val requestBody = currentUid.toString
 
   val requestHeaders = js.Dictionary(
       "Content-Type" -> "application/json",
