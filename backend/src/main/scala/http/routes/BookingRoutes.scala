@@ -13,6 +13,7 @@ class BookingRoutes private extends Http4sDsl[IO] {
 
   // TODO: i guess theres both a patient and clinic view of this
   // maybe they will have different filters
+  // todo: filters + pagination
   private val listAllBookingsRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root =>
       Ok("getting ma bookings")
@@ -23,9 +24,14 @@ class BookingRoutes private extends Http4sDsl[IO] {
       Ok("getting a specific booking")
   }
 
-  private val cancelBookingsRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
-    case GET -> Root / "cancel" / UUIDVar(bookingId) =>
-      Ok("cancelling mai bookings")
+  private val requestBookingRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case req @ POST -> Root / "request" =>
+      Ok("requesting a specific booking")
+  }
+
+  private val confirmBookingRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case req @ PUT -> Root / "confirm" / UUIDVar(id) =>
+      Ok("confirming a booking")
   }
 
   // TODO: so hopefully a clinic can update, say, with an important message
@@ -36,12 +42,22 @@ class BookingRoutes private extends Http4sDsl[IO] {
       Ok("updating my bookings")
   }
 
+  
+  private val cancelBookingRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case GET -> Root / "cancel" / UUIDVar(bookingId) =>
+      Ok("cancelling mai bookings")
+  }
+
+
+
   val routes = Router(
     "/bookings" -> (
       listAllBookingsRoute <+>
       getBookingByIdRoute <+>
-      cancelBookingsRoute <+>
-      updateBookingsRoute
+      requestBookingRoute <+>
+      confirmBookingRoute <+>
+      updateBookingsRoute <+>
+      cancelBookingRoute
       )
   )
 
