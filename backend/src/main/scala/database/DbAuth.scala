@@ -67,3 +67,35 @@ def deleteAccount(userId: UUID): IO[Either[String, Unit]] = {
     }
   }
 }
+
+def getAccountDetails(userId: UUID): IO[Either[String, AccountDetailsResponse]] = {
+  val userUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/patients?uid=eq.${userId}")
+
+  val userRequest = Request[IO](
+    method = Method.GET,
+    uri = userUri,
+    headers = Headers(
+      Header.Raw(ci"Authorization", s"Bearer $supabaseKey"),
+      Header.Raw(ci"apikey", s"${supabaseKey}"),
+      Header.Raw(ci"Content-Type", "application/json")
+    )
+  )
+
+  EmberClientBuilder.default[IO].build.use { httpClient =>
+    httpClient.fetch(userRequest) { response =>
+      response.status match {
+        case Status.Ok =>
+          response.as[List[AccountDetailsResponse]].flatMap { accounts =>
+            accounts.headOption match {
+              case Some(accountDetails) => IO.pure(Right(accountDetails))
+              case None => IO.pure(Left("No account details found"))
+            }
+          }
+        case _ =>
+          response.as[String].flatMap { body =>
+            IO.pure(Left(s"Error fetching account details: ${response.status.code} - $body"))
+          }
+      }
+    }
+  }
+}

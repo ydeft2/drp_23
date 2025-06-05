@@ -30,17 +30,6 @@ case class PatientInsert(
     dob: String
 )
 
-case class AccountDetailsRequest(
-    uid: String,
-    accessToken: String
-)
-
-case class AccountDetailsResponse(
-    first_name: String,
-    last_name: String,
-    dob: String
-)
-
 case class NotificationResponse(
     id: Int,
     message: String,
@@ -176,44 +165,6 @@ def insertUserRole(
           response.as[String].flatMap { body =>
             IO.println(s"Error response: Status ${response.status.code}, Body: $body") *>
             IO.pure(Left(s"Error inserting user role: ${response.status.code} - $body"))
-          }
-      }
-    }
-  }
-}
-
-def getAccountDetails(accountDetailsReq: AccountDetailsRequest): IO[Either[String, AccountDetailsResponse]] = {
-  val userUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/patients?uid=eq.${accountDetailsReq.uid}")
-
-  val userRequest = Request[IO](
-    method = Method.GET,
-    uri = userUri,
-    headers = Headers(
-      Header.Raw(ci"Authorization", s"Bearer ${accountDetailsReq.accessToken}"),
-      Header.Raw(ci"apikey", s"${sys.env("SUPABASE_ANON_KEY")}"),
-      Header.Raw(ci"Content-Type", "application/json")
-    )
-  )
-
-  EmberClientBuilder.default[IO].build.use { httpClient =>
-    httpClient.fetch(userRequest) { response =>
-      response.status match {
-        case Status.Ok =>
-          response.as[Json].flatMap { json =>
-            // Supabase returns an array; take the first element.
-            json.asArray match {
-              case Some(arr) if arr.nonEmpty =>
-                arr.head.as[AccountDetailsResponse].fold(
-                  err => IO.pure(Left(s"Decoding error: $err")),
-                  details => IO.pure(Right(details))
-                )
-              case _ =>
-                IO.pure(Left("No patient details found"))
-            }
-          }
-        case _ =>
-          response.as[String].flatMap { body =>
-            IO.pure(Left(s"Error fetching account details: ${response.status.code} - $body"))
           }
       }
     }

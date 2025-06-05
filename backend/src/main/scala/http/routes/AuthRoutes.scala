@@ -31,8 +31,8 @@ class AuthRoutes private extends Http4sDsl[IO] {
   private val accountDetailsRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
       case req @ POST -> Root / "accountDetails" =>
         for {
-          authReq    <- req.as[AccountDetailsRequest]
-          patientRes <- getAccountDetails(authReq)
+          userId   <- req.as[UUID]
+          patientRes <- getAccountDetails(userId)
           response   <- patientRes match {
                           case Right(details) => Ok(details.asJson)
                           case Left(error)    => BadRequest(Json.obj("error" -> Json.fromString(error)))
