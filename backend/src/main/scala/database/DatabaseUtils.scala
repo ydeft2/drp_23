@@ -16,5 +16,6 @@ case class AuthRequest(
     accessToken: String
 )
 
+
 val supabaseUrl: String = sys.env("SUPABASE_URL")
 val supabaseKey: String = sys.env("SUPABASE_API_KEY")
