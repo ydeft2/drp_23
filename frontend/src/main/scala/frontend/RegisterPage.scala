@@ -44,8 +44,8 @@ object RegisterPage {
       dom.console.log(dobInput.value)
 
       val data = js.Dynamic.literal(
-        "firstName" -> firstNameInput.value,
-        "lastName" -> lastNameInput.value,
+        "first_name" -> firstNameInput.value,
+        "last_name" -> lastNameInput.value,
         "dob" -> dobInput.value,
         "email" -> emailInput.value,
         "password" -> passwordInput.value

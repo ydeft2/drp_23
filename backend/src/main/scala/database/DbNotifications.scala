@@ -12,12 +12,14 @@ import io.circe.parser._
 import org.http4s.dsl.io._
 import java.util.UUID
 import backend.domain.notifications._
-import backend.domain.notifications.given
+import backend.domain.notifications.*
+import backend.domain.notifications.Notification.given
 import org.http4s.circe.CirceEntityDecoder.circeEntityDecoder
 import io.circe.Decoder
 
 given Decoder[Notification] = Notification.decoder
 given EntityDecoder[IO, List[Notification]] = jsonOf[IO, List[Notification]]
+
 
 // This is intended to be a function only used by the backend to notify users when necessary.
 def notifyUser(userId: UUID, message: String): IO[Either[String, Unit]] = {

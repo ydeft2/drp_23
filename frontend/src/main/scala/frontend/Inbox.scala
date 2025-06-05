@@ -59,7 +59,7 @@ object Inbox {
     requestHeaders.append("Authorization", s"Bearer $accessToken")
 
     val requestBody = js.Dynamic.literal(
-      "userId" -> uid,
+      "user_id" -> uid,
       "message" -> ""
     )
 
