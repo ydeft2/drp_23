@@ -112,8 +112,23 @@ class BookingRoutes private extends Http4sDsl[IO] {
   
   private val cancelBookingRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
     //todo: http delete or what
-    case GET -> Root / "cancel" / UUIDVar(bookingId) =>
-      Ok("cancelling mai bookings")
+    case req @ DELETE -> Root / "delete" / UUIDVar(bookingId) =>
+      DbBookings.deleteBooking(bookingId).flatMap {
+        case Right(_) =>
+          NoContent()
+
+        case Left(DbError.NotFound(_, _)) =>
+          NotFound(Json.obj("error" -> Json.fromString("Booking not found")))
+
+        case Left(DbError.SqlError(code, body)) =>
+          InternalServerError(Json.obj("error" -> Json.fromString(s"DB error $code: $body")))
+
+        case Left(DbError.Unknown(msg)) =>
+          InternalServerError(Json.obj("error" -> Json.fromString(msg)))
+
+        case Left(DbError.DecodeError(msg)) =>
+          BadRequest(Json.obj("error" -> Json.fromString(s"Decode error: $msg")))
+      } 
   }
   
   val routes = Router(

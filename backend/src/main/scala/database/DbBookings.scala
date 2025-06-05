@@ -66,5 +66,28 @@ object DbBookings {
     executeNoContent(req, "booking", bookingId.toString)
   }  
   
-
+  def deleteBooking(bookingId: UUID) = {
+    val deleteUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/bookings?booking_id=eq.${bookingId}")
+    val deleteRequest = Request[IO](
+      method = Method.DELETE,
+      uri = deleteUri,
+      headers = Headers(
+        Header.Raw(ci"Authorization", s"Bearer ${supabaseKey}"),
+        Header.Raw(ci"apikey", s"${supabaseKey}"),
+        Header.Raw(ci"Content-Type", "application/json")
+      )
+    )
+    EmberClientBuilder.default[IO].build.use { httpClient =>
+      httpClient.fetch(deleteRequest) { response =>
+        response.status match {
+          case Status.NoContent =>
+            IO.println(s"Notification deleted successfully") *> IO.pure(Right(()))
+          case _ =>
+            response.as[String].flatMap { body =>
+              IO.pure(Left(s"Error deleting notification: ${response.status.code} - $body"))
+            }
+        }
+      }
+    }
+  }
 }
