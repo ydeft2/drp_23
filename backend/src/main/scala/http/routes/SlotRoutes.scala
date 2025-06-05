@@ -2,6 +2,7 @@ package backend.http.routes
 
 
 import backend.database.DbSlots
+import backend.database.DbSlots.DbError
 import io.circe.generic.auto.*
 import org.http4s.circe.CirceEntityCodec.*
 import org.http4s.circe.CirceEntityEncoder.*
@@ -20,6 +21,8 @@ import cats.data.*
 import cats.syntax.*
 import backend.domain.slots.*
 
+import java.time.Instant
+
 
 /*
 case class Slot(
@@ -37,27 +40,72 @@ case class Slot(
 
 class SlotRoutes private extends Http4sDsl[IO] {
 
-//  private val getSlotsRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
-//    case GET -> Root / "fetch" =>
-//      for {
-//        result <- getAllSlots
-//        resp   <- result match {
-//          case Right(slotsList) => Ok(slotsList.asJson)
-//          case Left(errorMsg) =>
-//            BadRequest(Json.obj("error" -> Json.fromString(s"Could not fetch slots: $errorMsg")))
-//        }
-//      } yield resp
-//  }
+  // TODO: depending on supabase the whole java time Instant might have to change, genuinely
+  given instantQueryParmDecoder: QueryParamDecoder[Instant] =
+    QueryParamDecoder[String].map(Instant.parse)
 
-  /** 1) PATIENT VIEW: GET /slots/list */
-  private val listSlotsRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
-    case GET -> Root / "list" =>
+  object IsTakenQP     extends OptionalQueryParamDecoderMatcher[Boolean]("is_taken")
+  object ClinicInfoQP  extends OptionalQueryParamDecoderMatcher[String]("clinic_info")
+  object SlotTimeGteQP extends OptionalQueryParamDecoderMatcher[Instant]("slot_time_gte")
+  object SlotTimeLteQP extends OptionalQueryParamDecoderMatcher[Instant]("slot_time_lte")
+  object LimitQP       extends OptionalQueryParamDecoderMatcher[Int]("limit")
+  object OffsetQP      extends OptionalQueryParamDecoderMatcher[Int]("offset")
+
+  private val listAllSlotsRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case GET -> Root =>
       DbSlots.getAllSlotsForPatients.flatMap {
-        case Right(slotList: List[PatientSlotResponse]) =>
+        case Right(slotList) =>
           Ok(slotList.asJson)
-        case Left(err) =>
-          InternalServerError(Json.obj("error" -> Json.fromString(err)))
+        case Left(DbError.NotFound(_, _)) =>
+          // “no rows” .. empty array
+          Ok(Json.arr())
+        case Left(DbError.DecodeError(msg)) =>
+          BadRequest(Json.obj("error" -> Json.fromString(s"Decode error: $msg")))
+        case Left(DbError.SqlError(code, body)) =>
+          InternalServerError(Json.obj("error" -> Json.fromString(s"DB error $code: $body")))
+        case Left(DbError.Unknown(msg)) =>
+          InternalServerError(Json.obj("error" -> Json.fromString(msg)))
       }
+  }
+
+  /** 1) PATIENT VIEW: GET /slots/list?is_taken=...&clinic_info=...&slot_time_gte=...&limit=...&offset=... */ 
+  private val listFilteredSlotsRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case GET -> Root / "list" :?
+      IsTakenQP(mIsTaken) +&
+      ClinicInfoQP(mClinicInfo) +& 
+      SlotTimeGteQP(mGte) +&
+      SlotTimeLteQP(mLte) +&
+      LimitQP(mLimit) +&
+      OffsetQP(mOffset) =>
+      
+        val filter = SlotFilter(
+          isTaken = mIsTaken,
+          clinicInfo = mClinicInfo,
+          slotTimeGte = mGte,
+          slotTimeLte = mLte
+        )
+        
+        val pagination = Pagination(mLimit, mOffset)
+        
+        DbSlots.getSlots(filter, pagination).flatMap {
+          case Right(slotList) =>
+            // Return 200 + JSON array even if list is empty
+            Ok(slotList.asJson)
+
+          case Left(DbError.NotFound(_, _)) =>
+            // Treat “no rows” as an empty array
+            Ok(Json.arr())
+
+          case Left(DbError.DecodeError(msg)) =>
+            // JSON‐decoding issue
+            BadRequest(Json.obj("error" -> Json.fromString(msg)))
+
+          case Left(DbError.SqlError(code, body)) =>
+            InternalServerError(Json.obj("error" -> Json.fromString(s"DB error $code: $body")))
+
+          case Left(DbError.Unknown(msg)) =>
+            InternalServerError(Json.obj("error" -> Json.fromString(msg)))       
+        }
   }
   
   /** 2) CLINIC VIEW: GET /slots/{slotId} */
@@ -66,10 +114,14 @@ class SlotRoutes private extends Http4sDsl[IO] {
       DbSlots.getSlotById(slotId).flatMap {
         case Right(slot: Slot) =>
           Ok(slot.asJson)
-        case Left(err) if err.contains("not found") =>
+        case Left(DbError.NotFound(_, _)) =>
           NotFound(Json.obj("error" -> Json.fromString("Slot not found")))
-        case Left(err) =>
-          InternalServerError(Json.obj("error" -> Json.fromString(err)))
+        case Left(DbError.DecodeError(msg)) =>
+          BadRequest(Json.obj("error" -> Json.fromString(s"Decode error: $msg")))
+        case Left(DbError.SqlError(code, body)) =>
+          InternalServerError(Json.obj("error" -> Json.fromString(s"DB error $code: $body")))
+        case Left(DbError.Unknown(msg)) =>
+          InternalServerError(Json.obj("error" -> Json.fromString(msg)))
       }
   }
   
@@ -81,8 +133,21 @@ class SlotRoutes private extends Http4sDsl[IO] {
         newSlot = SlotRequest.create(slotReq.clinicId, slotReq.slotTime, slotReq.slotLength)
         ret <- DbSlots.addSlot(newSlot)
         resp <- ret match {
-          case Right(_) => Created()
-          case Left(error) => BadRequest(Json.obj("Error creating slot: " -> Json.fromString(error.toString)))
+          case Right(_) =>
+            Created()
+
+          case Left(DbError.DecodeError(msg)) =>
+            BadRequest(Json.obj("error" -> Json.fromString(s"Invalid JSON: $msg")))
+
+          case Left(DbError.SqlError(code, body)) =>
+            InternalServerError(Json.obj("error" -> Json.fromString(s"DB error $code: $body")))
+
+          case Left(DbError.Unknown(msg)) =>
+            InternalServerError(Json.obj("error" -> Json.fromString(msg)))
+
+          case Left(DbError.NotFound(_, _)) =>
+            // Shouldn’t happen on insert, but just in case:
+            NotFound(Json.obj("error" -> Json.fromString("Related resource not found")))
         }
       } yield resp
   }
@@ -91,20 +156,29 @@ class SlotRoutes private extends Http4sDsl[IO] {
     case req @ DELETE -> Root / "delete" / UUIDVar(slotId) =>
       DbSlots.deleteSlot(slotId).flatMap {
         case Right(_) =>
-          NoContent()  // 204
-        case Left(err) if err.contains("not found") =>
+          NoContent()
+
+        case Left(DbError.NotFound(_, _)) =>
           NotFound(Json.obj("error" -> Json.fromString("Slot not found")))
-        case Left(err) =>
-          InternalServerError(Json.obj("error" -> Json.fromString(err)))        
+
+        case Left(DbError.SqlError(code, body)) =>
+          InternalServerError(Json.obj("error" -> Json.fromString(s"DB error $code: $body")))
+
+        case Left(DbError.Unknown(msg)) =>
+          InternalServerError(Json.obj("error" -> Json.fromString(msg)))
+
+        case Left(DbError.DecodeError(msg)) =>
+          BadRequest(Json.obj("error" -> Json.fromString(s"Decode error: $msg")))
       }
   }
 
   val routes = Router(
     "/slots" -> (
-      listSlotsRoute <+> 
-        getSlotByIdRoute <+>
-        createSlotRoute <+> 
-        deleteSlotRoute
+      listAllSlotsRoute <+>
+      listFilteredSlotsRoute <+>
+      getSlotByIdRoute <+>
+      createSlotRoute <+>
+      deleteSlotRoute
     )
   )
   

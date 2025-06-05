@@ -53,6 +53,10 @@ object slots {
       )
     }
 
+    given decoder: Decoder[SlotRequest] = Decoder.forProduct3(
+      "clinic_id", "slot_time", "slot_length"
+    )(SlotRequest.apply)
+
 
     def create(clinicId: UUID, slotTime: Instant, slotLength: Long) = 
       SlotRequest(
@@ -65,7 +69,7 @@ object slots {
   final case class PatientSlotResponse(
       slotTime: Instant,
       slotLength: Long,
-      clinicInfo: String,
+      clinicInfo: Option[String],
       isTaken: Boolean
   )
 
@@ -73,11 +77,29 @@ object slots {
 
     given decoder: Decoder[PatientSlotResponse] = Decoder.forProduct4(
       "slot_time", "slot_length", "clinic_info", "is_taken"
-    )(PatientSlotResponse)
+    )(PatientSlotResponse.apply)
 
   }
 
+  /** Which fields can a user filter on? */
+  final case class SlotFilter(
+      isTaken: Option[Boolean],
+      clinicInfo: Option[String],
+      slotTimeGte: Option[Instant],
+      slotTimeLte: Option[Instant]
+  )
 
+  final case class Pagination(limit: Int, offset: Int)
 
+  object Pagination {
+    val defaultPageSize = 10
+
+    def apply(maybeLimit: Option[Int], maybeOffset: Option[Int]): Pagination =
+      Pagination(
+        limit = maybeLimit.getOrElse(defaultPageSize),
+        offset = maybeOffset.getOrElse(0)
+      )
+
+  }
 
 }
