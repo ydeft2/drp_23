@@ -17,6 +17,8 @@ import cats.data.*
 import cats.syntax.*
 import java.util.UUID
 import backend.database.*
+import backend.domain.auth.*
+import backend.domain.auth.given
 
 class AuthRoutes private extends Http4sDsl[IO] {
   

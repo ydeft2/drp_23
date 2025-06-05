@@ -48,4 +48,41 @@ object auth {
       dob: String
     ): AccountDetailsResponse = AccountDetailsResponse(firstName, lastName, dob)
   }
+
+  case class PatientInsert(
+    uid: String,
+    first_name: String,
+    last_name: String,
+    dob: String
+  )
+  
+  case class RegisterRequest(
+    firstName: String,
+    lastName: String,
+    dob: String,
+    email: String,
+    password: String
+  )
+
+  object RegisterRequest {
+
+    given encoder: Encoder[RegisterRequest] = Encoder.instance { r =>
+      Json.obj(
+        "first_name" -> r.firstName.asJson,
+        "last_name" -> r.lastName.asJson,
+        "dob" -> r.dob.asJson,
+        "email" -> r.email.asJson,
+        "password" -> r.password.asJson
+      )
+    }
+
+    def create(
+      firstName: String,
+      lastName: String,
+      dob: String,
+      email: String,
+      password: String
+    ): RegisterRequest = RegisterRequest(firstName, lastName, dob, email, password)
+  }
+
 }
