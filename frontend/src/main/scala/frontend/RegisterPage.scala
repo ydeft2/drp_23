@@ -52,8 +52,8 @@ object RegisterPage {
       )
 
       // Validate inputs
-      val isInvalid = data.firstName.asInstanceOf[String].isEmpty ||
-          data.lastName.asInstanceOf[String].isEmpty ||
+      val isInvalid = data.first_name.asInstanceOf[String].isEmpty ||
+          data.last_name.asInstanceOf[String].isEmpty ||
           data.dob.asInstanceOf[String].isEmpty ||
           data.email.asInstanceOf[String].isEmpty ||
           data.password.asInstanceOf[String].isEmpty ||

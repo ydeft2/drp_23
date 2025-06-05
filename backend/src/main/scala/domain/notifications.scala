@@ -37,26 +37,11 @@ object notifications {
 
     given decoder: Decoder[Notification] = Decoder.instance { c =>
       for {
-        notificationId <- c.downField("notification_id").as[UUID].map { id =>
-          println(s"Decoded notification_id: $id")
-          id
-        }
-        userId <- c.downField("user_id").as[UUID].map { uid =>
-          println(s"Decoded user_id: $uid")
-          uid
-        }
-        isRead <- c.downField("is_read").as[Boolean].map { read =>
-          println(s"Decoded is_read: $read")
-          read
-        }
-        createdAt <- c.downField("created_at").as[Instant].map { ts =>
-          println(s"Decoded created_at: $ts")
-          ts
-        }
-        message <- c.downField("message").as[String].map { msg =>
-          println(s"Decoded message: $msg")
-          msg
-        }
+        notificationId <- c.downField("notification_id").as[UUID]
+        userId <- c.downField("user_id").as[UUID]
+        isRead <- c.downField("is_read").as[Boolean]
+        createdAt <- c.downField("created_at").as[Instant]
+        message <- c.downField("message").as[String]
       } yield Notification.create(
         notificationId = notificationId,
         userId = userId,
