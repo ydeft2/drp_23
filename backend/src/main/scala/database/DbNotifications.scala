@@ -4,7 +4,6 @@ package backend.database
 import cats.effect.IO
 import org.http4s._
 import org.http4s.circe._
-import io.circe.generic.auto._
 import io.circe.syntax._
 import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.ci.CIStringSyntax
@@ -15,6 +14,10 @@ import java.util.UUID
 import backend.domain.notifications._
 import backend.domain.notifications.given
 import org.http4s.circe.CirceEntityDecoder.circeEntityDecoder
+import io.circe.Decoder
+
+given Decoder[Notification] = Notification.decoder
+given EntityDecoder[IO, List[Notification]] = jsonOf[IO, List[Notification]]
 
 // This is intended to be a function only used by the backend to notify users when necessary.
 def notifyUser(userId: UUID, message: String): IO[Either[String, Unit]] = {
@@ -62,7 +65,7 @@ def getNotifications(notificationsRequest: NotificationRequest): IO[Either[Strin
       Header.Raw(ci"apikey", s"$supabaseKey"),
       Header.Raw(ci"Content-Type", "application/json"),
       Header.Raw(ci"Accept", "application/json")
-    )
+    )     
   )
 
 

@@ -28,10 +28,7 @@ object Account {
     requestHeaders.append("Content-Type", "application/json")
     requestHeaders.append("Authorization", s"Bearer $accessToken")
 
-    val requestBody = js.Dynamic.literal(
-      "uid" -> uid,
-      "accessToken" -> accessToken
-    )
+    val requestBody = uid
 
     val requestInit = new dom.RequestInit {
       method = dom.HttpMethod.POST

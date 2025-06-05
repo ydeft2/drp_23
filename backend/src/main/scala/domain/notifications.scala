@@ -5,6 +5,10 @@ import java.time.Instant
 import io.circe.{Encoder, Decoder, Json}
 import io.circe.syntax.EncoderOps
 
+import java.time.Instant
+import java.time.format.DateTimeParseException
+import io.circe.Decoder
+
 object notifications {
 
   case class Notification(
@@ -12,7 +16,7 @@ object notifications {
     userId: UUID,
     isRead: Boolean,
     createdAt: Instant,
-    message: String,
+    message: String
   )
 
   case class NotificationRequest(
@@ -37,6 +41,8 @@ object notifications {
         message = message
       )
     }
+
+
 
     def create(
       notificationId: UUID,

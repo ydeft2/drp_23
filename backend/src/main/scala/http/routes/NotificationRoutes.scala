@@ -1,6 +1,5 @@
 package backend.http.routes
 
-import io.circe.generic.auto.*
 import org.http4s.circe.CirceEntityCodec.*
 import io.circe.syntax.*
 import io.circe.Json
@@ -26,8 +25,11 @@ class NotificationRoutes private extends Http4sDsl[IO] {
   private val getNotificationsRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case req @ POST -> Root / "fetch" =>
       for {
+        _ <- IO.println(s"Received request to fetch notifications $req")
         notificationReq <- req.as[NotificationRequest]
+        _ <- IO.println(s"Fetching notifications for user: ${notificationReq.userId}")
         notificationsRes <- getNotifications(notificationReq)
+        _ <- IO.println(s"Fetched notifications")
         response <- notificationsRes match {
                       case Right(notifications) => 
                         IO.println(s"Fetched notifications: ${notifications.length}") *>

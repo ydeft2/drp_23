@@ -211,10 +211,7 @@ def isPatient(): scala.concurrent.Future[Boolean] = {
     return Future.successful(false)
   }
 
-  val requestBody = js.Dynamic.literal(
-    "uid" -> currentUid,
-    "accessToken" -> accessToken
-  )
+  val requestBody = currentUid.toString
 
   val requestHeaders = js.Dictionary(
       "Content-Type" -> "application/json",
@@ -234,7 +231,7 @@ def isPatient(): scala.concurrent.Future[Boolean] = {
       .flatMap(_.json().toFuture)
       .map { json =>
         val roleInfo = json.asInstanceOf[js.Dynamic]
-        val isPatient = roleInfo.is_patient.asInstanceOf[String] == "true"
+        val isPatient = roleInfo.is_patient.asInstanceOf[Boolean] == true
         isPatient
       }
       .recover {
