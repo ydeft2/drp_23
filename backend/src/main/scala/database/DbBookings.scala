@@ -6,6 +6,9 @@ import io.circe.syntax._
 import org.http4s._
 import org.http4s.Method._
 import org.http4s.circe._
+import org.typelevel.ci.CIString
+import org.http4s.Header.Raw
+import io.circe.Decoder
 
 import java.util.UUID
 import backend.domain.bookings._
@@ -21,23 +24,37 @@ object DbBookings {
    * On success: Supabase normally returns 201 Created.
    * We return Right(()) if 201 or 200, otherwise Left(DbError.SqlError).
    */
-  def requestBooking(payload: BookingRequestPayload): IO[Either[DbError, Unit]] = {
-    val insertJson = io.circe.Json.obj(
-      "slot_id" -> payload.slotId.asJson,
-      "appointment_type" -> AppointmentType.NOT_SET.asJson,
-      "confirmed" -> io.circe.Json.False,
-      "patient_id" -> payload.patientId.asJson,
-      "clinic_id" -> payload.clinicId.asJson
-    )
-    val uri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/bookings")
+  def requestBooking(payload: BookingRequestPayload): IO[Either[DbError, UUID]] = {
+    val uri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/bookings?select=booking_id")
+
+    val preferHeader = Header.Raw(CIString("Prefer"), "return=representation")
+
     val req = Request[IO](
-      method = POST,
+      method = Method.POST,
       uri = uri,
-      headers = commonHeaders
+      headers = commonHeaders.put(preferHeader)
     ).withEntity(payload.asJson)
 
-    executeNoContent(req, "booking", "") // no known ID yet for noew booking
+    case class BookingIdResponse(booking_id: UUID)
+    given Decoder[BookingIdResponse] = Decoder.forProduct1("booking_id")(BookingIdResponse.apply)
+
+    for {
+      result <- fetchAndDecode[List[BookingIdResponse]](req, "booking")
+      response <- result match {
+        case Right(bookings) if bookings.nonEmpty =>
+          val id = bookings.head.booking_id
+          IO.pure(Right(id))
+
+        case Right(_) =>
+          IO.pure(Left(DbError.Unknown("No booking returned")))
+
+        case Left(err) =>
+          IO.pure(Left(err))
+      }
+    } yield response
   }
+
+
 
   /**
    *  2) Confirm an existing booking (set confirmed = true):
@@ -113,5 +130,48 @@ object DbBookings {
 
     fetchAndDecode[List[BookingDto]](req, "bookings").map(_.map(_.map(toBookingResponse)))
   }
+
+  def linkSlotWithBooking(slotId: UUID, bookingId: UUID): IO[Either[DbError, Unit]] = {
+
+    IO.println(s"Linking slot $slotId with booking $bookingId")
+
+    val patchJson = Json.obj(
+      "booking_id" -> bookingId.asJson,
+      "is_taken" -> Json.True
+    )
+
+    val uri = Uri.unsafeFromString(
+      s"$supabaseUrl/rest/v1/slots?slot_id=eq.$slotId"
+    )
+
+    val req = Request[IO](
+      method = Method.PATCH,
+      uri = uri,
+      headers = commonHeaders
+    ).withEntity(patchJson)
+
+    executeNoContent(req, "slot", slotId.toString)
+  }
+
+
+  def unlinkSlotWithBooking(bookingId: UUID): IO[Either[DbError, Unit]] = {
+    val patchJson = Json.obj(
+      "booking_id" -> Json.Null,
+      "is_taken" -> Json.False
+    )
+
+    val uri = Uri.unsafeFromString(
+      s"$supabaseUrl/rest/v1/slots?booking_id=eq.$bookingId"
+    )
+
+    val req = Request[IO](
+      method = Method.PATCH,
+      uri = uri,
+      headers = commonHeaders
+    ).withEntity(patchJson)
+
+    executeNoContent(req, "slot", s"booking_id=$bookingId")
+  }
+
 
 }

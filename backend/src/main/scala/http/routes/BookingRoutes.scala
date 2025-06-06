@@ -14,6 +14,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.server.*
 import backend.database.{DbBookings, DbError}
 import backend.domain.bookings.*
+import cats.implicits._
 
 class BookingRoutes private extends Http4sDsl[IO] {
 
@@ -50,9 +51,19 @@ class BookingRoutes private extends Http4sDsl[IO] {
           BadRequest(Json.obj("error" -> Json.fromString(s"Invalid JSON: ${err.getMessage}")))
 
         case Right(br) =>
+          IO(println(s"[DEBUG] BookingRequestPayload received: $br")) *>   
           DbBookings.requestBooking(br).flatMap {
-            case Right(_) =>
-              Created(Json.obj("message" -> Json.fromString("Booking requested")))
+            case Right(bookingId) =>
+              println(s"[DEBUG] Booking created with ID: $bookingId")
+              DbBookings.linkSlotWithBooking(br.slotId, bookingId).flatMap {
+                case Right(_) =>
+                  Created(Json.obj(
+                    "message" -> Json.fromString("Booking requested"),
+                    "booking_id" -> bookingId.asJson
+                  ))
+                case Left(err) =>
+                  InternalServerError(Json.obj("error" -> Json.fromString("Failed to link slot")))
+              }
 
             case Left(DbError.DecodeError(msg)) =>
               BadRequest(Json.obj("error" -> Json.fromString(s"Decode error: $msg")))
@@ -123,25 +134,41 @@ class BookingRoutes private extends Http4sDsl[IO] {
   }
   
   private val cancelBookingRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
-    //todo: http delete or what
-    case req @ DELETE -> Root / "cancel" / UUIDVar(bookingId) =>
-      DbBookings.deleteBooking(bookingId).flatMap {
+    case DELETE -> Root / "cancel" / UUIDVar(bookingId) =>
+      // First unlink the slot with the booking
+      DbBookings.unlinkSlotWithBooking(bookingId).flatMap {
         case Right(_) =>
-          NoContent()
-
-        case Left(DbError.NotFound(_, _)) =>
-          NotFound(Json.obj("error" -> Json.fromString("Booking not found")))
-
-        case Left(DbError.SqlError(code, body)) =>
-          InternalServerError(Json.obj("error" -> Json.fromString(s"DB error $code: $body")))
-
-        case Left(DbError.Unknown(msg)) =>
-          InternalServerError(Json.obj("error" -> Json.fromString(msg)))
-
-        case Left(DbError.DecodeError(msg)) =>
-          BadRequest(Json.obj("error" -> Json.fromString(s"Decode error: $msg")))
-      } 
+          // Then delete the booking
+          DbBookings.deleteBooking(bookingId).flatMap {
+            case Right(_) =>
+              NoContent()
+            case Left(DbError.NotFound(_, _)) =>
+              NotFound(Json.obj("error" -> Json.fromString("Booking not found")))
+            case Left(DbError.SqlError(code, body)) =>
+              InternalServerError(Json.obj("error" -> Json.fromString(s"DB error $code: $body")))
+            case Left(DbError.Unknown(msg)) =>
+              InternalServerError(Json.obj("error" -> Json.fromString(msg)))
+            case Left(DbError.DecodeError(msg)) =>
+              BadRequest(Json.obj("error" -> Json.fromString(s"Decode error: $msg")))
+          }
+        case Left(err) =>
+          // If unlinking fails, log or handle, but still try to delete
+          DbBookings.deleteBooking(bookingId).flatMap {
+            case Right(_) =>
+              // Even if unlink failed, deletion succeeded, so return success
+              NoContent()
+            case Left(DbError.NotFound(_, _)) =>
+              NotFound(Json.obj("error" -> Json.fromString("Booking not found")))
+            case Left(DbError.SqlError(code, body)) =>
+              InternalServerError(Json.obj("error" -> Json.fromString(s"DB error $code: $body")))
+            case Left(DbError.Unknown(msg)) =>
+              InternalServerError(Json.obj("error" -> Json.fromString(msg)))
+            case Left(DbError.DecodeError(msg)) =>
+              BadRequest(Json.obj("error" -> Json.fromString(s"Decode error: $msg")))
+          }
+      }
   }
+
   
   val routes = Router(
     "/bookings" -> (
