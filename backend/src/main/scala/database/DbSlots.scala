@@ -45,8 +45,10 @@ object DbSlots {
 
     val baseSelect = "slot_time,slot_length,clinic_info,is_taken"
     val selectQuery = s"?select=$baseSelect"
+    val maybeClinicClause: Option[String] = filter.clinicId.map(id => s"clinic_id=eq.$id")
 
     val filterClauses = List(
+      maybeClinicClause,
       filter.isTaken.map(t => s"is_taken=eq.$t"),
       filter.clinicInfo.map(ci => s"clinic_info=ilike.%$ci%"),
       filter.slotTimeGte.map(i => s"slot_time=gte.${i}"),
@@ -54,6 +56,14 @@ object DbSlots {
     ).flatten
      .map("&" + _)
      .mkString("")
+
+    /*
+    We might have to use this instead of the .map.mkString call above
+      val filterString: String =
+        if (filterClauses.isEmpty) ""
+        else filterClauses.map("&" + _).mkString("")
+     */
+
 
     val paginationClauses = s"&limit=${pagination.limit}&offset=${pagination.offset}"
 
@@ -84,7 +94,7 @@ object DbSlots {
    * TODOOOO: Do we need this?
    */
   def getAllSlotsForPatients: IO[Either[DbError, List[PatientSlotResponse]]] =
-    getSlots(SlotFilter(None, None, None, None), Pagination(None, None))
+    getSlots(SlotFilter(None, None, None, None, None), Pagination(None, None))
 
 
   /**
