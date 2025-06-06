@@ -2,225 +2,231 @@ package frontend
 
 import org.scalajs.dom
 import org.scalajs.dom.document
-import org.scalajs.dom.html.{Div, Button, Element, Span}
-import java.time.{LocalDate, YearMonth, DayOfWeek}
-import scala.scalajs.js.timers._
+import org.scalajs.dom.html.{Div, Button, Span, Table, TableCell, TableRow}
+
+import java.time.*
+import java.time.format.DateTimeFormatter
+import java.util.UUID
+import scala.util.Random
+
+// replace with backend
+final case class Slot(
+  slotId: UUID,
+  bookingId: UUID,
+  clinicId: UUID,
+  isTaken: Boolean,
+  slotTime: Instant,
+  slotLength: Long,
+  clinicInfo: String,
+  createdAt: Instant
+)
 
 object BookingPage {
 
+
+  private val timeStrings = Seq("09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00")
+  private val fmt         = DateTimeFormatter.ofPattern("HH:mm")
+  private val zoneId      = ZoneOffset.UTC
+
+
+  private def randUuid(): UUID = {
+    val hex = List.fill(32)(Random.nextInt(16).toHexString).mkString
+    val dashed =
+      s"${hex.substring(0, 8)}-" +
+      s"${hex.substring(8,12)}-" +
+      s"${hex.substring(12,16)}-" +
+      s"${hex.substring(16,20)}-" +
+      hex.substring(20)
+    UUID.fromString(dashed)
+  }
+
+// remove when backend complete
+  private def dummySlots(weekStart: LocalDate): Seq[Slot] = {
+    for {
+      d       <- 0 until 7
+      day      = weekStart.plusDays(d) if !day.getDayOfWeek.isWeekend
+      t       <- timeStrings
+      localDT  = LocalDateTime.of(day, LocalTime.parse(t, fmt))
+      instant  = localDT.atZone(zoneId).toInstant
+    } yield Slot(
+      slotId     = randUuid(),
+      bookingId  = randUuid(),
+      clinicId   = randUuid(),
+      isTaken    = false,
+      slotTime   = instant,
+      slotLength = 30,
+      clinicInfo = "London Dental Care",
+      createdAt  = Instant.now()
+    )
+  }
+
   def render(): Unit = {
-    // Clear the page
     document.body.innerHTML = ""
 
-    // Create header
-    val header = document.createElement("div").asInstanceOf[Div]
-    header.style.backgroundColor = "purple"
-    header.style.color = "white"
-    header.style.padding = "10px"
-    header.style.display = "flex"
-    header.style.setProperty("justify-content", "space-between")
-    header.style.setProperty("align-items", "center")
-    header.style.position = "fixed"
-    header.style.top = "0"
-    header.style.left = "0"
-    header.style.right = "0"
-    header.style.height = "50px"
-    header.style.zIndex = "1"
+    document.body.appendChild(createSubpageHeader("Available Bookings"))
 
-    // Home button
-    val homeBtn = document.createElement("button").asInstanceOf[Button]
-    homeBtn.textContent = "Home"
-    homeBtn.style.background = "transparent"
-    homeBtn.style.color = "white"
-    homeBtn.style.border = "none"
-    homeBtn.style.cursor = "pointer"
-    homeBtn.style.fontSize = "16px"
-    homeBtn.onclick = (_: dom.MouseEvent) => HomePage.render()
+    val main = document.createElement("div").asInstanceOf[Div]
+    main.style.marginTop   = "80px"
+    main.style.width       = "90%"
+    main.style.marginLeft  = "auto"
+    main.style.marginRight = "auto"
+    main.style.maxWidth    = "1200px"
+    main.style.padding     = "20px"
+    main.style.backgroundColor = "#f9f9f9"
+    main.style.borderRadius = "8px"
+    main.style.boxShadow    = "0 2px 8px rgba(0, 0, 0, 0.1)"
 
-    val titleHeader = document.createElement("div")
-    titleHeader.textContent = "Booking Calendar"
-    titleHeader.asInstanceOf[Div].style.fontSize = "20px"
-    titleHeader.asInstanceOf[Div].style.fontWeight = "bold"
-    titleHeader.asInstanceOf[Div].style.margin = "0 auto"
-    titleHeader.asInstanceOf[Div].style.position = "absolute"
-    titleHeader.asInstanceOf[Div].style.left = "50%"
-    titleHeader.asInstanceOf[Div].style.transform = "translateX(-50%)"
-
-    header.appendChild(homeBtn)
-    header.appendChild(titleHeader)
-    document.body.appendChild(header)
-
-    // Main container below header
-    val container = document.createElement("div").asInstanceOf[Div]
-    container.style.marginTop = "70px"
-    container.style.marginLeft = "auto"
-    container.style.marginRight = "auto"
-    container.style.width = "80%"
-    document.body.appendChild(container)
-
-    // Setup month navigation state
+  
     val today = LocalDate.now(java.time.Clock.systemUTC())
-    val currentYearMonth = YearMonth.of(today.getYear, today.getMonthValue)
-    var displayYearMonth: YearMonth = currentYearMonth
-    val maxFuture: YearMonth = currentYearMonth.plusMonths(12)
+    val daysFromSunday  = today.getDayOfWeek.getValue % 7 // Sunday -> 0, Monday -> 1 …
+    val startToday      = today.minusDays(daysFromSunday.toLong)
+    var currentWeekStart = startToday
+    val lastWeekStart    = startToday.plusWeeks(52)   // 12‑month horizon
 
-    // Create month navigation container (will hold the navigation buttons)
-    val monthNavContainer = document.createElement("div").asInstanceOf[Div]
-    monthNavContainer.style.setProperty("justify-content", "center")
-    monthNavContainer.style.setProperty("align-items", "center")
-    monthNavContainer.style.marginBottom = "20px"
-    container.appendChild(monthNavContainer)
+    
+    val navBar = document.createElement("div").asInstanceOf[Div]
+    navBar.style.display = "flex"
+    navBar.style.setProperty("justify-content", "center")
+    navBar.style.setProperty("align-items", "center")
+    navBar.style.marginBottom = "15px"
+    navBar.style.padding = "10px"
+    navBar.style.backgroundColor = "#e0e0e0"
+    navBar.style.borderRadius = "5px"
+    navBar.style.boxShadow = "0 1px 3px rgba(23, 21, 21, 0.1)"
 
-    // Create calendar container (will hold the calendar grid)
-    val calendarContainer = document.createElement("div").asInstanceOf[Div]
-    calendarContainer.style.display = "grid"
-    calendarContainer.style.setProperty("grid-template-columns", "repeat(7, 1fr)")
-    calendarContainer.style.setProperty("gap", "5px")
-    container.appendChild(calendarContainer)
+    val prevBtn = navButton("< Prev Week")
+    val nextBtn = navButton("Next Week >")
+    val weekLab = document.createElement("span").asInstanceOf[Span]
+    weekLab.style.margin = "0 12px"
 
-    // Define calendar render logic before it's used in any event handler
-    def renderCalendar(): Unit = {
-      calendarContainer.innerHTML = ""
-      // Add weekday header row
-      val weekdays = List("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
-      weekdays.foreach { day =>
-        val dayHeader = document.createElement("div").asInstanceOf[Div]
-        dayHeader.textContent = day
-        dayHeader.style.fontWeight = "bold"
-        dayHeader.style.textAlign = "center"
-        calendarContainer.appendChild(dayHeader)
-      }
+    navBar.appendChild(prevBtn)
+    navBar.appendChild(weekLab)
+    navBar.appendChild(nextBtn)
+    main.appendChild(navBar)
+    
 
-      // Calculate details for the display month
-      val firstDayOfMonth = displayYearMonth.atDay(1)
-      val lastDay = displayYearMonth.lengthOfMonth()
-      val firstDayOfWeek = firstDayOfMonth.getDayOfWeek.getValue % 7
+    val tableHolder = document.createElement("div").asInstanceOf[Div]
+    main.appendChild(tableHolder)
 
-      // Fill in leading blank cells
-      for (_ <- 0 until firstDayOfWeek) {
-        val emptyCell = document.createElement("div").asInstanceOf[Div]
-        emptyCell.textContent = ""
-        calendarContainer.appendChild(emptyCell)
-      }
+    def updateLabel(): Unit = {
+      weekLab.textContent = s"${currentWeekStart} – ${currentWeekStart.plusDays(6)}"
+    }
 
-      // For each day of the month, create a cell in the calendar
-      for(day <- 1 to lastDay) {
-        val cell = document.createElement("div").asInstanceOf[Div]
-        cell.textContent = day.toString
-        cell.style.border = "1px solid #ccc"
-        cell.style.padding = "8px"
-        cell.style.textAlign = "center"
-        cell.style.cursor = "pointer"
-        // Highlight today's date only if display month is the current month
-        if (displayYearMonth.equals(currentYearMonth) && day == today.getDayOfMonth) {
-          cell.style.backgroundColor = "#d1e7dd"
-        }
-        // On click, show available times for the selected date
-        cell.addEventListener("click", { (_: dom.MouseEvent) =>
-          // Remove any previous times container before creating a new one
-          val existingTimes = container.querySelector("#timesContainer")
-          if (existingTimes != null) container.removeChild(existingTimes)
-          val timesContainer = document.createElement("div").asInstanceOf[Div]
-          timesContainer.id = "timesContainer"
-          timesContainer.style.marginTop = "20px"
-          container.appendChild(timesContainer)
-          val selectedDate = displayYearMonth.atDay(day)
-          showAvailableTimes(selectedDate, timesContainer)
-        })
-        calendarContainer.appendChild(cell)
+    def updateButtons(): Unit = {
+      prevBtn.disabled = currentWeekStart == startToday
+      nextBtn.disabled = currentWeekStart == lastWeekStart
+    }
+
+    def drawWeek(): Unit = {
+      tableHolder.innerHTML = ""
+      tableHolder.appendChild(buildTable(currentWeekStart))
+      updateLabel()
+      updateButtons()
+    }
+
+    prevBtn.onclick = (_: dom.MouseEvent) => {
+      if (currentWeekStart.isAfter(startToday)) {
+        currentWeekStart = currentWeekStart.minusWeeks(1)
+        drawWeek()
       }
     }
 
-    // Declare all buttons and label first:
-    lazy val prevBtn: Button = {
-      val btn = document.createElement("button").asInstanceOf[Button]
-      btn.textContent = "<"
-      btn.style.marginRight = "10px"
-      btn.onclick = (_: dom.MouseEvent) => {
-        if (displayYearMonth.isAfter(currentYearMonth)) {
-          displayYearMonth = displayYearMonth.minusMonths(1)
-          renderCalendar()
-          updateNav()
-        }
+    nextBtn.onclick = (_: dom.MouseEvent) => {
+      if (currentWeekStart.isBefore(lastWeekStart)) {
+        currentWeekStart = currentWeekStart.plusWeeks(1)
+        drawWeek()
       }
-      btn
     }
 
-    lazy val monthLabel: Span = {
-      val span = document.createElement("span").asInstanceOf[Span]
-      span.style.setProperty("margin", "0 10px")
-      span.style.right = "10px"
-      span
-    }
-
-    lazy val nextBtn: Button = {
-      val btn = document.createElement("button").asInstanceOf[Button]
-      btn.textContent = ">"
-      btn.style.marginLeft = "10px"
-      btn.onclick = (_: dom.MouseEvent) => {
-        if (displayYearMonth.isBefore(maxFuture)) {
-          displayYearMonth = displayYearMonth.plusMonths(1)
-          renderCalendar()
-          updateNav()
-        }
-      }
-      btn
-    }
-
-    // Now define updateNav AFTER those are declared
-    def updateNav(): Unit = {
-      monthLabel.textContent = s"${displayYearMonth.getMonth} ${displayYearMonth.getYear}"
-      prevBtn.disabled = !displayYearMonth.isAfter(currentYearMonth)
-      nextBtn.disabled = !displayYearMonth.isBefore(maxFuture)
-    }
-
-    // Append buttons to container after they are declared
-    monthNavContainer.appendChild(prevBtn)
-    monthNavContainer.appendChild(nextBtn)
-    monthNavContainer.appendChild(monthLabel)
-
-    // Then you can safely call updateNav and renderCalendar
-    updateNav()
-    renderCalendar()
-
+    document.body.appendChild(main)
+    drawWeek()
   }
 
-  private def showAvailableTimes(date: java.time.LocalDate, container: Div): Unit = {
-    // Clear existing times
-    container.innerHTML = ""
-    // Title for selected day
-    val title = document.createElement("h3")
 
-    // Calculate tomorrow based on the current UTC date
-    val tomorrow = LocalDate.now(java.time.Clock.systemUTC()).plusDays(1)
+  private def buildTable(weekStart: LocalDate): Table = {
 
-    // If the date is in the past or today, or if it's a weekend, show no available slots
-    if (date.isBefore(tomorrow) || date.getDayOfWeek == java.time.DayOfWeek.SATURDAY || date.getDayOfWeek == java.time.DayOfWeek.SUNDAY) {
-      title.textContent = s"No available slots for ${date.toString}"
-      container.appendChild(title)
-      return
-    }
-
-    title.textContent = s"Available slots for ${date.toString}"
-    container.appendChild(title)
-
-    // List available time slots from 9:00 AM to 4:00 PM
-    val timesList = List(
-      "9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM",
-      "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"
+    // add actual slots from backend here
+  val slotsByDay: Map[LocalDate, Seq[Slot]] =
+    dummySlots(weekStart).groupBy(s =>
+      s.slotTime.atZone(zoneId).toLocalDate
     )
 
-    timesList.foreach { time =>
-      val timeSlot = document.createElement("div").asInstanceOf[Div]
-      timeSlot.textContent = time
-      timeSlot.style.border = "1px solid #ccc"
-      timeSlot.style.padding = "6px"
-      timeSlot.style.marginBottom = "4px"
-      timeSlot.style.cursor = "pointer"
-      timeSlot.addEventListener("click", { (_: dom.MouseEvent) =>
-        dom.window.alert(s"Booking confirmed for ${date.toString} at $time")
-      })
-      container.appendChild(timeSlot)
-    }
+
+  val tbl = document.createElement("table").asInstanceOf[Table]
+  tbl.style.borderCollapse = "collapse"
+  tbl.style.width          = "100%"
+  tbl.style.border         = "1px solid #ddd"
+
+  def th(txt: String): TableCell = {
+    val c = document.createElement("th").asInstanceOf[TableCell]
+    c.textContent = txt
+    c.style.border = "1px solid #999"
+    c.style.padding = "6px"
+    c
   }
+
+  def td(txt: String, clickable: Boolean): TableCell = {
+    val c = document.createElement("td").asInstanceOf[TableCell]
+    c.textContent = txt
+    c.style.border = "1px solid #ccc"
+    c.style.padding = "6px"
+    if (clickable) {
+      c.style.cursor = "pointer"
+      c.style.backgroundColor = "#e0ffe0"
+    }
+    c
+  }
+
+  val headerRow = document.createElement("tr").asInstanceOf[TableRow]
+  headerRow.appendChild(th(""))
+  for (i <- 0 until 7)
+    headerRow.appendChild(th(weekStart.plusDays(i).getDayOfWeek.toString.take(3)))
+  tbl.appendChild(headerRow)
+
+
+  for (tStr <- timeStrings) {
+    val row = document.createElement("tr").asInstanceOf[TableRow]
+    row.appendChild(th(tStr))
+
+    val targetTime = LocalTime.parse(tStr)
+
+    for (i <- 0 until 7) {
+      val day     = weekStart.plusDays(i)
+      val slotOpt = slotsByDay.getOrElse(day, Nil).find(s =>
+        s.slotTime.atZone(zoneId).toLocalTime == targetTime
+      )
+
+      slotOpt match {
+        case Some(slt) =>
+          val cell = td("Book", clickable = true)
+          cell.addEventListener("click", (_: dom.MouseEvent) =>
+            dom.window.alert(
+              s"Booking confirmed for $day at $tStr\nClinic: ${slt.clinicInfo}"
+            )
+            
+            // Add booking backend logic here
+          )
+          row.appendChild(cell)
+        case None =>
+          row.appendChild(td("-", clickable = false))
+      }
+    }
+
+    tbl.appendChild(row)
+  }
+
+  tbl
+}
+
+
+  private def navButton(text: String): Button = {
+    val b = document.createElement("button").asInstanceOf[Button]
+    b.textContent = text
+    b.style.padding = "6px 12px"
+    b
+  }
+
+
+  extension (d: DayOfWeek) private def isWeekend: Boolean =
+    d == DayOfWeek.SATURDAY || d == DayOfWeek.SUNDAY
 }
