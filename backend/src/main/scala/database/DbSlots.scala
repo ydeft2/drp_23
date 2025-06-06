@@ -43,7 +43,7 @@ object DbSlots {
       pagination: Pagination
   ): IO[Either[DbError, List[PatientSlotResponse]]] = {
 
-    val baseSelect = "slot_time,slot_length,clinic_info,is_taken"
+    val baseSelect = "slot_time,slot_length,clinic_info,is_taken,clinic_id,slot_id"
     val selectQuery = s"?select=$baseSelect"
     val maybeClinicClause: Option[String] = filter.clinicId.map(id => s"clinic_id=eq.$id")
 
