@@ -1,7 +1,7 @@
 package backend.domain
 
 import java.util.UUID
-import java.time.Instant
+import java.time.{Instant, OffsetDateTime}
 import io.circe.{Decoder, Encoder, Json}
 import io.circe.syntax.EncoderOps
 
@@ -70,13 +70,24 @@ object slots {
       slotTime: Instant,
       slotLength: Long,
       clinicInfo: Option[String],
-      isTaken: Boolean
+      isTaken: Boolean,
+      clinicId: UUID,
+      slotId: UUID
   )
 
   object PatientSlotResponse {
 
-    given decoder: Decoder[PatientSlotResponse] = Decoder.forProduct4(
-      "slot_time", "slot_length", "clinic_info", "is_taken"
+    given Decoder[Instant] = Decoder.decodeString.emap { str =>
+      try {
+        val odt = OffsetDateTime.parse(str)
+        Right(odt.toInstant)
+      } catch {
+        case e: Exception => Left(s"Could not parse Instant: $str - ${e.getMessage}")
+      }
+    }
+
+    given decoder: Decoder[PatientSlotResponse] = Decoder.forProduct6(
+      "slot_time", "slot_length", "clinic_info", "is_taken", "clinic_id", "slot_id"
     )(PatientSlotResponse.apply)
 
   }
