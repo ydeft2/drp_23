@@ -3,6 +3,7 @@ package backend.domain
 import io.circe.{Decoder, Encoder}
 import io.circe.syntax.*
 import java.util.UUID
+import java.time.Instant
 
 object bookings {
 
@@ -15,9 +16,52 @@ object bookings {
       clinicId: UUID
   )
 
+  final case class BookingResponse(
+      patientId: UUID,
+      clinicId: UUID,
+      slotTime: Instant,
+      slotLength: Long,
+      clinicInfo: Option[String],
+      isConfirmed: Boolean
+  )
+
+  final case class SlotInfo(
+    slot_time: Instant,
+    slot_length: Long,
+    clinic_info: Option[String]
+  )
+
+  final case class BookingDto(
+    patient_id: UUID,
+    clinic_id: UUID,
+    confirmed: Boolean,
+    slot: SlotInfo
+  )
+
+  given Decoder[SlotInfo] = Decoder.forProduct3(
+    "slot_time", "slot_length", "clinic_info"
+  )(SlotInfo.apply)
+
+  given Decoder[BookingDto] = Decoder.forProduct4(
+    "patient_id", "clinic_id", "confirmed", "slot"
+  )(BookingDto.apply)
+
+
+
   enum AppointmentType {
     case CHECKUP, EXTRACTION, FILLING, ROOT_CANAL, HYGIENE, OTHER, NOT_SET
   }
+
+  val toBookingResponse: BookingDto => BookingResponse = dto =>
+    BookingResponse(
+      patientId = dto.patient_id,
+      clinicId = dto.clinic_id,
+      slotTime = dto.slot.slot_time,
+      slotLength = dto.slot.slot_length,
+      clinicInfo = dto.slot.clinic_info,
+      isConfirmed = dto.confirmed
+    )
+
 
   object AppointmentType {
     // encode as a JSON string of the enum’s name
@@ -60,6 +104,28 @@ object bookings {
         "confirmed"        -> io.circe.Json.True
       )
     }
+  }
+
+  final case class BookingFilter(
+      isConfirmed: Option[Boolean],
+      clinicInfo: Option[String],
+      slotTimeGte: Option[Instant],
+      slotTimeLte: Option[Instant],
+      patientId: Option[UUID],
+      clinicId: Option[UUID]
+  )
+
+  final case class Pagination(limit: Int, offset: Int)
+
+  object Pagination {
+    val defaultPageSize = 10
+
+    def apply(maybeLimit: Option[Int], maybeOffset: Option[Int]): Pagination =
+      Pagination(
+        limit = maybeLimit.getOrElse(defaultPageSize),
+        offset = maybeOffset.getOrElse(0)
+      )
+
   }
 
 }

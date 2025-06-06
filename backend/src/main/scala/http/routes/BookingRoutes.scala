@@ -22,7 +22,19 @@ class BookingRoutes private extends Http4sDsl[IO] {
   // todo: filters + pagination
   private val listAllBookingsRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root =>
-      Ok("getting ma bookings")
+      DbBookings.getAllBookingsForPatients.flatMap {
+        case Right(bookingList) =>
+          Ok(bookingList.asJson)
+        case Left(DbError.NotFound(_, _)) =>
+          // “no rows” .. empty array
+          Ok(Json.arr())
+        case Left(DbError.DecodeError(msg)) =>
+          BadRequest(Json.obj("error" -> Json.fromString(s"Decode error: $msg")))
+        case Left(DbError.SqlError(code, body)) =>
+          InternalServerError(Json.obj("error" -> Json.fromString(s"DB error $code: $body")))
+        case Left(DbError.Unknown(msg)) =>
+          InternalServerError(Json.obj("error" -> Json.fromString(msg)))
+      }
   }
 
   private val getBookingByIdRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
@@ -112,7 +124,7 @@ class BookingRoutes private extends Http4sDsl[IO] {
   
   private val cancelBookingRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
     //todo: http delete or what
-    case req @ DELETE -> Root / "delete" / UUIDVar(bookingId) =>
+    case req @ DELETE -> Root / "cancel" / UUIDVar(bookingId) =>
       DbBookings.deleteBooking(bookingId).flatMap {
         case Right(_) =>
           NoContent()

@@ -71,23 +71,47 @@ object DbBookings {
     val deleteRequest = Request[IO](
       method = Method.DELETE,
       uri = deleteUri,
-      headers = Headers(
-        Header.Raw(ci"Authorization", s"Bearer ${supabaseKey}"),
-        Header.Raw(ci"apikey", s"${supabaseKey}"),
-        Header.Raw(ci"Content-Type", "application/json")
-      )
+      headers = commonHeaders
     )
-    EmberClientBuilder.default[IO].build.use { httpClient =>
-      httpClient.fetch(deleteRequest) { response =>
-        response.status match {
-          case Status.NoContent =>
-            IO.println(s"Notification deleted successfully") *> IO.pure(Right(()))
-          case _ =>
-            response.as[String].flatMap { body =>
-              IO.pure(Left(s"Error deleting notification: ${response.status.code} - $body"))
-            }
-        }
-      }
-    }
+    executeNoContent(deleteRequest, "booking", bookingId.toString)
   }
+
+  def getAllBookingsForPatients: IO[Either[DbError, List[BookingResponse]]] =
+    getBookings(BookingFilter(None, None, None, None, None, None), Pagination(None, None))
+
+
+  def getBookings(
+      filter: BookingFilter,
+      pagination: Pagination
+  ): IO[Either[DbError, List[BookingResponse]]] = {
+
+    val baseSelect =
+      "patient_id,clinic_id,confirmed,slot:slots(slot_time,slot_length,clinic_info)"
+
+    val filterClauses = List(
+      filter.isConfirmed.map(c => s"confirmed=eq.$c"),
+      filter.clinicInfo.map(ci => s"slot->>clinic_info=ilike.%25$ci%25"),
+      filter.slotTimeGte.map(ts => s"slot->>slot_time=gte.$ts"),
+      filter.slotTimeLte.map(ts => s"slot->>slot_time=lte.$ts"),
+      filter.patientId.map(id => s"patient_id=eq.$id"),
+      filter.clinicId.map(id => s"clinic_id=eq.$id")
+    ).flatten.map("&" + _).mkString("")
+
+
+    val paginationClauses = s"&limit=${pagination.limit}&offset=${pagination.offset}"
+
+
+    val fullUri = Uri.unsafeFromString(
+      s"$supabaseUrl/rest/v1/bookings?select=$baseSelect$filterClauses$paginationClauses"
+    )
+
+    val req = Request[IO](
+      method = Method.GET,
+      uri = fullUri,
+      headers = commonHeaders
+    )
+
+    fetchAndDecode[List[BookingDto]](req, "bookings").map(_.map(_.map(toBookingResponse)))
+  }
+
 }
