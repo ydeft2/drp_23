@@ -25,14 +25,10 @@ class NotificationRoutes private extends Http4sDsl[IO] {
   private val getNotificationsRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case req @ POST -> Root / "fetch" =>
       for {
-        _ <- IO.println(s"Received request to fetch notifications $req")
         notificationReq <- req.as[NotificationRequest]
-        _ <- IO.println(s"Fetching notifications for user: ${notificationReq.userId}")
         notificationsRes <- getNotifications(notificationReq)
-        _ <- IO.println(s"Fetched notifications")
         response <- notificationsRes match {
                       case Right(notifications) => 
-                        IO.println(s"Fetched notifications: ${notifications.length}") *>
                         Ok(notifications.asJson)
                       case Left(error) => 
                         IO.println(s"Error fetching notifications: $error") *>
@@ -48,7 +44,6 @@ class NotificationRoutes private extends Http4sDsl[IO] {
         res <- markNotificationRead(notificationId)
         response <- res match {
                       case Right(_) => 
-                        IO.println(s"Notification $notificationId marked as read") *>
                         Ok()
                       case Left(error) => 
                         IO.println(s"Error marking notification as read: $error") *>
@@ -56,9 +51,25 @@ class NotificationRoutes private extends Http4sDsl[IO] {
                     }
       } yield response
   }
+
+  private val deleteNotificationRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case req @ POST -> Root / "delete" =>
+      for {
+        notificationId <- req.as[UUID]
+        res <- deleteNotification(notificationId)
+        response <- res match {
+                      case Right(_) =>
+                        IO.println(s"Notification $notificationId deleted") *>
+                        Ok()
+                      case Left(error) =>
+                        IO.println(s"Error deleting notification: $error") *>
+                        BadRequest(Json.obj("error" -> Json.fromString(error)))
+                    }
+      } yield response
+  }
   
   val routes = Router(
-    "/notifications" -> (getNotificationsRoute <+> markNotificationReadRoute)
+    "/notifications" -> (getNotificationsRoute <+> markNotificationReadRoute <+> deleteNotificationRoute)
     )
 
 }

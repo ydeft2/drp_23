@@ -96,30 +96,33 @@ object Inbox {
     notifications: List[NotificationResponse],
     onSuccess: () => Unit
   ): Unit = {
+
     val accessToken = dom.window.localStorage.getItem("accessToken")
     val uid = dom.window.localStorage.getItem("userId")
+
     if (accessToken == null || uid == null) return
 
     val requestHeaders = new dom.Headers()
     requestHeaders.append("Content-Type", "application/json")
     requestHeaders.append("Authorization", s"Bearer $accessToken")
 
-    val requestBody = js.Dynamic.literal(
-      "uid" -> uid.toString,
-      "id" -> notificationId.toString
-    )
-
     val requestInit = new dom.RequestInit {
       method = dom.HttpMethod.POST
       headers = requestHeaders
-      body = JSON.stringify(requestBody)
+      body = JSON.stringify(notificationId.toString)
     }
 
     // Optimistically update local state
-    notifications.find(_.notificationId == notificationId).foreach { n =>
-      n.asInstanceOf[js.Dynamic].updateDynamic("is_read")(true)
+    val updatedNotifications = notifications.map { n =>
+      if (n.notificationId == notificationId) n.copy(isRead = true)
+      else n
     }
-    renderNotifications(notificationsBox, notifications)
+
+    Inbox.notifications = Inbox.notifications.map { n =>
+      if (n.notificationId == notificationId) n.copy(isRead = true) else n
+    }
+    renderNotifications(notificationsBox, Inbox.notifications)
+
 
     dom.fetch("/api/notifications/markNotificationRead", requestInit)
       .toFuture
@@ -212,14 +215,75 @@ object Inbox {
           showModal(contentHtml)
         })
 
+
+
         notificationItem.appendChild(leftSide)
         notificationItem.appendChild(timeDiv)
+        notificationItem.appendChild(deleteButton(notification, notificationsBox))
         notificationsBox.appendChild(notificationItem)
       }
     }
   }
 
-  
+  private def deleteButton(notification: NotificationResponse, notificationsBox: Div): Button = {
+    val deleteBtn = document.createElement("button").asInstanceOf[Button]
+    deleteBtn.innerHTML = "🗑️"
+    deleteBtn.title = "Delete notification"
+    deleteBtn.style.border = "none"
+    deleteBtn.style.background = "transparent"
+    deleteBtn.style.cursor = "pointer"
+    deleteBtn.style.fontSize = "1.2em"
+    deleteBtn.style.color = "#888"
+    deleteBtn.style.marginLeft = "15px"
+    deleteBtn.style.transition = "color 0.3s ease"
+    deleteBtn.style.outline = "none"
+    deleteBtn.style.padding = "2px"
+
+    deleteBtn.onmouseover = (_: dom.MouseEvent) => deleteBtn.style.color = "#e53935" // Red-ish
+    deleteBtn.onmouseout = (_: dom.MouseEvent) => deleteBtn.style.color = "#888"
+
+    deleteBtn.addEventListener("click", (e: dom.MouseEvent) => {
+      e.stopPropagation()
+      deleteNotification(notification.notificationId, notificationsBox)
+    })
+    deleteBtn
+  }
+
+  def deleteNotification(notificationId: UUID, notificationsBox: Div): Unit = {
+    val accessToken = dom.window.localStorage.getItem("accessToken")
+    val uid = dom.window.localStorage.getItem("userId")
+
+    if (accessToken == null || uid == null) {
+      dom.window.alert("You are not logged in.")
+      return
+    }
+
+    val requestHeaders = new dom.Headers()
+    requestHeaders.append("Content-Type", "application/json")
+    requestHeaders.append("Authorization", s"Bearer $accessToken")
+
+    val requestInit = new dom.RequestInit {
+      method = dom.HttpMethod.POST
+      headers = requestHeaders
+      body = JSON.stringify(notificationId.toString)
+    }
+
+    // Optimistically remove notification from local state and rerender
+    Inbox.notifications = Inbox.notifications.filterNot(_.notificationId == notificationId)
+    renderNotifications(notificationsBox, Inbox.notifications)
+
+    dom.fetch("/api/notifications/delete", requestInit)
+      .toFuture
+      .map { response =>
+        if (!response.ok) {
+          dom.window.alert("Failed to delete notification.")
+        }
+      }
+      .recover { case e =>
+        dom.window.alert(s"Error deleting notification: ${e.getMessage}")
+      }
+  }
+
   def render(): Unit = {
     clearPage()
 
