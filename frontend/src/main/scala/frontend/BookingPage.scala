@@ -4,10 +4,15 @@ import org.scalajs.dom
 import org.scalajs.dom.document
 import org.scalajs.dom.html.{Div, Button, Span, Table, TableCell, TableRow}
 
+import scala.scalajs.js
+import scala.scalajs.js.JSON
+
 import java.time.*
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import scala.util.Random
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 // replace with backend
 final case class Slot(
@@ -40,24 +45,47 @@ object BookingPage {
     UUID.fromString(dashed)
   }
 
-// remove when backend complete
-  private def dummySlots(weekStart: LocalDate): Seq[Slot] = {
-    for {
-      d       <- 0 until 7
-      day      = weekStart.plusDays(d) if !day.getDayOfWeek.isWeekend
-      t       <- timeStrings
-      localDT  = LocalDateTime.of(day, LocalTime.parse(t, fmt))
-      instant  = localDT.atZone(zoneId).toInstant
-    } yield Slot(
-      slotId     = randUuid(),
-      bookingId  = randUuid(),
-      clinicId   = randUuid(),
-      isTaken    = false,
-      slotTime   = instant,
-      slotLength = 30,
-      clinicInfo = "London Dental Care",
-      createdAt  = Instant.now()
-    )
+  private def dummySlots(weekStart: LocalDate): Future[Seq[Slot]] = {
+
+    val accessToken = dom.window.localStorage.getItem("accessToken")
+    val uid = dom.window.localStorage.getItem("userId")
+
+    if (accessToken == null || uid == null) {
+      dom.window.alert("You are not logged in.")
+      User("Unknown", "Unknown", "Unknown")
+    }
+
+    val requestHeaders = new dom.Headers()
+    requestHeaders.append("Content-Type", "application/json")
+    requestHeaders.append("Authorization", s"Bearer $accessToken")
+
+
+    val requestInit = new dom.RequestInit {
+      method = dom.HttpMethod.GET
+      headers = requestHeaders
+    }
+
+    dom.fetch("/api/slots/list?is_taken=false").toFuture.flatMap { response =>
+      if (response.ok) {
+        response.json().toFuture.map { data =>
+          val arr = data.asInstanceOf[js.Array[js.Dynamic]]
+          arr.map { obj =>
+            Slot(
+              slotId     = UUID.fromString(obj.slotId.asInstanceOf[String]),
+              bookingId  = randUuid(), // Placeholder until real booking ID is provided
+              clinicId   = UUID.fromString(obj.clinicId.asInstanceOf[String]),
+              isTaken    = obj.isTaken.asInstanceOf[Boolean],
+              slotTime   = Instant.parse(obj.slotTime.asInstanceOf[String]),
+              slotLength = obj.slotLength.asInstanceOf[Double].toLong,
+              clinicInfo = obj.clinicInfo.asInstanceOf[js.UndefOr[String]].getOrElse("Unknown Clinic"),
+              createdAt  = Instant.now() // Placeholder
+            )
+          }.toSeq
+        }
+      } else {
+        Future.failed(new RuntimeException(s"Failed to fetch slots: ${response.status}"))
+      }
+    }
   }
 
   def render(): Unit = {
@@ -118,11 +146,19 @@ object BookingPage {
     }
 
     def drawWeek(): Unit = {
-      tableHolder.innerHTML = ""
-      tableHolder.appendChild(buildTable(currentWeekStart))
-      updateLabel()
-      updateButtons()
+      tableHolder.innerHTML = "Loading..."
+
+      dummySlots(currentWeekStart).foreach { slots =>
+        val slotsByDay: Map[LocalDate, Seq[Slot]] =
+          slots.groupBy(s => s.slotTime.atZone(zoneId).toLocalDate)
+
+        tableHolder.innerHTML = ""
+        tableHolder.appendChild(buildTable(currentWeekStart, slotsByDay))
+        updateLabel()
+        updateButtons()
+      }
     }
+
 
     prevBtn.onclick = (_: dom.MouseEvent) => {
       if (currentWeekStart.isAfter(startToday)) {
@@ -143,90 +179,121 @@ object BookingPage {
   }
 
 
-  private def buildTable(weekStart: LocalDate): Table = {
+  private def buildTable(weekStart: LocalDate, slotsByDay: Map[LocalDate, Seq[Slot]]): Table = {
 
-    // add actual slots from backend here
-  val slotsByDay: Map[LocalDate, Seq[Slot]] =
-    dummySlots(weekStart).groupBy(s =>
-      s.slotTime.atZone(zoneId).toLocalDate
-    )
+    val tbl = document.createElement("table").asInstanceOf[Table]
+    tbl.style.borderCollapse = "collapse"
+    tbl.style.width          = "100%"
+    tbl.style.border         = "1px solid #ddd"
 
-
-  val tbl = document.createElement("table").asInstanceOf[Table]
-  tbl.style.borderCollapse = "collapse"
-  tbl.style.width          = "100%"
-  tbl.style.border         = "1px solid #ddd"
-
-  def th(txt: String): TableCell = {
-    val c = document.createElement("th").asInstanceOf[TableCell]
-    c.textContent = txt
-    c.style.border = "1px solid #999"
-    c.style.padding = "6px"
-    c
-  }
-
-  def td(txt: String, clickable: Boolean): TableCell = {
-    val c = document.createElement("td").asInstanceOf[TableCell]
-    c.textContent = txt
-    c.style.border = "1px solid #ccc"
-    c.style.padding = "6px"
-    if (clickable) {
-      c.style.cursor = "pointer"
-      c.style.backgroundColor = "#e0ffe0"
+    def th(txt: String): TableCell = {
+      val c = document.createElement("th").asInstanceOf[TableCell]
+      c.textContent = txt
+      c.style.border = "1px solid #999"
+      c.style.padding = "6px"
+      c
     }
-    c
-  }
 
-  val headerRow = document.createElement("tr").asInstanceOf[TableRow]
-  headerRow.appendChild(th(""))
-  for (i <- 0 until 7)
-    headerRow.appendChild(th(weekStart.plusDays(i).getDayOfWeek.toString.take(3)))
-  tbl.appendChild(headerRow)
-
-
-  for (tStr <- timeStrings) {
-    val row = document.createElement("tr").asInstanceOf[TableRow]
-    row.appendChild(th(tStr))
-
-    val targetTime = LocalTime.parse(tStr)
-
-    for (i <- 0 until 7) {
-      val day     = weekStart.plusDays(i)
-      val slotOpt = slotsByDay.getOrElse(day, Nil).find(s =>
-        s.slotTime.atZone(zoneId).toLocalTime == targetTime
-      )
-
-      slotOpt match {
-        case Some(slt) =>
-          val cell = td("Book", clickable = true)
-          cell.addEventListener("click", (_: dom.MouseEvent) =>
-            dom.window.alert(
-              s"Booking confirmed for $day at $tStr\nClinic: ${slt.clinicInfo}"
-            )
-            
-            // Add booking backend logic here
-          )
-          row.appendChild(cell)
-        case None =>
-          row.appendChild(td("-", clickable = false))
+    def td(txt: String, clickable: Boolean): TableCell = {
+      val c = document.createElement("td").asInstanceOf[TableCell]
+      c.textContent = txt
+      c.style.border = "1px solid #ccc"
+      c.style.padding = "6px"
+      if (clickable) {
+        c.style.cursor = "pointer"
+        c.style.backgroundColor = "#e0ffe0"
       }
+      c
     }
 
-    tbl.appendChild(row)
+    val headerRow = document.createElement("tr").asInstanceOf[TableRow]
+    headerRow.appendChild(th(""))
+    for (i <- 0 until 7)
+      headerRow.appendChild(th(weekStart.plusDays(i).getDayOfWeek.toString.take(3)))
+    tbl.appendChild(headerRow)
+
+
+    for (tStr <- timeStrings) {
+      val row = document.createElement("tr").asInstanceOf[TableRow]
+      row.appendChild(th(tStr))
+
+      val targetTime = LocalTime.parse(tStr)
+
+      for (i <- 0 until 7) {
+        val day     = weekStart.plusDays(i)
+        val slotOpt = slotsByDay.getOrElse(day, Nil).find(s =>
+          s.slotTime.atZone(zoneId).toLocalTime == targetTime
+        )
+
+        slotOpt match {
+          case Some(slt) =>
+            val cell = td("Book", clickable = true)
+            cell.addEventListener("click", (_: dom.MouseEvent) => {
+              // Get patientId from localStorage (or elsewhere)
+              val patientIdStr = dom.window.localStorage.getItem("userId")
+              
+              if (patientIdStr == null) {
+                dom.window.alert("You must be logged in to request a booking.")
+                ()
+              } else {
+                val payload = js.Dynamic.literal(
+                  slot_id   = slt.slotId.toString,
+                  patient_id = patientIdStr,
+                  clinic_id = slt.clinicId.toString
+                )
+
+                val requestHeaders = new dom.Headers()
+                requestHeaders.append("Content-Type", "application/json")
+
+                // Also include authorization header if needed
+                val accessToken = dom.window.localStorage.getItem("accessToken")
+                if (accessToken != null) {
+                  requestHeaders.append("Authorization", s"Bearer $accessToken")
+                }
+
+                val requestInit = new dom.RequestInit {
+                  method = dom.HttpMethod.POST
+                  headers = requestHeaders
+                  body = JSON.stringify(payload)
+                }
+
+                dom.fetch("/api/bookings/request", requestInit).toFuture.flatMap { response =>
+                  if (response.ok) {
+                    response.json().toFuture.map { json =>
+                      dom.window.alert("Booking requested successfully!")
+                    }
+                  } else {
+                    response.text().toFuture.map { text =>
+                      dom.window.alert(s"Failed to request booking: ${response.status} - $text")
+                    }
+                  }
+                }.recover {
+                  case ex =>
+                    dom.window.alert(s"Error requesting booking: ${ex.getMessage}")
+                }
+              }
+            })
+            row.appendChild(cell)
+          case None =>
+            row.appendChild(td("-", clickable = false))
+        }
+      }
+
+      tbl.appendChild(row)
+    }
+
+    tbl
   }
 
-  tbl
-}
+
+    private def navButton(text: String): Button = {
+      val b = document.createElement("button").asInstanceOf[Button]
+      b.textContent = text
+      b.style.padding = "6px 12px"
+      b
+    }
 
 
-  private def navButton(text: String): Button = {
-    val b = document.createElement("button").asInstanceOf[Button]
-    b.textContent = text
-    b.style.padding = "6px 12px"
-    b
-  }
-
-
-  extension (d: DayOfWeek) private def isWeekend: Boolean =
-    d == DayOfWeek.SATURDAY || d == DayOfWeek.SUNDAY
+    extension (d: DayOfWeek) private def isWeekend: Boolean =
+      d == DayOfWeek.SATURDAY || d == DayOfWeek.SUNDAY
 }

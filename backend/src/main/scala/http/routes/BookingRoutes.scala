@@ -51,10 +51,8 @@ class BookingRoutes private extends Http4sDsl[IO] {
           BadRequest(Json.obj("error" -> Json.fromString(s"Invalid JSON: ${err.getMessage}")))
 
         case Right(br) =>
-          IO(println(s"[DEBUG] BookingRequestPayload received: $br")) *>   
           DbBookings.requestBooking(br).flatMap {
             case Right(bookingId) =>
-              println(s"[DEBUG] Booking created with ID: $bookingId")
               DbBookings.linkSlotWithBooking(br.slotId, bookingId).flatMap {
                 case Right(_) =>
                   Created(Json.obj(
