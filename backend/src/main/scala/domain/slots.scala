@@ -83,6 +83,7 @@ object slots {
 
   /** Which fields can a user filter on? */
   final case class SlotFilter(
+      clinicId: Option[UUID],
       isTaken: Option[Boolean],
       clinicInfo: Option[String],
       slotTimeGte: Option[Instant],

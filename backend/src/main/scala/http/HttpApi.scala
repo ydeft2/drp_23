@@ -17,17 +17,16 @@ class HttpApi private {
   private val authRoutes = AuthRoutes().routes
   private val notificationRoutes = NotificationRoutes().routes
   private val slotRoutes = SlotRoutes().routes
-  // private val bookingRoutes = BookingRoutes[F].routes
+  private val bookingRoutes = BookingRoutes().routes
 
 
   val endpoints = Router(
     "/api" -> (
       healthRoutes <+>
       slotRoutes <+>
-      // bookingRoutes <+>
+      bookingRoutes <+>
       authRoutes <+>
       notificationRoutes
-      
     ),
     "/" -> fileService[IO](FileService.Config("public", pathPrefix = ""))
   )

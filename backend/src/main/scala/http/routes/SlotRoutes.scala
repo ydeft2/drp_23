@@ -1,8 +1,7 @@
 package backend.http.routes
 
 
-import backend.database.DbSlots
-import backend.database.DbSlots.DbError
+import backend.database.{DbError, DbSlots}
 import io.circe.generic.auto.*
 import org.http4s.circe.CirceEntityCodec.*
 import org.http4s.circe.CirceEntityEncoder.*
@@ -22,6 +21,7 @@ import cats.syntax.*
 import backend.domain.slots.*
 
 import java.time.Instant
+import java.util.UUID
 
 
 /*
@@ -44,6 +44,10 @@ class SlotRoutes private extends Http4sDsl[IO] {
   given instantQueryParmDecoder: QueryParamDecoder[Instant] =
     QueryParamDecoder[String].map(Instant.parse)
 
+  given uuidQueryParamDecoder: QueryParamDecoder[UUID] =
+    QueryParamDecoder[String].map(UUID.fromString)
+
+  object ClinicIdQP extends OptionalQueryParamDecoderMatcher[UUID]("clinic_id")
   object IsTakenQP     extends OptionalQueryParamDecoderMatcher[Boolean]("is_taken")
   object ClinicInfoQP  extends OptionalQueryParamDecoderMatcher[String]("clinic_info")
   object SlotTimeGteQP extends OptionalQueryParamDecoderMatcher[Instant]("slot_time_gte")
@@ -71,6 +75,7 @@ class SlotRoutes private extends Http4sDsl[IO] {
   /** 1) PATIENT VIEW: GET /slots/list?is_taken=...&clinic_info=...&slot_time_gte=...&limit=...&offset=... */ 
   private val listFilteredSlotsRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root / "list" :?
+      ClinicIdQP(mClinicId) +&
       IsTakenQP(mIsTaken) +&
       ClinicInfoQP(mClinicInfo) +& 
       SlotTimeGteQP(mGte) +&
@@ -79,6 +84,7 @@ class SlotRoutes private extends Http4sDsl[IO] {
       OffsetQP(mOffset) =>
       
         val filter = SlotFilter(
+          clinicId = mClinicId,
           isTaken = mIsTaken,
           clinicInfo = mClinicInfo,
           slotTimeGte = mGte,
