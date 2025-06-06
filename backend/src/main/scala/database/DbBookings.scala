@@ -86,7 +86,7 @@ object DbBookings {
   ): IO[Either[DbError, List[BookingResponse]]] = {
 
     val baseSelect =
-      "patient_id,clinic_id,confirmed,slot:slots(slot_time,slot_length,clinic_info)"
+      "patient_id,clinic_id,confirmed,slot:slot_id(slot_time,slot_length,clinic_info)"
 
     val filterClauses = List(
       filter.isConfirmed.map(c => s"confirmed=eq.$c"),
