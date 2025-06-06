@@ -32,6 +32,7 @@ object bookings {
   )
 
   final case class BookingDto(
+    booking_id: UUID, 
     patient_id: UUID,
     clinic_id: UUID,
     confirmed: Boolean,
@@ -42,8 +43,8 @@ object bookings {
     "slot_time", "slot_length", "clinic_info"
   )(SlotInfo.apply)
 
-  given Decoder[BookingDto] = Decoder.forProduct4(
-    "patient_id", "clinic_id", "confirmed", "slot"
+  given Decoder[BookingDto] = Decoder.forProduct5(
+    "booking_id", "patient_id", "clinic_id", "confirmed", "slot"
   )(BookingDto.apply)
 
 
@@ -93,6 +94,10 @@ object bookings {
         "clinic_id" -> b.clinicId.asJson
       )
     }
+
+    given decoder: Decoder[BookingRequestPayload] = Decoder.forProduct3(
+      "slot_id", "patient_id", "clinic_id"
+    )(BookingRequestPayload.apply)
   }
 
   final case class ConfirmBookingPayload(appointmentType: AppointmentType)
@@ -104,6 +109,11 @@ object bookings {
         "confirmed"        -> io.circe.Json.True
       )
     }
+
+    given decoder: Decoder[ConfirmBookingPayload] = Decoder.instance { c =>
+      c.downField("appointment_type").as[AppointmentType].map(ConfirmBookingPayload.apply)
+    }
+    
   }
 
   final case class BookingFilter(

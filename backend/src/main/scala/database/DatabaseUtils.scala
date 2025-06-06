@@ -51,7 +51,7 @@ private def fetchAndDecode[A: Decoder](
     .use { client =>
       client.fetch(req) { resp =>
         resp.status match {
-          case Status.Ok =>
+          case Status.Ok | Status.Created =>
             resp.as[A].attempt.flatMap {
               case Right(a) => IO.pure(Right(a))
               case Left(decErr) => IO.pure(Left(DbError.DecodeError(decErr.getMessage)))
