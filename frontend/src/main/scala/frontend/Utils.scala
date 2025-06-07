@@ -3,6 +3,7 @@ package frontend
 import org.scalajs.dom
 import org.scalajs.dom.document
 import org.scalajs.dom.html._
+import org.scalajs.dom.html
 import scala.scalajs.js
 import scala.scalajs.js.Dynamic.literal
 import scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -576,3 +577,11 @@ def hideModal(): Unit = {
   if (overlay != null) overlay.classList.add("hidden")
 }
 
+def happyLogo(): html.Element = {
+  val img = document.createElement("img").asInstanceOf[html.Image]
+  img.src = "images/DentanaLogoHappy.png"
+  img.alt = "Dentana Happy Tooth"
+  img.width = 50
+  img.style.margin = "20px"
+  img
+}

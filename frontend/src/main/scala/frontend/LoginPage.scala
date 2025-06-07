@@ -22,8 +22,23 @@ object LoginPage {
     
     // Create a grey box container for the login form
     val container = document.createElement("div")
-    container.setAttribute("style", "margin: 200px auto 50px auto; width: 300px; padding: 20px; background-color: lightgrey; border-radius: 5px;")
+    container.setAttribute("style", "position: relative; margin: 200px auto 50px auto; width: 300px; padding: 120px 20px 20px 20px; background-color: lightgrey; border-radius: 5px;border: 2px solidrgb(128, 127, 127);")
+
     document.body.appendChild(container)
+    val welcomeText = dom.document.createElement("div").asInstanceOf[Div]
+    welcomeText.innerHTML = "Login"
+    welcomeText.setAttribute(
+      "style",
+      "font-weight: bold; font-size: 32px; text-align: left; position: absolute; top: 20px; left: 20px;"
+    )
+    container.appendChild(welcomeText)
+    val logoContainer = document.createElement("div")
+    logoContainer.setAttribute(
+      "style",
+      "position: absolute; top: 10px; right: 10px;"
+    )
+    logoContainer.appendChild(happyLogo())
+    container.appendChild(logoContainer)
     // Create an email input field
     val emailInput = createFormField(container, "Email")
     
