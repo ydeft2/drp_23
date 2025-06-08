@@ -283,13 +283,7 @@ object Inbox {
         dom.window.alert(s"Error deleting notification: ${e.getMessage}")
       }
   }
-
-  def render(): Unit = {
-    clearPage()
-
-    document.body.appendChild(createSubpageHeader("Dentana Notifications"))
-
-    // Notifications box
+  def renderNotificationsBox(): Div = {
     val notificationsBox = document.createElement("div").asInstanceOf[Div]
     notificationsBox.style.marginTop = "70px"
     notificationsBox.style.marginLeft = "auto"
@@ -302,14 +296,22 @@ object Inbox {
     notificationsBox.style.padding = "20px"
     notificationsBox.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)"
     notificationsBox.style.backgroundColor = "#f9f9f9"
-    
-    document.body.appendChild(notificationsBox)
-    
+    notificationsBox
+  }
+  def render(): Unit = {
     Spinner.show()
     
     fetchNotifications { () =>
-      Spinner.hide()
-      renderNotifications(notificationsBox, notifications)
+      Layout.renderPage(
+        leftButton = Some(createHomeButton()),
+        contentRender = () => 
+        {
+          Spinner.hide()
+          val notificationsBox = renderNotificationsBox()
+          document.body.appendChild(notificationsBox)
+          renderNotifications(notificationsBox, notifications)
+        }
+      )
     }
   }
 }
