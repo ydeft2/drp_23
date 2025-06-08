@@ -89,93 +89,95 @@ object BookingPage {
   }
 
   def render(): Unit = {
-    document.body.innerHTML = ""
+    Layout.renderPage(
+      leftButton = Some(createHomeButton()),
+      contentRender = () => 
+        {
+          val main = document.createElement("div").asInstanceOf[Div]
+          main.style.marginTop   = "80px"
+          main.style.width       = "90%"
+          main.style.marginLeft  = "auto"
+          main.style.marginRight = "auto"
+          main.style.maxWidth    = "1200px"
+          main.style.padding     = "20px"
+          main.style.backgroundColor = "#f9f9f9"
+          main.style.borderRadius = "8px"
+          main.style.boxShadow    = "0 2px 8px rgba(0, 0, 0, 0.1)"
 
-    document.body.appendChild(createSubpageHeader("Available Bookings"))
+        
+          val today = LocalDate.now(java.time.Clock.systemUTC())
+          val daysFromSunday  = today.getDayOfWeek.getValue % 7 // Sunday -> 0, Monday -> 1 …
+          val startToday      = today.minusDays(daysFromSunday.toLong)
+          var currentWeekStart = startToday
+          val lastWeekStart    = startToday.plusWeeks(52)   // 12‑month horizon
 
-    val main = document.createElement("div").asInstanceOf[Div]
-    main.style.marginTop   = "80px"
-    main.style.width       = "90%"
-    main.style.marginLeft  = "auto"
-    main.style.marginRight = "auto"
-    main.style.maxWidth    = "1200px"
-    main.style.padding     = "20px"
-    main.style.backgroundColor = "#f9f9f9"
-    main.style.borderRadius = "8px"
-    main.style.boxShadow    = "0 2px 8px rgba(0, 0, 0, 0.1)"
+          
+          val navBar = document.createElement("div").asInstanceOf[Div]
+          navBar.style.display = "flex"
+          navBar.style.setProperty("justify-content", "center")
+          navBar.style.setProperty("align-items", "center")
+          navBar.style.marginBottom = "15px"
+          navBar.style.padding = "10px"
+          navBar.style.backgroundColor = "#e0e0e0"
+          navBar.style.borderRadius = "5px"
+          navBar.style.boxShadow = "0 1px 3px rgba(23, 21, 21, 0.1)"
 
-  
-    val today = LocalDate.now(java.time.Clock.systemUTC())
-    val daysFromSunday  = today.getDayOfWeek.getValue % 7 // Sunday -> 0, Monday -> 1 …
-    val startToday      = today.minusDays(daysFromSunday.toLong)
-    var currentWeekStart = startToday
-    val lastWeekStart    = startToday.plusWeeks(52)   // 12‑month horizon
+          val prevBtn = navButton("< Prev Week")
+          val nextBtn = navButton("Next Week >")
+          val weekLab = document.createElement("span").asInstanceOf[Span]
+          weekLab.style.margin = "0 12px"
 
-    
-    val navBar = document.createElement("div").asInstanceOf[Div]
-    navBar.style.display = "flex"
-    navBar.style.setProperty("justify-content", "center")
-    navBar.style.setProperty("align-items", "center")
-    navBar.style.marginBottom = "15px"
-    navBar.style.padding = "10px"
-    navBar.style.backgroundColor = "#e0e0e0"
-    navBar.style.borderRadius = "5px"
-    navBar.style.boxShadow = "0 1px 3px rgba(23, 21, 21, 0.1)"
+          navBar.appendChild(prevBtn)
+          navBar.appendChild(weekLab)
+          navBar.appendChild(nextBtn)
+          main.appendChild(navBar)
+          
 
-    val prevBtn = navButton("< Prev Week")
-    val nextBtn = navButton("Next Week >")
-    val weekLab = document.createElement("span").asInstanceOf[Span]
-    weekLab.style.margin = "0 12px"
+          val tableHolder = document.createElement("div").asInstanceOf[Div]
+          main.appendChild(tableHolder)
 
-    navBar.appendChild(prevBtn)
-    navBar.appendChild(weekLab)
-    navBar.appendChild(nextBtn)
-    main.appendChild(navBar)
-    
+          def updateLabel(): Unit = {
+            weekLab.textContent = s"${currentWeekStart} – ${currentWeekStart.plusDays(6)}"
+          }
 
-    val tableHolder = document.createElement("div").asInstanceOf[Div]
-    main.appendChild(tableHolder)
+          def updateButtons(): Unit = {
+            prevBtn.disabled = currentWeekStart == startToday
+            nextBtn.disabled = currentWeekStart == lastWeekStart
+          }
 
-    def updateLabel(): Unit = {
-      weekLab.textContent = s"${currentWeekStart} – ${currentWeekStart.plusDays(6)}"
-    }
+          def drawWeek(): Unit = {
+            tableHolder.innerHTML = "Loading..."// todo cute
 
-    def updateButtons(): Unit = {
-      prevBtn.disabled = currentWeekStart == startToday
-      nextBtn.disabled = currentWeekStart == lastWeekStart
-    }
+            dummySlots(currentWeekStart).foreach { slots =>
+              val slotsByDay: Map[LocalDate, Seq[Slot]] =
+                slots.groupBy(s => s.slotTime.atZone(zoneId).toLocalDate)
 
-    def drawWeek(): Unit = {
-      tableHolder.innerHTML = "Loading..."
-
-      dummySlots(currentWeekStart).foreach { slots =>
-        val slotsByDay: Map[LocalDate, Seq[Slot]] =
-          slots.groupBy(s => s.slotTime.atZone(zoneId).toLocalDate)
-
-        tableHolder.innerHTML = ""
-        tableHolder.appendChild(buildTable(currentWeekStart, slotsByDay))
-        updateLabel()
-        updateButtons()
-      }
-    }
+              tableHolder.innerHTML = ""
+              tableHolder.appendChild(buildTable(currentWeekStart, slotsByDay))
+              updateLabel()
+              updateButtons()
+            }
+          }
 
 
-    prevBtn.onclick = (_: dom.MouseEvent) => {
-      if (currentWeekStart.isAfter(startToday)) {
-        currentWeekStart = currentWeekStart.minusWeeks(1)
-        drawWeek()
-      }
-    }
+          prevBtn.onclick = (_: dom.MouseEvent) => {
+            if (currentWeekStart.isAfter(startToday)) {
+              currentWeekStart = currentWeekStart.minusWeeks(1)
+              drawWeek()
+            }
+          }
 
-    nextBtn.onclick = (_: dom.MouseEvent) => {
-      if (currentWeekStart.isBefore(lastWeekStart)) {
-        currentWeekStart = currentWeekStart.plusWeeks(1)
-        drawWeek()
-      }
-    }
+          nextBtn.onclick = (_: dom.MouseEvent) => {
+            if (currentWeekStart.isBefore(lastWeekStart)) {
+              currentWeekStart = currentWeekStart.plusWeeks(1)
+              drawWeek()
+            }
+          }
 
-    document.body.appendChild(main)
-    drawWeek()
+          document.body.appendChild(main)
+          drawWeek()
+        }
+    )
   }
 
 
