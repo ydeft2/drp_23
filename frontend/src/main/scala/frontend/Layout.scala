@@ -59,7 +59,7 @@ object Layout {
         "position: fixed; bottom: 0; left: 0; width: 100%; background-color: #333; color: white; " +
         "text-align: center; padding: 10px 0; font-size: 14px; z-index: 1000;"
       )
-      footer.textContent = "© 2025 Dentana. All rights reserved."
+      footer.textContent = "© 2025 DRP Group 23. All rights reserved."
       document.body.appendChild(footer)
     }
   }
