@@ -117,40 +117,6 @@ def createBlankHeaderWithTitle(): Div = {
 
     header
 }
-def createAdminPageHeader(): Div = {
-    val header = document.createElement("div").asInstanceOf[Div]
-    header.style.backgroundColor = "purple"
-    header.style.color = "white"
-    header.style.padding = "10px"
-    header.style.display = "flex"
-    header.style.setProperty("justify-content", "space-between")
-    header.style.setProperty("align-items", "center")
-    header.style.position = "fixed"
-    header.style.top = "0"
-    header.style.left = "0"
-    header.style.right = "0"
-    header.style.height = "50px"
-    header.style.zIndex = "1"
-
-    val accountBtn = createHeaderButton("Account")
-    accountBtn.addEventListener("click", (_: dom.MouseEvent) => AdminAccount.render())
-
-    // val inboxBtn = createHeaderButton("Inbox")
-    // inboxBtn.addEventListener("click", (_: dom.MouseEvent) => Inbox.render())
-
-    val title = document.createElement("div").asInstanceOf[Div]
-    title.textContent = "Dentana"
-    title.style.fontSize = "20px"
-    title.style.fontWeight = "bold"
-    title.style.margin = "0 auto"
-    title.style.position = "absolute"
-    title.style.left = "50%"
-    title.style.transform = "translateX(-50%)"
-
-    header.appendChild(accountBtn)
-    header.appendChild(title)
-    header
-  }
 
 def createBlankHeader(name: String): Div = {
     val header = document.createElement("div").asInstanceOf[Div]

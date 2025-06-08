@@ -73,18 +73,17 @@ import org.scalajs.dom.html._
 object AdminPage {
 
   def render(): Unit = {
-    document.body.innerHTML = ""
-
-    // Create and append the header
-    document.body.appendChild(createAdminPageHeader())
-
-    // Create and append the Admin Dashboard box
-    val adminBox = createAdminDashboardBox()
-    document.body.appendChild(adminBox)
-
-    // Create and append the Booking Dashboard box
-    val bookingBox = createBookingDashboardBox()
-    document.body.appendChild(bookingBox)
+    
+    val accountBtn = createHeaderButton("Account")
+    accountBtn.addEventListener("click", (_: dom.MouseEvent) => AdminAccount.render())
+    Layout.renderPage(
+      leftButton = Some(accountBtn),
+      contentRender = () => 
+      {
+        document.body.appendChild(createAdminDashboardBox())
+        document.body.appendChild(createBookingDashboardBox())
+      }
+    )
   }
 
 
