@@ -68,64 +68,28 @@ object HomePage {
   }
 
   private def buildBookingEntry(booking: Booking): Div = {
+
     val entry = document.createElement("div").asInstanceOf[Div]
     entry.innerHTML = s"<strong>${booking.name}</strong><br>Time: ${booking.time}<br>Location: ${booking.location}"
     entry.style.cursor = "pointer"
-    entry.addEventListener("click", (_: dom.MouseEvent) => renderBookingDetails(booking))
+    entry.addEventListener("click", (_: dom.MouseEvent) => {
+        showModal(renderBookingDetails(booking))
+        addCancelBookingButton(booking)
+      }
+    )
     val hr = document.createElement("hr")
     entry.appendChild(hr)
     entry
   }
 
-  private def renderBookingDetails(booking: Booking): Unit = {
-    val container = document.createElement("div").asInstanceOf[Div]
-    container.style.marginTop = "70px"
-    container.style.marginLeft = "auto"
-    container.style.marginRight = "auto"
-    container.style.width = "80%"
-    container.style.padding = "20px"
-    container.style.border = "1px solid #ccc"
-    container.style.borderRadius = "8px"
-    container.style.backgroundColor = "#f9f9f9"
-    container.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)"
-
-    val title = document.createElement("h2")
-    title.textContent = booking.name
-    container.appendChild(title)
-
-    val timeP = document.createElement("p")
-    timeP.textContent = s"Time: ${booking.time}"
-    container.appendChild(timeP)
-
-    val locP = document.createElement("p")
-    locP.textContent = s"Location: ${booking.location}"
-    container.appendChild(locP)
-
-    val cancelBtn = document.createElement("button").asInstanceOf[Button]
-    cancelBtn.textContent = "Cancel Booking"
-    cancelBtn.style.backgroundColor = "red"
-    cancelBtn.style.color = "white"
-    cancelBtn.style.border = "none"
-    cancelBtn.style.padding = "10px 20px"
-    cancelBtn.style.cursor = "pointer"
-    cancelBtn.style.borderRadius = "4px"
-    cancelBtn.addEventListener("click", (_: dom.MouseEvent) => {
-      bookings = bookings.filterNot(_ == booking)
-      render()
-    })
-    container.appendChild(cancelBtn)
-
-    val backBtn = document.createElement("button").asInstanceOf[Button]
-    backBtn.textContent = "Back"
-    backBtn.style.marginLeft = "10px"
-    backBtn.style.padding = "10px 20px"
-    backBtn.style.cursor = "pointer"
-    backBtn.style.border = "1px solid #333"
-    backBtn.style.background = "transparent"
-    backBtn.addEventListener("click", (_: dom.MouseEvent) => render())
-    container.appendChild(backBtn)
-
-    document.body.appendChild(container)
+  def renderBookingDetails(booking: Booking): String = {
+    s"""
+      <h3>${booking.name}</h3>
+      <p><strong>Time:</strong> ${booking.time}</p>
+      <p><strong>Location:</strong> ${booking.location}</p>
+      <p><strong>Details:</strong> This is a detailed description of the booking.</p>
+      <div id="cancel-booking-btn-container"></div>
+    """
   }
 
   private def createBookingButton(): Div = {
@@ -191,5 +155,60 @@ object HomePage {
       .foreach(_ => onDone())
   }
 
+  // Add this after showing the modal, to inject the button and logic
+  def addCancelBookingButton(booking: Booking): Unit = {
+    val container = dom.document.getElementById("cancel-booking-btn-container")
+    if (container != null) {
+      val button = dom.document.createElement("button").asInstanceOf[dom.html.Button]
+      button.textContent = "Cancel Booking"
+      button.style.backgroundColor = "#e74c3c"
+      button.style.color = "white"
+      button.style.padding = "10px 20px"
+      button.style.border = "none"
+      button.style.borderRadius = "5px"
+      button.style.cursor = "pointer"
+
+      var confirmState = false
+
+      button.onclick = (_: dom.MouseEvent) => {
+        if (!confirmState) {
+          button.textContent = "Confirm Cancellation"
+          button.style.backgroundColor = "#c0392b"
+          confirmState = true
+        } else {
+          cancelBooking(booking)
+        }
+      }
+
+      container.appendChild(button)
+    }
+  }
+
+  def cancelBooking(booking: Booking): Unit = {
+    
+    replaceModalContent(
+      """
+      <h3>Cancellation Successful</h3>
+      <p>Your booking has been successfully cancelled.</p>
+      <img src="images/Sad.png" alt="Sad Icon" style="width: 50px; height: 50px;">
+      """
+    )
+
+    // val bookingId = "12345678-1234-1234-1234-123456789012"
+
+    // val req = new dom.Request(
+    //   s"/api/bookings/cancel/$bookingId",
+    //   new dom.RequestInit {
+    //     method = "DELETE"
+    //     headers = new dom.Headers {
+    //       append("Content-Type", "application/json")
+    //       val accessToken = dom.window.localStorage.getItem("accessToken")
+    //       if (accessToken != null) {
+    //         append("Authorization", s"Bearer $accessToken")
+    //       }
+    //     }
+    //   }
+    // )
+  }
 }
 

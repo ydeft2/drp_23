@@ -530,9 +530,13 @@ def createModal(): Unit = {
 
   document.body.appendChild(overlay)
 
-  val modalWindow = document.getElementById("modal-window")
   overlay.addEventListener("click", (e: dom.MouseEvent) => {
-    if (!modalWindow.contains(e.target.asInstanceOf[dom.Node])) {
+    val modalWindow = dom.document.getElementById("modal-window")
+    modalWindow.addEventListener("click", (e: dom.MouseEvent) => {
+      e.stopPropagation()
+    })
+    val target = e.target.asInstanceOf[dom.Node]
+    if (!modalWindow.contains(target)) {
       hideModal()
     }
   })
@@ -544,17 +548,38 @@ def createModal(): Unit = {
   }
 }
 
-def showModal(contentHtml: String): Unit = {
+def showModal(contentHtml: String, forceReplace: Boolean = true): Unit = {
   createModal()
   val overlay = document.getElementById("modal-overlay")
   val content = document.getElementById("modal-content")
-  content.innerHTML = contentHtml
-  overlay.classList.remove("hidden")
+
+  if (content != null && forceReplace) {
+    content.innerHTML = contentHtml
+  }
+
+  if (overlay != null) {
+    overlay.classList.remove("hidden")
+  }
+}
+
+def replaceModalContent(newContentHtml: String): Unit = {
+  println("Replacing modal content...")
+  val content = dom.document.getElementById("modal-content")
+  if (content != null) {
+    content.innerHTML = newContentHtml
+    println("Modal content updated.")
+  } else {
+    println("Modal content container not found!")
+  }
 }
 
 def hideModal(): Unit = {
   val overlay = document.getElementById("modal-overlay")
-  if (overlay != null) overlay.classList.add("hidden")
+  if (overlay != null) {
+    overlay.classList.add("hidden")
+    val content = document.getElementById("modal-content")
+    if (content != null) content.innerHTML = "" // clear contents
+  }
 }
 
 def happyLogo(): html.Element = {
