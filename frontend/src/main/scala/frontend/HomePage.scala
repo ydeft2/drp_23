@@ -23,30 +23,26 @@ object HomePage {
   // def main(args: Array[String]): Unit = render()
 
   def render(): Unit = {
-    document.body.innerHTML = ""
     Spinner.show()
     fetchUnreadCount { () =>
-        document.body.appendChild(buildHeader())
-        document.body.appendChild(buildBookingsBox())
-        document.body.appendChild(createBookingButton())
-        Spinner.hide()
+        val accountBtn = createHeaderButton("Account")
+        accountBtn.addEventListener("click", (_: dom.MouseEvent) => Account.render())
+
+        val inboxLabel = if (unreadNotifications > 0) s"Inbox ($unreadNotifications)" else "Inbox"
+        val inboxBtn = createHeaderButton(inboxLabel)
+        inboxBtn.addEventListener("click", (_: dom.MouseEvent) => Inbox.render())
+
+        Layout.renderPage(
+          leftButton = Some(accountBtn),
+          rightButton = Some(inboxBtn),
+          contentRender = () => 
+          {
+            document.body.appendChild(buildBookingsBox())
+            document.body.appendChild(createBookingButton())
+            Spinner.hide()
+          }
+        )
       }
-  }
-
-  private def buildHeader(): Div = {
-    val header = createBlankHeaderWithTitle()
-
-    val accountBtn = createHeaderButton("Account")
-    accountBtn.addEventListener("click", (_: dom.MouseEvent) => Account.render())
-
-    val inboxLabel = if (unreadNotifications > 0) s"Inbox ($unreadNotifications)" else "Inbox"
-    val inboxBtn = createHeaderButton(inboxLabel)
-    inboxBtn.addEventListener("click", (_: dom.MouseEvent) => Inbox.render())
-
-
-    header.appendChild(accountBtn)
-    header.appendChild(inboxBtn)
-    header
   }
 
   private def buildBookingsBox(): Div = {
@@ -82,9 +78,6 @@ object HomePage {
   }
 
   private def renderBookingDetails(booking: Booking): Unit = {
-    document.body.innerHTML = ""
-    document.body.appendChild(buildHeader())
-
     val container = document.createElement("div").asInstanceOf[Div]
     container.style.marginTop = "70px"
     container.style.marginLeft = "auto"

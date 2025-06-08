@@ -16,6 +16,11 @@ body, input, button, select, textarea {
   font-family: 'Poppins', sans-serif;
 }
 
+button {
+  padding: 0.75rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
 
 body {
   display: grid;
@@ -25,15 +30,22 @@ body {
 }
 
 #header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   background: linear-gradient(135deg, #8e44ad, #7e3aa8);  
   color: white;
   padding: 10px;
-  position: relative;
   font-size: 24px;
   font-weight: bold;
   text-align: center;
   z-index: 1001;
   overflow: hidden;
+  box-sizing: border-box;
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 
 #header::before {
@@ -50,21 +62,6 @@ body {
   );
   pointer-events: none;
   z-index: 1;
-}
-
-
-#header .header-left,
-#header .header-right {
-  position: absolute;
-  top: 10px;
-}
-
-#header .header-left {
-  left: 10px;
-}
-
-#header .header-right {
-  right: 10px;
 }
 
 #header button {
@@ -105,5 +102,13 @@ body {
   width: 340px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.08);
   text-align: center;
+}
+
+#header-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 40px;
 }
 

@@ -401,15 +401,26 @@ object Spinner {
     spinner.style.position = "fixed"
     spinner.style.top = "50%"
     spinner.style.left = "50%"
-    spinner.style.width = "60px"
-    spinner.style.height = "60px"
+    spinner.style.width = "80px"
+    spinner.style.height = "80px"
     spinner.style.marginLeft = "-30px"
     spinner.style.marginTop = "-30px"
     spinner.style.border = "6px solid #f3f3f3"
-    spinner.style.borderTop = "6px solid #3498db"
+    spinner.style.borderTop = "6px solidrgb(128, 0, 128)"
     spinner.style.borderRadius = "50%"
     spinner.style.animation = "spin 1s linear infinite"
     spinner.style.zIndex = "9999"
+
+    val img = dom.document.createElement("img").asInstanceOf[dom.html.Image]
+    img.src = "images/Waiting.png"
+    img.style.position = "absolute"
+    img.style.top = "50%"
+    img.style.left = "50%"
+    img.style.transform = "translate(-50%, -50%)"
+    img.style.width = "60px"
+    img.style.height = "60px"
+
+    spinner.appendChild(img)
 
     // Add @keyframes if not already present
     if (dom.document.getElementById("spinner-style") == null) {

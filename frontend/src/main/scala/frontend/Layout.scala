@@ -12,42 +12,33 @@ object Layout {
     if (existingHeader == null) {
       val header = document.createElement("div").asInstanceOf[html.Div]
       header.id = "header"
-      header.setAttribute(
-        "style",
-        "background-color: purple; color: white; padding: 10px; position: relative; font-size: 24px; font-weight: bold; text-align: center;"
-      )
+      header.setAttribute("style", "display: flex; justify-content: space-between; align-items: center; padding: 10px;")
 
-      // Left container
       val leftContainer = document.createElement("div").asInstanceOf[html.Div]
-      leftContainer.setAttribute(
-        "style",
-        "position: absolute; left: 10px; top: 10px;"
-      )
       leftButton.foreach(leftContainer.appendChild)
 
-      // Right container
-      val rightContainer = document.createElement("div").asInstanceOf[html.Div]
-      rightContainer.setAttribute(
-        "style",
-        "position: absolute; right: 10px; top: 10px;"
-      )
-      rightButton.foreach(rightContainer.appendChild)
-
-      leftContainer.className = "header-left"
-      rightContainer.className = "header-right"
+      val logoContainer = document.createElement("div").asInstanceOf[html.Div]
+      logoContainer.setAttribute("style", "display: flex; align-items: center; flex: 1;")
 
       val logo = document.createElement("img").asInstanceOf[html.Image]
       logo.src = "images/DentanaTitle.png"
       logo.alt = "Dentana Logo"
       logo.setAttribute("style", "height: 40px;")
+      logo.id = "header-logo"
+
+      logoContainer.appendChild(logo)
+
+      val rightContainer = document.createElement("div").asInstanceOf[html.Div]
+      rightButton.foreach(rightContainer.appendChild)
 
       header.appendChild(leftContainer)
-      header.appendChild(logo)  
+      header.appendChild(logoContainer)
       header.appendChild(rightContainer)
 
       document.body.insertBefore(header, document.body.firstChild)
     }
   }
+
 
   def renderFooter(): Unit = {
     val existingFooter = document.getElementById("footer")
