@@ -20,10 +20,16 @@ object AdminAccount {
 
      fetchUserDetails()
     .map { currentUser =>
-      Spinner.hide()
-      val card = buildProfileCard(currentUser, false)
-      document.body.appendChild(card)
-      document.body.appendChild(buildDeleteAccountButton())
+      Layout.renderPage(
+        leftButton = Some(createHomeButton()),
+        contentRender = () => 
+          {
+            Spinner.hide()
+            val card = buildProfileCard(currentUser, false)
+            document.body.appendChild(card)
+            document.body.appendChild(buildDeleteAccountButton())
+          }
+      )
     }
   }
 
