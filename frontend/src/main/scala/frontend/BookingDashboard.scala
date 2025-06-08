@@ -21,95 +21,99 @@ object BookingDashboard {
   var slotsContainer: Div = _
   var clinicMap: Map[String, String] = Map.empty
 
-  def render(): Unit = {
-    clearPage()
-    document.body.appendChild(createSubpageHeader("Booking Dashboard"))
-
-    val container = document.createElement("div").asInstanceOf[Div]
-    container.setAttribute("style",
+  def createRow(labelText: String, inputElement: Element): Div = {
+    val row = document.createElement("div").asInstanceOf[Div]
+    row.setAttribute("style",
       """
-      |display: flex;
-      |flex-direction: column;
-      |align-items: flex-start;
-      |gap: 15px;
-      |margin: 50px auto;
-      |max-width: 500px;
-      |padding: 20px;
-      |border: 1px solid #ccc;
-      |border-radius: 10px;
-      |box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      """.stripMargin)
-
-    def createRow(labelText: String, inputElement: Element): Div = {
-      val row = document.createElement("div").asInstanceOf[Div]
-      row.setAttribute("style",
-        """
-          |display: flex;
-          |align-items: center;
-          |gap: 10px;
-          """.stripMargin)
-      val label = document.createElement("label")
-      label.textContent = labelText
-      row.appendChild(label)
-      row.appendChild(inputElement)
-      row
-    }
-
-    dateInput = document.createElement("input").asInstanceOf[Input]
-    dateInput.setAttribute("type", "date")
-    dateInput.setAttribute("required", "true")
-    container.appendChild(createRow("Select date:", dateInput))
-
-    timeInput = document.createElement("input").asInstanceOf[Input]
-    timeInput.setAttribute("type", "time")
-    timeInput.setAttribute("required", "true")
-    container.appendChild(createRow("Select time:", timeInput))
-
-    clinicSelect = document.createElement("select").asInstanceOf[Select]
-    container.appendChild(createRow("Clinic:", clinicSelect))
-
-    lengthInput = document.createElement("input").asInstanceOf[Input]
-    lengthInput.setAttribute("type", "number")
-    lengthInput.setAttribute("min", "5")
-    lengthInput.setAttribute("value", "30")
-    container.appendChild(createRow("Length (minutes):", lengthInput))
-
-    val bookButton = document.createElement("button").asInstanceOf[Button]
-    bookButton.textContent = "Create Slot"
-    bookButton.setAttribute("style",
-      """
-      |padding: 8px 16px;
-      |border: none;
-      |background-color: #800080;
-      |color: white;
-      |border-radius: 6px;
-      |cursor: pointer;
-      """.stripMargin)
-    bookButton.addEventListener("click", { (_: dom.MouseEvent) =>
-      createSlot(
-        dateInput.value,
-        timeInput.value,
-        clinicSelect.value,
-        lengthInput.value.toLong
-      )
-    })
-    container.appendChild(bookButton)
-
-    document.body.appendChild(container)
-
-    slotsContainer = document.createElement("div").asInstanceOf[Div]
-    slotsContainer.setAttribute("style",
-      """
-        |margin-top: 30px;
-        |max-width: 500px;
-        |border-top: 1px solid #ccc;
-        |padding-top: 20px;
+        |display: flex;
+        |align-items: center;
+        |gap: 10px;
         """.stripMargin)
-    document.body.appendChild(slotsContainer)
+    val label = document.createElement("label")
+    label.textContent = labelText
+    row.appendChild(label)
+    row.appendChild(inputElement)
+    row
+  }
 
-    fetchClinics(clinicSelect).foreach { _ =>
-      fetchAndDisplaySlots()
-    }
+  def render(): Unit = {
+    Layout.renderPage(
+      leftButton = Some(createHomeButton()),
+      contentRender = () => 
+        {
+          val container = document.createElement("div").asInstanceOf[Div]
+          container.setAttribute("style",
+            """
+            |display: flex;
+            |flex-direction: column;
+            |align-items: flex-start;
+            |gap: 15px;
+            |margin: 50px auto;
+            |max-width: 500px;
+            |padding: 20px;
+            |border: 1px solid #ccc;
+            |border-radius: 10px;
+            |box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            """.stripMargin)
+
+          dateInput = document.createElement("input").asInstanceOf[Input]
+          dateInput.setAttribute("type", "date")
+          dateInput.setAttribute("required", "true")
+          container.appendChild(createRow("Select date:", dateInput))
+
+          timeInput = document.createElement("input").asInstanceOf[Input]
+          timeInput.setAttribute("type", "time")
+          timeInput.setAttribute("required", "true")
+          container.appendChild(createRow("Select time:", timeInput))
+
+          clinicSelect = document.createElement("select").asInstanceOf[Select]
+          container.appendChild(createRow("Clinic:", clinicSelect))
+
+          lengthInput = document.createElement("input").asInstanceOf[Input]
+          lengthInput.setAttribute("type", "number")
+          lengthInput.setAttribute("min", "5")
+          lengthInput.setAttribute("value", "30")
+          container.appendChild(createRow("Length (minutes):", lengthInput))
+
+          val bookButton = document.createElement("button").asInstanceOf[Button]
+          bookButton.textContent = "Create Slot"
+          bookButton.setAttribute("style",
+            """
+            |padding: 8px 16px;
+            |border: none;
+            |background-color: #800080;
+            |color: white;
+            |border-radius: 6px;
+            |cursor: pointer;
+            """.stripMargin)
+          bookButton.addEventListener("click", { (_: dom.MouseEvent) =>
+            createSlot(
+              dateInput.value,
+              timeInput.value,
+              clinicSelect.value,
+              lengthInput.value.toLong
+            )
+          })
+          container.appendChild(bookButton)
+
+          document.body.appendChild(container)
+
+          slotsContainer = document.createElement("div").asInstanceOf[Div]
+          slotsContainer.setAttribute("style",
+            """
+              |margin-top: 30px;
+              |max-width: 500px;
+              |border-top: 1px solid #ccc;
+              |padding-top: 20px;
+              """.stripMargin)
+          document.body.appendChild(slotsContainer)
+
+          fetchClinics(clinicSelect).foreach { _ =>
+            fetchAndDisplaySlots()
+          }
+  
+        }
+    )
   }
 
   def fetchClinics(clinicSelect: Select): scala.concurrent.Future[Unit] = {
