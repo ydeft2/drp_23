@@ -44,6 +44,20 @@ def createHeaderButton(name : String) : Button = {
     button
 }
 
+def createHomeButton(): Button = {
+  val homeBtn = createHeaderButton("Home")
+  homeBtn.onclick = (_: dom.MouseEvent) => {
+    isPatient().foreach { patient =>
+      if (patient) {
+        HomePage.render()
+      } else {
+        AdminPage.render()
+      }
+    }
+  }
+  homeBtn
+}
+
 def createSubpageHeader(name: String): Div = {
     val header = document.createElement("div").asInstanceOf[Div]
     header.style.backgroundColor = "purple"
@@ -58,18 +72,7 @@ def createSubpageHeader(name: String): Div = {
     header.style.right = "0"
     header.style.height = "50px"
     header.style.zIndex = "1"
-
-    // Home button
-    val homeBtn = createHeaderButton("Home")
-    homeBtn.onclick = (_: dom.MouseEvent) => {
-      isPatient().foreach { patient =>
-        if (patient) {
-          HomePage.render()
-        } else {
-          AdminPage.render()
-        }
-      }
-    }   
+  
 
     val title = document.createElement("div")
     title.textContent = name
@@ -80,7 +83,7 @@ def createSubpageHeader(name: String): Div = {
     title.asInstanceOf[Div].style.left = "50%"
     title.asInstanceOf[Div].style.transform = "translateX(-50%)"
 
-    header.appendChild(homeBtn)
+    header.appendChild(createHomeButton())
     header.appendChild(title)
 
     header

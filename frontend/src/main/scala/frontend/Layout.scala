@@ -9,35 +9,43 @@ object Layout {
       rightButton: Option[Element] = None
   ): Unit = {
     val existingHeader = document.getElementById("header")
-    if (existingHeader == null) {
-      val header = document.createElement("div").asInstanceOf[html.Div]
-      header.id = "header"
-      header.setAttribute("style", "display: flex; justify-content: space-between; align-items: center; padding: 10px;")
 
-      val leftContainer = document.createElement("div").asInstanceOf[html.Div]
-      leftButton.foreach(leftContainer.appendChild)
-
-      val logoContainer = document.createElement("div").asInstanceOf[html.Div]
-      logoContainer.setAttribute("style", "display: flex; align-items: center; flex: 1;")
-
-      val logo = document.createElement("img").asInstanceOf[html.Image]
-      logo.src = "images/DentanaTitle.png"
-      logo.alt = "Dentana Logo"
-      logo.setAttribute("style", "height: 40px;")
-      logo.id = "header-logo"
-
-      logoContainer.appendChild(logo)
-
-      val rightContainer = document.createElement("div").asInstanceOf[html.Div]
-      rightButton.foreach(rightContainer.appendChild)
-
-      header.appendChild(leftContainer)
-      header.appendChild(logoContainer)
-      header.appendChild(rightContainer)
-
-      document.body.insertBefore(header, document.body.firstChild)
+    val header = if (existingHeader == null) {
+      val newHeader = document.createElement("div").asInstanceOf[html.Div]
+      newHeader.id = "header"
+      newHeader.setAttribute(
+        "style",
+        "display: flex; justify-content: space-between; align-items: center; padding: 10px;"
+      )
+      document.body.insertBefore(newHeader, document.body.firstChild)
+      newHeader
+    } else {
+      existingHeader.asInstanceOf[html.Div]
     }
+
+    header.innerHTML = ""
+
+    val leftContainer = document.createElement("div").asInstanceOf[html.Div]
+    leftButton.foreach(leftContainer.appendChild)
+
+    val logoContainer = document.createElement("div").asInstanceOf[html.Div]
+    logoContainer.setAttribute("style", "display: flex; align-items: center; flex: 1; justify-content: center;")
+
+    val logo = document.createElement("img").asInstanceOf[html.Image]
+    logo.src = "images/DentanaTitle.png"
+    logo.alt = "Dentana Logo"
+    logo.setAttribute("style", "height: 40px;")
+    logo.id = "header-logo"
+    logoContainer.appendChild(logo)
+
+    val rightContainer = document.createElement("div").asInstanceOf[html.Div]
+    rightButton.foreach(rightContainer.appendChild)
+
+    header.appendChild(leftContainer)
+    header.appendChild(logoContainer)
+    header.appendChild(rightContainer)
   }
+
 
 
   def renderFooter(): Unit = {

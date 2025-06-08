@@ -12,18 +12,21 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 object Account {
   def render(): Unit = {
-  clearPage()
-
-  document.body.appendChild(createSubpageHeader("Dentana Account"))
 
   Spinner.show()
 
   fetchUserDetails()
     .map { currentUser =>
-      Spinner.hide()
-      val card = buildProfileCard(currentUser, true)
-      document.body.appendChild(card)
-      document.body.appendChild(buildDeleteAccountButton())
+      Layout.renderPage(
+        leftButton = Some(createHomeButton()), 
+        contentRender = () => 
+          {
+            val card = buildProfileCard(currentUser, true)
+            document.body.appendChild(card)
+            document.body.appendChild(buildDeleteAccountButton())
+            Spinner.hide()
+          }
+      )
     }
   }
 }
