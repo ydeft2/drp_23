@@ -47,7 +47,7 @@ object LoginPage {
     welcomeText.innerHTML = "Login"
     welcomeText.setAttribute(
       "style",
-      "font-weight: bold; font-size: 32px"
+      "font-weight: 500; font-size: 32px"
     )
     container.appendChild(welcomeText)
     val logoContainer = document.createElement("div")

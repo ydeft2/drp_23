@@ -1,6 +1,7 @@
 package frontend
 
 import org.scalajs.dom.{document, html, Element}
+import org.scalajs.dom
 
 object Layout {
 
@@ -35,7 +36,11 @@ object Layout {
     logo.src = "images/DentanaTitle.png"
     logo.alt = "Dentana Logo"
     logo.setAttribute("style", "height: 40px;")
+    logo.style.cursor = "pointer"
     logo.id = "header-logo"
+    logo.addEventListener("click", (_: dom.MouseEvent) => {
+      dom.window.location.reload()
+    })
     logoContainer.appendChild(logo)
 
     val rightContainer = document.createElement("div").asInstanceOf[html.Div]
