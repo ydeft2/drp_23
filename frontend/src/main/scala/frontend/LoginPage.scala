@@ -69,6 +69,13 @@ object LoginPage {
 
     
     // Add click event listener to the Login button
+    def handleEnterKey(e: dom.KeyboardEvent): Unit = {
+      if (e.key == "Enter") {
+      loginButton.click()
+      }
+    }
+    emailInput.addEventListener("keydown", handleEnterKey _)
+    passwordInput.addEventListener("keydown", handleEnterKey _)
     loginButton.addEventListener("click", { (_: dom.Event) =>
       
       val data = literal(
