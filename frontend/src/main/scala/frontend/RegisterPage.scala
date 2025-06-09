@@ -2,6 +2,7 @@ package frontend
 
 import org.scalajs.dom
 import org.scalajs.dom.document
+import org.scalajs.dom.html
 import org.scalajs.dom.html._
 import org.scalajs.dom.experimental._
 import scala.scalajs.js
@@ -17,18 +18,42 @@ object RegisterPage {
   def render(): Unit = {
 
     document.body.innerHTML = ""
-    val header = createBlankHeaderWithTitle()
 
-    val returnBtn = createHeaderButton("Login")
-    returnBtn.addEventListener("click", (_: dom.MouseEvent) => LoginPage.render())
-    
-    header.appendChild(returnBtn)
-    document.body.appendChild(header)
+    val mainContainer = document.createElement("div")
+    mainContainer.setAttribute("style", "display: flex; flex-direction: column; align-items: center; gap: 10px;")
+    document.body.appendChild(mainContainer)
+    document.body.appendChild(fancyBackButton())
+
+    val logo = document.createElement("img").asInstanceOf[html.Image]
+    logo.src = "images/DentanaTitleBlack.png"
+    logo.alt = "Dentana Logo"
+    logo.setAttribute("style", "height: 40px;")
+
+    val logoWrapper = document.createElement("div")
+    logoWrapper.setAttribute(
+      "style",
+      """
+        |width: 100%;
+        |text-align: center;
+        |margin-top: 20px;
+        |margin-bottom: 20px;
+      """.stripMargin.replaceAll("\n", "")
+    )
+    logoWrapper.appendChild(logo)
+    mainContainer.appendChild(logoWrapper)
   
     // Create a grey box container for the registration form
     val container = document.createElement("div")
-    container.setAttribute("style", "margin: 100px auto 50px auto; width: 300px; padding: 20px; background-color: lightgrey; border-radius: 5px;")
-    document.body.appendChild(container)
+    container.setAttribute("class", "login-card")
+    mainContainer.appendChild(container)
+
+    val welcomeText = dom.document.createElement("div").asInstanceOf[Div]
+    welcomeText.innerHTML = "Register"
+    welcomeText.setAttribute(
+      "style",
+      "font-weight: bold; font-size: 32px; margin-bottom: 20px"
+    )
+    container.appendChild(welcomeText)
 
     val firstNameInput = createFormField(container, "First Name")
     val lastNameInput = createFormField(container, "Last Name")
@@ -38,9 +63,6 @@ object RegisterPage {
     val emailInput = createFormField(container, "Email")
     val passwordInput = createPasswordInput(container, "Password")
     val confirmPasswordInput = createPasswordInput(container, "Confirm Password")
-
-    // Append inputs to the container
-
 
     val registerButton = createFormButton(container, "Register")
 
@@ -85,5 +107,52 @@ object RegisterPage {
         }
       } 
     })
+  }
+
+  def fancyBackButton(): dom.Element = {
+    val backButtonWrapper = document.createElement("div")
+    backButtonWrapper.setAttribute(
+      "style",
+      """
+        |position: absolute;
+        |top: 20px;
+        |left: 20px;
+        |z-index: 10;
+      """.stripMargin.replaceAll("\n", "")
+    )
+
+    val backButton = document.createElement("button").asInstanceOf[html.Button]
+    backButton.textContent = "Back to Login"
+    backButton.setAttribute(
+      "style",
+      """
+        |background-color: white;
+        |color: #7a5fa4;
+        |border: 1px solid #ccc;
+        |border-radius: 10px;
+        |padding: 10px 20px;
+        |font-size: 16px;
+        |font-weight: 600;
+        |cursor: pointer;
+        |font-family: 'Poppins', sans-serif;
+        |box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        |transition: background-color 0.2s ease;
+      """.stripMargin.replaceAll("\n", "")
+    )
+
+    backButton.addEventListener("mouseover", (_: dom.Event) => {
+      backButton.style.backgroundColor = "#f0f0f0"
+    })
+    backButton.addEventListener("mouseout", (_: dom.Event) => {
+      backButton.style.backgroundColor = "white"
+    })
+
+    backButton.addEventListener("click", (_: dom.Event) => {
+      document.body.innerHTML = "" // Clear the body content
+      LoginPage.render()
+    })
+
+    backButtonWrapper.appendChild(backButton)
+    backButtonWrapper
   }
 }

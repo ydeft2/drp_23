@@ -16,36 +16,24 @@ body, input, button, select, textarea {
   font-family: 'Poppins', sans-serif;
 }
 
-button {
-  padding: 0.75rem;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
 
 body {
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #883bcfc0 0%, #56a0eb 100%);
+  background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
   font-family: 'Poppins', sans-serif;
 }
 
 #header {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   background: linear-gradient(135deg, #8e44ad, #7e3aa8);  
   color: white;
   padding: 10px;
+  position: relative;
   font-size: 24px;
   font-weight: bold;
   text-align: center;
   z-index: 1001;
   overflow: hidden;
-  box-sizing: border-box;
-  position: fixed;
-  top: 0;
-  left: 0;
 }
 
 #header::before {
@@ -62,6 +50,21 @@ body {
   );
   pointer-events: none;
   z-index: 1;
+}
+
+
+#header .header-left,
+#header .header-right {
+  position: absolute;
+  top: 10px;
+}
+
+#header .header-left {
+  left: 10px;
+}
+
+#header .header-right {
+  right: 10px;
 }
 
 #header button {
@@ -95,23 +98,12 @@ body {
 }
 
 .login-card {
-  background: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.7)),
-    rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(12px);
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(8px);
   border-radius: 16px;
   padding: 2rem;
   width: 340px;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
   text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-}
-
-#header-logo {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  height: 40px;
 }
 

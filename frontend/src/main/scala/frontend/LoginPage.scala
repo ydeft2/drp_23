@@ -3,6 +3,7 @@ package frontend
 import org.scalajs.dom
 import org.scalajs.dom.document
 import org.scalajs.dom.html._
+import org.scalajs.dom.html
 import org.scalajs.dom.experimental._
 import scala.scalajs.js
 import scala.scalajs.js.JSON
@@ -14,16 +15,45 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 object LoginPage {
   def render(): Unit = {
-    // Clear the document body
-    document.body.innerHTML = ""
-    
-    // Create purple banner with the title "Dentana"
-    document.body.appendChild(createBlankHeaderWithTitle())
-    
+
+    val mainContainer = document.createElement("div")
+    mainContainer.setAttribute("style", "display: flex; flex-direction: column; align-items: center; gap: 10px;")
+
+
+    val logo = document.createElement("img").asInstanceOf[html.Image]
+    logo.src = "images/DentanaTitleBlack.png"
+    logo.alt = "Dentana Logo"
+    logo.setAttribute("style", "height: 40px;")
+
+    val logoWrapper = document.createElement("div")
+    logoWrapper.setAttribute(
+      "style",
+      """
+        |width: 100%;
+        |text-align: center;
+        |margin-top: 20px;
+        |margin-bottom: 70px;
+      """.stripMargin.replaceAll("\n", "")
+    )
+    logoWrapper.appendChild(logo)
+    mainContainer.appendChild(logoWrapper)
+
     // Create a grey box container for the login form
     val container = document.createElement("div")
-    container.setAttribute("style", "margin: 200px auto 50px auto; width: 300px; padding: 20px; background-color: lightgrey; border-radius: 5px;")
+    container.setAttribute("class", "login-card")
+
     document.body.appendChild(container)
+    val welcomeText = dom.document.createElement("div").asInstanceOf[Div]
+    welcomeText.innerHTML = "Login"
+    welcomeText.setAttribute(
+      "style",
+      "font-weight: 500; font-size: 32px"
+    )
+    container.appendChild(welcomeText)
+    val logoContainer = document.createElement("div")
+    
+    logoContainer.appendChild(happyLogo())
+    container.appendChild(logoContainer)
     // Create an email input field
     val emailInput = createFormField(container, "Email")
     
@@ -36,21 +66,16 @@ object LoginPage {
 
     // Create the Login button
     val loginButton = createFormButton(container, "Login")
-    
-
-    // Create the Register button
-    val registerButton = document.createElement("button")
-    registerButton.textContent = "New Here? Register!"
-    registerButton.setAttribute(
-      "style",
-      "display: block; width: 40%; padding: 10px; box-sizing: border-box; " +
-      "background-color: purple; color: white; border: none; border-radius: 4px; " +
-      "font-size: 16px; cursor: pointer; margin: 10px auto 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"
-    )
-    document.body.appendChild(registerButton)
 
     
     // Add click event listener to the Login button
+    def handleEnterKey(e: dom.KeyboardEvent): Unit = {
+      if (e.key == "Enter") {
+      loginButton.click()
+      }
+    }
+    emailInput.addEventListener("keydown", handleEnterKey _)
+    passwordInput.addEventListener("keydown", handleEnterKey _)
     loginButton.addEventListener("click", { (_: dom.Event) =>
       
       val data = literal(
@@ -98,10 +123,24 @@ object LoginPage {
         case e: Throwable => dom.window.alert(s"An error occurred: ${e.getMessage}")
       }
     })
-    
-    // Add click event listener to the Register button
-    registerButton.addEventListener("click", { (_: dom.Event) =>
+
+    val registerText = document.createElement("div")
+    registerText.setAttribute("style", "text-align: center; margin-top: 20px; font-size: 14px; font-family: 'Poppins', sans-serif;")
+
+    registerText.innerHTML =
+      """Don't have an account? <span id="signup-link" style="color: purple; cursor: pointer; text-decoration: underline;">Sign up</span>"""
+
+    container.appendChild(registerText)
+
+    val signUpLink = document.getElementById("signup-link")
+    signUpLink.addEventListener("click", (_: dom.Event) => {
       RegisterPage.render()
     })
+
+    mainContainer.appendChild(container)
+
+    document.body.appendChild(mainContainer)
+
+    Layout.renderFooter()
   }
 }

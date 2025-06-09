@@ -3,6 +3,7 @@ package frontend
 import org.scalajs.dom
 import org.scalajs.dom.document
 import org.scalajs.dom.html._
+import org.scalajs.dom.html
 import scala.scalajs.js
 import scala.scalajs.js.Dynamic.literal
 import scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -43,6 +44,20 @@ def createHeaderButton(name : String) : Button = {
     button
 }
 
+def createHomeButton(): Button = {
+  val homeBtn = createHeaderButton("Home")
+  homeBtn.onclick = (_: dom.MouseEvent) => {
+    isPatient().foreach { patient =>
+      if (patient) {
+        HomePage.render()
+      } else {
+        AdminPage.render()
+      }
+    }
+  }
+  homeBtn
+}
+
 def createSubpageHeader(name: String): Div = {
     val header = document.createElement("div").asInstanceOf[Div]
     header.style.backgroundColor = "purple"
@@ -57,18 +72,7 @@ def createSubpageHeader(name: String): Div = {
     header.style.right = "0"
     header.style.height = "50px"
     header.style.zIndex = "1"
-
-    // Home button
-    val homeBtn = createHeaderButton("Home")
-    homeBtn.onclick = (_: dom.MouseEvent) => {
-      isPatient().foreach { patient =>
-        if (patient) {
-          HomePage.render()
-        } else {
-          AdminPage.render()
-        }
-      }
-    }   
+  
 
     val title = document.createElement("div")
     title.textContent = name
@@ -79,7 +83,7 @@ def createSubpageHeader(name: String): Div = {
     title.asInstanceOf[Div].style.left = "50%"
     title.asInstanceOf[Div].style.transform = "translateX(-50%)"
 
-    header.appendChild(homeBtn)
+    header.appendChild(createHomeButton())
     header.appendChild(title)
 
     header
@@ -113,40 +117,6 @@ def createBlankHeaderWithTitle(): Div = {
 
     header
 }
-def createAdminPageHeader(): Div = {
-    val header = document.createElement("div").asInstanceOf[Div]
-    header.style.backgroundColor = "purple"
-    header.style.color = "white"
-    header.style.padding = "10px"
-    header.style.display = "flex"
-    header.style.setProperty("justify-content", "space-between")
-    header.style.setProperty("align-items", "center")
-    header.style.position = "fixed"
-    header.style.top = "0"
-    header.style.left = "0"
-    header.style.right = "0"
-    header.style.height = "50px"
-    header.style.zIndex = "1"
-
-    val accountBtn = createHeaderButton("Account")
-    accountBtn.addEventListener("click", (_: dom.MouseEvent) => AdminAccount.render())
-
-    // val inboxBtn = createHeaderButton("Inbox")
-    // inboxBtn.addEventListener("click", (_: dom.MouseEvent) => Inbox.render())
-
-    val title = document.createElement("div").asInstanceOf[Div]
-    title.textContent = "Dentana"
-    title.style.fontSize = "20px"
-    title.style.fontWeight = "bold"
-    title.style.margin = "0 auto"
-    title.style.position = "absolute"
-    title.style.left = "50%"
-    title.style.transform = "translateX(-50%)"
-
-    header.appendChild(accountBtn)
-    header.appendChild(title)
-    header
-  }
 
 def createBlankHeader(name: String): Div = {
     val header = document.createElement("div").asInstanceOf[Div]
@@ -400,15 +370,26 @@ object Spinner {
     spinner.style.position = "fixed"
     spinner.style.top = "50%"
     spinner.style.left = "50%"
-    spinner.style.width = "60px"
-    spinner.style.height = "60px"
+    spinner.style.width = "80px"
+    spinner.style.height = "80px"
     spinner.style.marginLeft = "-30px"
     spinner.style.marginTop = "-30px"
     spinner.style.border = "6px solid #f3f3f3"
-    spinner.style.borderTop = "6px solid #3498db"
+    spinner.style.borderTop = "6px solidrgb(128, 0, 128)"
     spinner.style.borderRadius = "50%"
     spinner.style.animation = "spin 1s linear infinite"
     spinner.style.zIndex = "9999"
+
+    val img = dom.document.createElement("img").asInstanceOf[dom.html.Image]
+    img.src = "images/Waiting.png"
+    img.style.position = "absolute"
+    img.style.top = "50%"
+    img.style.left = "50%"
+    img.style.transform = "translate(-50%, -50%)"
+    img.style.width = "60px"
+    img.style.height = "60px"
+
+    spinner.appendChild(img)
 
     // Add @keyframes if not already present
     if (dom.document.getElementById("spinner-style") == null) {
@@ -549,9 +530,13 @@ def createModal(): Unit = {
 
   document.body.appendChild(overlay)
 
-  val modalWindow = document.getElementById("modal-window")
   overlay.addEventListener("click", (e: dom.MouseEvent) => {
-    if (!modalWindow.contains(e.target.asInstanceOf[dom.Node])) {
+    val modalWindow = dom.document.getElementById("modal-window")
+    modalWindow.addEventListener("click", (e: dom.MouseEvent) => {
+      e.stopPropagation()
+    })
+    val target = e.target.asInstanceOf[dom.Node]
+    if (!modalWindow.contains(target)) {
       hideModal()
     }
   })
@@ -563,16 +548,45 @@ def createModal(): Unit = {
   }
 }
 
-def showModal(contentHtml: String): Unit = {
+def showModal(contentHtml: String, forceReplace: Boolean = true): Unit = {
   createModal()
   val overlay = document.getElementById("modal-overlay")
   val content = document.getElementById("modal-content")
-  content.innerHTML = contentHtml
-  overlay.classList.remove("hidden")
+
+  if (content != null && forceReplace) {
+    content.innerHTML = contentHtml
+  }
+
+  if (overlay != null) {
+    overlay.classList.remove("hidden")
+  }
+}
+
+def replaceModalContent(newContentHtml: String): Unit = {
+  println("Replacing modal content...")
+  val content = dom.document.getElementById("modal-content")
+  if (content != null) {
+    content.innerHTML = newContentHtml
+    println("Modal content updated.")
+  } else {
+    println("Modal content container not found!")
+  }
 }
 
 def hideModal(): Unit = {
   val overlay = document.getElementById("modal-overlay")
-  if (overlay != null) overlay.classList.add("hidden")
+  if (overlay != null) {
+    overlay.classList.add("hidden")
+    val content = document.getElementById("modal-content")
+    if (content != null) content.innerHTML = "" // clear contents
+  }
 }
 
+def happyLogo(): html.Element = {
+  val img = document.createElement("img").asInstanceOf[html.Image]
+  img.src = "images/DentanaLogoHappy.png"
+  img.alt = "Dentana Happy Tooth"
+  img.width = 50
+  img.style.margin = "20px"
+  img
+}
