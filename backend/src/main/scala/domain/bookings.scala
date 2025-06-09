@@ -17,6 +17,7 @@ object bookings {
   )
 
   final case class BookingResponse(
+      bookingId: UUID,
       patientId: UUID,
       clinicId: UUID,
       slotTime: Instant,
@@ -24,6 +25,29 @@ object bookings {
       clinicInfo: Option[String],
       isConfirmed: Boolean
   )
+  
+  object BookingResponse {
+    given Decoder[BookingResponse] = Decoder.instance { c =>
+      for {
+        bookingId  <- c.downField("booking_id").as[UUID]
+        patientId  <- c.downField("patient_id").as[UUID]
+        clinicId   <- c.downField("clinic_id").as[UUID]
+        confirmed  <- c.downField("confirmed").as[Boolean]
+        slotField   = c.downField("slot")
+        slotTime   <- slotField.downField("slot_time").as[Instant]
+        slotLength <- slotField.downField("slot_length").as[Long]
+        clinicInfo <- slotField.downField("clinic_info").as[Option[String]]
+      } yield BookingResponse(
+        bookingId,
+        patientId,
+        clinicId,
+        slotTime,
+        slotLength,
+        clinicInfo,
+        confirmed
+      )
+    }
+  }
 
   final case class SlotInfo(
     slot_time: Instant,
@@ -53,15 +77,15 @@ object bookings {
     case CHECKUP, EXTRACTION, FILLING, ROOT_CANAL, HYGIENE, OTHER, NOT_SET
   }
 
-  val toBookingResponse: BookingDto => BookingResponse = dto =>
-    BookingResponse(
-      patientId = dto.patient_id,
-      clinicId = dto.clinic_id,
-      slotTime = dto.slot.slot_time,
-      slotLength = dto.slot.slot_length,
-      clinicInfo = dto.slot.clinic_info,
-      isConfirmed = dto.confirmed
-    )
+//  val toBookingResponse: BookingDto => BookingResponse = dto =>
+//    BookingResponse(
+//      patientId = dto.patient_id,
+//      clinicId = dto.clinic_id,
+//      slotTime = dto.slot.slot_time,
+//      slotLength = dto.slot.slot_length,
+//      clinicInfo = dto.slot.clinic_info,
+//      isConfirmed = dto.confirmed
+//    )
 
 
   object AppointmentType {

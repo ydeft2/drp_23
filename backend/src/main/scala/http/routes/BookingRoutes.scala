@@ -9,12 +9,16 @@ import cats.*
 import cats.data.*
 import cats.implicits.*
 import cats.effect.IO
+import org.http4s.*
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.*
 import backend.database.{DbBookings, DbError}
 import backend.domain.bookings.*
-import cats.implicits._
+import cats.implicits.*
+
+import java.time.Instant
+import java.util.UUID
 
 class BookingRoutes private extends Http4sDsl[IO] {
 
@@ -33,6 +37,73 @@ class BookingRoutes private extends Http4sDsl[IO] {
           BadRequest(Json.obj("error" -> Json.fromString(s"Decode error: $msg")))
         case Left(DbError.SqlError(code, body)) =>
           InternalServerError(Json.obj("error" -> Json.fromString(s"DB error $code: $body")))
+        case Left(DbError.Unknown(msg)) =>
+          InternalServerError(Json.obj("error" -> Json.fromString(msg)))
+      }
+  }
+
+  // TODO: We can move these elsewhere
+  given instantQueryParmDecoder: QueryParamDecoder[Instant] =
+    QueryParamDecoder[String].map(Instant.parse)
+
+  given uuidQueryParamDecoder: QueryParamDecoder[UUID] =
+    QueryParamDecoder[String].map(UUID.fromString)
+
+  object ConfirmedQP    extends OptionalQueryParamDecoderMatcher[Boolean]("confirmed")
+  object ClinicInfoQP   extends OptionalQueryParamDecoderMatcher[String] ("clinic_info")
+  object SlotTimeGteQP  extends OptionalQueryParamDecoderMatcher[Instant]("slot_time_gte")
+  object SlotTimeLteQP  extends OptionalQueryParamDecoderMatcher[Instant]("slot_time_lte")
+  object PatientIdQP    extends OptionalQueryParamDecoderMatcher[UUID]   ("patient_id")
+  object ClinicIdQP     extends OptionalQueryParamDecoderMatcher[UUID]   ("clinic_id")
+  object LimitQP        extends OptionalQueryParamDecoderMatcher[Int]    ("limit")
+  object OffsetQP       extends OptionalQueryParamDecoderMatcher[Int]    ("offset")
+
+  /** 1) GET /bookings/list?...filters...&limit=&offset= */
+  private val listFilteredBookingsRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case GET -> Root / "list" :?
+      ConfirmedQP(mConfirmed)   +&
+      ClinicInfoQP(mClinicInfo) +&
+      SlotTimeGteQP(mGte)       +&
+      SlotTimeLteQP(mLte)       +&
+      PatientIdQP(mPatient)     +&
+      ClinicIdQP(mClinic)       +&
+      LimitQP(mLimit)           +&
+      OffsetQP(mOffset) =>
+
+      val filter = BookingFilter(
+        isConfirmed = mConfirmed,
+        clinicInfo  = mClinicInfo,
+        slotTimeGte = mGte,
+        slotTimeLte = mLte,
+        patientId   = mPatient,
+        clinicId    = mClinic
+      )
+      val pagination = Pagination(mLimit, mOffset)
+
+      DbBookings.getBookings(filter, pagination).flatMap {
+        case Right(bookings) =>
+          // directly a List[BookingResponse]
+          Ok(bookings.asJson)
+
+        case Left(DbError.NotFound(_, _)) =>
+          Ok(Json.arr())
+
+        case Left(DbError.DecodeError(msg)) =>
+          BadRequest(Json.obj("error" -> Json.fromString(s"Decode error: $msg")))
+
+        case Left(DbError.SqlError(code, body)) =>
+          // for 4xx from Supabase (e.g. foreign-key violation), return 400
+          if (400 until 500 contains code)
+            BadRequest(Json.obj(
+              "error"   -> Json.fromString("Booking request rejected by DB"),
+              "details" -> Json.fromString(body)
+            ))
+          else
+            InternalServerError(Json.obj(
+              "error"   -> Json.fromString(s"Database error $code"),
+              "details" -> Json.fromString(body)
+            ))
+
         case Left(DbError.Unknown(msg)) =>
           InternalServerError(Json.obj("error" -> Json.fromString(msg)))
       }
@@ -170,6 +241,7 @@ class BookingRoutes private extends Http4sDsl[IO] {
   
   val routes = Router(
     "/bookings" -> (
+      listFilteredBookingsRoute <+>
       listAllBookingsRoute <+>
       getBookingByIdRoute <+>
       requestBookingRoute <+>

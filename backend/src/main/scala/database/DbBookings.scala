@@ -103,32 +103,33 @@ object DbBookings {
   ): IO[Either[DbError, List[BookingResponse]]] = {
 
     val baseSelect =
-      "patient_id,clinic_id,confirmed,slot:slot_id(slot_time,slot_length,clinic_info)"
+      "booking_id,patient_id,clinic_id,confirmed,slot:slot_id(slot_time,slot_length,clinic_info)"
+    val selectQuery = s"?select=$baseSelect"
 
     val filterClauses = List(
       filter.isConfirmed.map(c => s"confirmed=eq.$c"),
       filter.clinicInfo.map(ci => s"slot->>clinic_info=ilike.%25$ci%25"),
-      filter.slotTimeGte.map(ts => s"slot->>slot_time=gte.$ts"),
-      filter.slotTimeLte.map(ts => s"slot->>slot_time=lte.$ts"),
+      filter.slotTimeGte.map(gt => s"slot->>slot_time=gte.$gt"),
+      filter.slotTimeLte.map(lt => s"slot->>slot_time=lte.$lt"),
       filter.patientId.map(id => s"patient_id=eq.$id"),
       filter.clinicId.map(id => s"clinic_id=eq.$id")
-    ).flatten.map("&" + _).mkString("")
-
-
+    ).flatten
+      .map("&" + _)
+      .mkString("")
+    
     val paginationClauses = s"&limit=${pagination.limit}&offset=${pagination.offset}"
 
-
     val fullUri = Uri.unsafeFromString(
-      s"$supabaseUrl/rest/v1/bookings?select=$baseSelect$filterClauses$paginationClauses"
+      s"$supabaseUrl/rest/v1/bookings$selectQuery$filterClauses$paginationClauses"
     )
-
+    
     val req = Request[IO](
       method = Method.GET,
       uri = fullUri,
       headers = commonHeaders
     )
 
-    fetchAndDecode[List[BookingDto]](req, "bookings").map(_.map(_.map(toBookingResponse)))
+    fetchAndDecode[List[BookingResponse]](req, "bookings")
   }
 
   def linkSlotWithBooking(slotId: UUID, bookingId: UUID): IO[Either[DbError, Unit]] = {
