@@ -115,3 +115,70 @@ body {
   height: 40px;
 }
 
+.sheen-button {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+  padding: 10px 20px;
+  color: white;
+  background-color: #007bff; /* customize as needed */
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+/* Sheen shimmer */
+.sheen-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 255, 255, 0.3) 100%
+  );
+  transform: skewX(-20deg);
+  pointer-events: none; /* ignore pointer events */
+  opacity: 0; /* hidden by default */
+}
+
+/* Persistent transparent grey overlay */
+.sheen-button::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(128, 128, 128, 0.25); /* transparent grey */
+  opacity: 0; /* hidden by default */
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  border-radius: 4px; /* match button */
+}
+
+/* On hover: play sheen animation */
+.sheen-button:hover::before {
+  opacity: 1;
+  animation: sheen 0.75s forwards;
+}
+
+/* After animation ends, sheen disappears but overlay stays */
+.sheen-button:hover::after {
+  opacity: 1;
+}
+
+/* sheen animation keyframes */
+@keyframes sheen {
+  0% {
+    left: -75%;
+    opacity: 1;
+  }
+  100% {
+    left: 125%;
+    opacity: 0;
+  }
+}

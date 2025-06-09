@@ -27,7 +27,10 @@ object Layout {
     header.innerHTML = ""
 
     val leftContainer = document.createElement("div").asInstanceOf[html.Div]
-    leftButton.foreach(leftContainer.appendChild)
+    leftButton.foreach { btn =>
+      btn.classList.add("sheen-button")
+      leftContainer.appendChild(btn)
+    }
 
     val logoContainer = document.createElement("div").asInstanceOf[html.Div]
     logoContainer.setAttribute("style", "display: flex; align-items: center; flex: 1; justify-content: center;")
@@ -44,7 +47,10 @@ object Layout {
     logoContainer.appendChild(logo)
 
     val rightContainer = document.createElement("div").asInstanceOf[html.Div]
-    rightButton.foreach(rightContainer.appendChild)
+    rightButton.foreach { btn =>
+      btn.classList.add("sheen-button")
+      rightContainer.appendChild(btn)
+    }
 
     header.appendChild(leftContainer)
     header.appendChild(logoContainer)

@@ -46,39 +46,75 @@ object HomePage {
   }
 
   private def buildBookingsBox(): Div = {
-    val box = document.createElement("div").asInstanceOf[Div]
-    box.style.marginTop = "70px"
-    box.style.marginLeft = "auto"
-    box.style.marginRight = "auto"
-    box.style.width = "80%"
-    box.style.maxHeight = "400px"
-    box.style.overflowY = "scroll"
-    box.style.border = "1px solid #ccc"
-    box.style.borderRadius = "8px"
-    box.style.padding = "20px"
-    box.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)"
-    box.style.backgroundColor = "#f9f9f9"
+    val outerBox = document.createElement("div").asInstanceOf[Div]
+    outerBox.style.marginTop = "20px"
+    outerBox.style.marginLeft = "auto"
+    outerBox.style.marginRight = "auto"
+    outerBox.style.width = "80%"
+    outerBox.style.border = "1px solid #ccc"
+    outerBox.style.borderRadius = "8px"
+    outerBox.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)"
+    outerBox.style.backgroundColor = "#f9f9f9"
+    outerBox.style.overflow = "hidden"
 
-    val title = document.createElement("h2")
+    val title = document.createElement("div").asInstanceOf[Div]
     title.textContent = "Your bookings"
-    box.appendChild(title)
+    title.style.fontSize = "1.5em"
+    title.style.fontWeight = "bold"
+    title.style.padding = "20px"
+    title.style.borderBottom = "1px solid #ddd"
+    title.style.backgroundColor = "#f9f9f9"
+    title.style.position = "sticky"
+    title.style.top = "0"
+    title.style.zIndex = "1"
 
-    bookings.foreach(b => box.appendChild(buildBookingEntry(b)))
-    box
+    val scrollArea = document.createElement("div").asInstanceOf[Div]
+    scrollArea.style.maxHeight = "400px"
+    scrollArea.style.overflowY = "auto"
+    scrollArea.style.padding = "20px"
+
+    bookings.foreach(b => scrollArea.appendChild(buildBookingEntry(b)))
+
+    outerBox.appendChild(title)
+    outerBox.appendChild(scrollArea)
+
+    outerBox
   }
 
-  private def buildBookingEntry(booking: Booking): Div = {
 
+  private def buildBookingEntry(booking: Booking): Div = {
     val entry = document.createElement("div").asInstanceOf[Div]
-    entry.innerHTML = s"<strong>${booking.name}</strong><br>Time: ${booking.time}<br>Location: ${booking.location}"
+
+    entry.style.backgroundColor = "#ffffff"
+    entry.style.borderRadius = "12px"
+    entry.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.1)"
+    entry.style.marginBottom = "16px"
+    entry.style.padding = "16px"
+    entry.style.transition = "transform 0.2s ease, box-shadow 0.2s ease"
     entry.style.cursor = "pointer"
+    entry.style.backgroundImage = "linear-gradient(135deg, #ffffff 0%, #f7f7f7 100%)"
+
+    entry.addEventListener("mouseover", (_: dom.MouseEvent) => {
+      entry.style.transform = "translateY(-2px)"
+      entry.style.boxShadow = "0 6px 16px rgba(0, 0, 0, 0.15)"
+    })
+    entry.addEventListener("mouseout", (_: dom.MouseEvent) => {
+      entry.style.transform = "translateY(0)"
+      entry.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.1)"
+    })
+
+    entry.innerHTML =
+      s"""
+        <strong style="font-size: 1.2em;">${booking.name}</strong><br>
+        <span><strong>Time:</strong> ${booking.time}</span><br>
+        <span><strong>Location:</strong> ${booking.location}</span>
+      """
+
     entry.addEventListener("click", (_: dom.MouseEvent) => {
-        showModal(renderBookingDetails(booking))
-        addCancelBookingButton(booking)
-      }
-    )
-    val hr = document.createElement("hr")
-    entry.appendChild(hr)
+      showModal(renderBookingDetails(booking))
+      addCancelBookingButton(booking)
+    })
+
     entry
   }
 
@@ -95,22 +131,45 @@ object HomePage {
   private def createBookingButton(): Div = {
     val button = document.createElement("div").asInstanceOf[Div]
     button.textContent = "Create Booking"
+
+    // Base styles
     button.style.position = "fixed"
     button.style.left = "50%"
     button.style.bottom = "80px"
-    button.style.transform = "translateX(-50%)"
-    button.style.backgroundColor = "purple"
+    button.style.transform = "translate(-50%, 0)" // Ensure horizontal center remains fixed
+    button.style.backgroundImage = "linear-gradient(135deg, #7b2ff7, #f107a3)"
     button.style.color = "white"
-    button.style.padding = "20px 40px"
-    button.style.borderRadius = "50px"
+    button.style.padding = "24px 48px" // slightly larger
+    button.style.fontSize = "1.2em"
+    button.style.fontWeight = "bold"
+    button.style.borderRadius = "60px"
     button.style.cursor = "pointer"
-    button.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.2)"
-    button.addEventListener("click", (_: dom.MouseEvent) => 
-      System.out.println("Create Booking button clicked")
-      BookingPage.render())
+    button.style.boxShadow = "0 6px 14px rgba(0, 0, 0, 0.2)"
+    button.style.transition = "transform 0.2s ease, box-shadow 0.2s ease, background-position 0.5s ease"
+    button.style.backgroundSize = "200% 200%"
+    button.style.backgroundRepeat = "no-repeat"
+    button.style.setProperty("will-change", "transform") // Hint browser for performance
+
+    // Prevent "hopping" by preserving horizontal transform
+    button.addEventListener("mouseover", (_: dom.MouseEvent) => {
+      button.style.transform = "translate(-50%, -4px)" // move up, stay centered
+      button.style.boxShadow = "0 8px 18px rgba(0, 0, 0, 0.25)"
+    })
+
+    button.addEventListener("mouseout", (_: dom.MouseEvent) => {
+      button.style.transform = "translate(-50%, 0)" // reset to original position
+      button.style.boxShadow = "0 6px 14px rgba(0, 0, 0, 0.2)"
+    })
+
+    // Click handler
+    button.addEventListener("click", (_: dom.MouseEvent) => {
+      BookingPage.render()
+    })
 
     button
   }
+
+
 
   private def fetchUnreadCount(onDone: () => Unit): Unit = {
     val accessToken = dom.window.localStorage.getItem("accessToken")
