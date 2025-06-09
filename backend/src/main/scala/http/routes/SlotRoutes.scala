@@ -191,5 +191,4 @@ class SlotRoutes private extends Http4sDsl[IO] {
 
 object SlotRoutes {
   def apply(): SlotRoutes = new SlotRoutes
-
 }
