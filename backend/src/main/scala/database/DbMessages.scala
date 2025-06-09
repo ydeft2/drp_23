@@ -42,8 +42,6 @@ object DbMessages {
       uri = fullUri,
       headers = commonHeaders
     )
-    IO.println(s"Fetching messages for user: $userId") *>
-    IO.println(s"Request URI: ${req.uri}") *>
     fetchAndDecode[List[Message]](req, "messages")
   }
 

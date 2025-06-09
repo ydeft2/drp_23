@@ -46,14 +46,11 @@ class MessageRoutes private extends Http4sDsl[IO] {
   private val getMessagesRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root / "fetch"/ UUIDVar(userId) =>
       for {
-        _ <- IO.println(s"Fetching messages for user: $userId")
         messagesRes <- DbMessages.fetchMessages(userId)
-        _ <- IO.println(s"Messages fetched: $messagesRes")
         response <- messagesRes match {
           case Right(messages) =>
             Ok(messages.asJson)
           case Left(error) =>
-            IO.println(s"Error fetching messages: $error") *>
             BadRequest("Error fetching messages")
         }
       } yield response
