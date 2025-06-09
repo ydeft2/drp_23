@@ -136,7 +136,15 @@ object Inbox {
     if (sortedNotifications.isEmpty) {
       val noNotifications = document.createElement("p")
       noNotifications.textContent = "No notifications available."
+      noNotifications.setAttribute("style", "text-align: center; margin-top: 20px;")
       notificationsBox.appendChild(noNotifications)
+      val img = document.createElement("img").asInstanceOf[dom.html.Image]
+      img.src = "images/Waiting.png"
+      img.style.display = "block"
+      img.style.marginLeft = "auto"
+      img.style.marginRight = "auto"
+      img.style.width = "250px"
+      notificationsBox.appendChild(img)
     } else {
       val notificationsTitle = document.createElement("h2")
       notificationsTitle.textContent = "Notifications"
