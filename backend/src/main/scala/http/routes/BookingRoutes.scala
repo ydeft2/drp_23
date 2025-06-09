@@ -49,7 +49,7 @@ class BookingRoutes private extends Http4sDsl[IO] {
   given uuidQueryParamDecoder: QueryParamDecoder[UUID] =
     QueryParamDecoder[String].map(UUID.fromString)
 
-  object ConfirmedQP    extends OptionalQueryParamDecoderMatcher[Boolean]("confirmed")
+  object ConfirmedQP    extends OptionalQueryParamDecoderMatcher[Boolean]("is_confirmed")
   object ClinicInfoQP   extends OptionalQueryParamDecoderMatcher[String] ("clinic_info")
   object SlotTimeGteQP  extends OptionalQueryParamDecoderMatcher[Instant]("slot_time_gte")
   object SlotTimeLteQP  extends OptionalQueryParamDecoderMatcher[Instant]("slot_time_lte")
