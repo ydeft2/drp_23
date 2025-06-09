@@ -590,3 +590,47 @@ def happyLogo(): html.Element = {
   img.style.margin = "20px"
   img
 }
+
+private def fetchUnreadCount(): Future[Int] = {
+  val accessToken = dom.window.localStorage.getItem("accessToken")
+  val uid = dom.window.localStorage.getItem("userId")
+
+  if (accessToken == null || uid == null) {
+    dom.window.alert("You are not logged in.")
+    Future.successful(0)
+  } else {
+    val requestHeaders = new dom.Headers()
+    requestHeaders.append("Content-Type", "application/json")
+    requestHeaders.append("Authorization", s"Bearer $accessToken")
+
+    val requestBody = js.Dynamic.literal(
+      "user_id" -> uid,
+      "message" -> ""
+    )
+
+    val requestInit = new dom.RequestInit {
+      method = dom.HttpMethod.POST
+      headers = requestHeaders
+      body = JSON.stringify(requestBody)
+    }
+
+    dom.fetch("/api/notifications/fetch", requestInit)
+      .toFuture
+      .flatMap(_.json().toFuture)
+      .map { jsValue =>
+        if (js.Array.isArray(jsValue)) {
+          val arr = jsValue.asInstanceOf[js.Array[js.Dynamic]]
+          val parsed = Inbox.parseNotifications(arr)
+          parsed.count(!_.isRead)
+        } else {
+          println("Unexpected response format")
+          0
+        }
+      }
+      .recover {
+        case e =>
+          println(s"Failed to fetch unread notifications: ${e.getMessage}")
+          0
+      }
+  }
+}

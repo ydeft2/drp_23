@@ -69,21 +69,34 @@ package frontend
 import org.scalajs.dom
 import org.scalajs.dom.document
 import org.scalajs.dom.html._
+import concurrent.ExecutionContext.Implicits.global
 
 object AdminPage {
 
+  private var unreadNotifications: Int = 0
+
   def render(): Unit = {
-    
-    val accountBtn = createHeaderButton("Account")
-    accountBtn.addEventListener("click", (_: dom.MouseEvent) => AdminAccount.render())
-    Layout.renderPage(
-      leftButton = Some(accountBtn),
-      contentRender = () => 
-      {
-        document.body.appendChild(createAdminDashboardBox())
-        document.body.appendChild(createBookingDashboardBox())
-      }
-    )
+    Spinner.show()
+    fetchUnreadCount().foreach { unreadCount =>
+      unreadNotifications = unreadCount
+      val accountBtn = createHeaderButton("Account")
+      accountBtn.addEventListener("click", (_: dom.MouseEvent) => AdminAccount.render())
+
+      val inboxLabel = if (unreadNotifications > 0) s"Inbox ($unreadNotifications)" else "Inbox"
+      val inboxBtn = createHeaderButton(inboxLabel)
+      inboxBtn.addEventListener("click", (_: dom.MouseEvent) => Inbox.render())
+
+      Layout.renderPage(
+        leftButton = Some(accountBtn),
+        rightButton = Some(inboxBtn),
+        contentRender = () =>
+        {
+          document.body.appendChild(createAdminDashboardBox())
+          document.body.appendChild(createBookingDashboardBox())
+          Spinner.hide()
+        }
+      )
+    }
   }
 
 
