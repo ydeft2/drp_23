@@ -238,22 +238,40 @@ object Inbox {
     deleteBtn.innerHTML = "🗑️"
     deleteBtn.title = "Delete notification"
     deleteBtn.style.border = "none"
-    deleteBtn.style.background = "transparent"
+    deleteBtn.style.background = "red"
     deleteBtn.style.cursor = "pointer"
     deleteBtn.style.fontSize = "1.2em"
     deleteBtn.style.color = "#888"
     deleteBtn.style.marginLeft = "15px"
-    deleteBtn.style.transition = "color 0.3s ease"
+    deleteBtn.style.transition = "color 0.3s ease, background-color 0.3s ease"
     deleteBtn.style.outline = "none"
     deleteBtn.style.padding = "2px"
 
-    deleteBtn.onmouseover = (_: dom.MouseEvent) => deleteBtn.style.color = "#e53935" // Red-ish
-    deleteBtn.onmouseout = (_: dom.MouseEvent) => deleteBtn.style.color = "#888"
+    deleteBtn.onmouseover = (_: dom.MouseEvent) => {
+      deleteBtn.style.color = "#e53935" // Red-ish text on hover
+      deleteBtn.style.backgroundColor = "#d32f2f" // Slightly darker red on hover
+    }
+    deleteBtn.onmouseout = (_: dom.MouseEvent) => {
+      deleteBtn.style.color = "#888"
+      deleteBtn.style.backgroundColor = "red"
+    }
+
+    var confirming = false
 
     deleteBtn.addEventListener("click", (e: dom.MouseEvent) => {
       e.stopPropagation()
-      deleteNotification(notification.notificationId, notificationsBox)
+      if (!confirming) {
+        confirming = true
+        deleteBtn.innerHTML = "confirm delete"
+        js.timers.setTimeout(3000) {
+          confirming = false
+          deleteBtn.innerHTML = "🗑️"
+        }
+      } else {
+        deleteNotification(notification.notificationId, notificationsBox)
+      }
     })
+
     deleteBtn
   }
 
