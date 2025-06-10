@@ -17,6 +17,7 @@ object BookingDashboard {
   var lengthInput: Input = _
 
   var slotsContainer: Div = _
+  var currentWeekStart: js.Date = getStartOfWeek(new js.Date())
 
   def createRow(labelText: String, inputElement: Element): Div = {
     val row = document.createElement("div").asInstanceOf[Div]
@@ -36,73 +37,110 @@ object BookingDashboard {
   def render(): Unit = {
     Layout.renderPage(
       leftButton = Some(createHomeButton()),
-      contentRender = () =>
-        {
-          val container = document.createElement("div").asInstanceOf[Div]
-          container.setAttribute("style",
-            """
-            |display: flex;
-            |flex-direction: column;
-            |align-items: flex-start;
-            |gap: 15px;
-            |margin: 50px auto;
-            |max-width: 500px;
-            |padding: 20px;
-            |border: 1px solid #ccc;
-            |border-radius: 10px;
-            |box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            """.stripMargin)
+      contentRender = () => {
+        // Main flex container
+        val mainContainer = document.createElement("div").asInstanceOf[Div]
+        mainContainer.setAttribute("style",
+          """
+          |display: flex;
+          |flex-direction: row;
+          |align-items: flex-start;
+          |gap: 40px;
+          |margin: 50px auto;
+          |max-width: 1200px;
+          |padding: 20px;
+          |border: 1px solid #ccc;
+          |border-radius: 10px;
+          |box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          """.stripMargin)
 
-          dateInput = document.createElement("input").asInstanceOf[Input]
-          dateInput.setAttribute("type", "date")
-          dateInput.setAttribute("required", "true")
-          container.appendChild(createRow("Select date:", dateInput))
+        // Booking form (left)
+        val formContainer = document.createElement("div").asInstanceOf[Div]
+        formContainer.setAttribute("style",
+          """
+          |display: flex;
+          |flex-direction: column;
+          |align-items: flex-start;
+          |gap: 15px;
+          |min-width: 280px;
+          |max-width: 350px;
+          """.stripMargin)
 
-          timeInput = document.createElement("input").asInstanceOf[Input]
-          timeInput.setAttribute("type", "time")
-          timeInput.setAttribute("required", "true")
-          container.appendChild(createRow("Select time:", timeInput))
+        dateInput = document.createElement("input").asInstanceOf[Input]
+        dateInput.setAttribute("type", "date")
+        dateInput.setAttribute("required", "true")
+        formContainer.appendChild(createRow("Select date:", dateInput))
 
-          lengthInput = document.createElement("input").asInstanceOf[Input]
-          lengthInput.setAttribute("type", "number")
-          lengthInput.setAttribute("min", "5")
-          lengthInput.setAttribute("value", "30")
-          container.appendChild(createRow("Length (minutes):", lengthInput))
+        timeInput = document.createElement("input").asInstanceOf[Input]
+        timeInput.setAttribute("type", "time")
+        timeInput.setAttribute("required", "true")
+        formContainer.appendChild(createRow("Select time:", timeInput))
 
-          val bookButton = document.createElement("button").asInstanceOf[Button]
-          bookButton.textContent = "Create Slot"
-          bookButton.setAttribute("style",
-            """
-            |padding: 8px 16px;
-            |border: none;
-            |background-color: #800080;
-            |color: white;
-            |border-radius: 6px;
-            |cursor: pointer;
-            """.stripMargin)
-          bookButton.addEventListener("click", { (_: dom.MouseEvent) =>
-            createSlot(
-              dateInput.value,
-              timeInput.value,
-              lengthInput.value.toLong
-            )
-          })
-          container.appendChild(bookButton)
+        lengthInput = document.createElement("input").asInstanceOf[Input]
+        lengthInput.setAttribute("type", "number")
+        lengthInput.setAttribute("min", "5")
+        lengthInput.setAttribute("value", "30")
+        formContainer.appendChild(createRow("Length (minutes):", lengthInput))
 
-          document.body.appendChild(container)
+        val bookButton = document.createElement("button").asInstanceOf[Button]
+        bookButton.textContent = "Create Slot"
+        bookButton.setAttribute("style",
+          """
+          |padding: 8px 16px;
+          |border: none;
+          |background-color: #800080;
+          |color: white;
+          |border-radius: 6px;
+          |cursor: pointer;
+          """.stripMargin)
+        bookButton.addEventListener("click", { (_: dom.MouseEvent) =>
+          createSlot(
+            dateInput.value,
+            timeInput.value,
+            lengthInput.value.toLong
+          )
+        })
+        formContainer.appendChild(bookButton)
 
-          slotsContainer = document.createElement("div").asInstanceOf[Div]
-          slotsContainer.setAttribute("style",
-            """
-              |margin-top: 30px;
-              |max-width: 500px;
-              |border-top: 1px solid #ccc;
-              |padding-top: 20px;
-              """.stripMargin)
-          document.body.appendChild(slotsContainer)
+        // Calendar and navigation (right)
+        val calendarContainer = document.createElement("div").asInstanceOf[Div]
+        calendarContainer.setAttribute("style", "flex: 1; min-width: 500px;")
 
+        val navDiv = document.createElement("div").asInstanceOf[Div]
+        navDiv.setAttribute("style", "display: flex; gap: 20px; align-items: center; margin-bottom: 10px;")
+        val prevBtn = document.createElement("button").asInstanceOf[Button]
+        prevBtn.textContent = "< Previous Week"
+        prevBtn.onclick = (_: dom.MouseEvent) => {
+          currentWeekStart = addDays(currentWeekStart, -7)
           fetchAndDisplaySlots()
         }
+        val nextBtn = document.createElement("button").asInstanceOf[Button]
+        nextBtn.textContent = "Next Week >"
+        nextBtn.onclick = (_: dom.MouseEvent) => {
+          currentWeekStart = addDays(currentWeekStart, 7)
+          fetchAndDisplaySlots()
+        }
+        val weekLabel = document.createElement("span")
+        weekLabel.setAttribute("id", "weekLabel")
+        navDiv.appendChild(prevBtn)
+        navDiv.appendChild(weekLabel)
+        navDiv.appendChild(nextBtn)
+        calendarContainer.appendChild(navDiv)
+
+        slotsContainer = document.createElement("div").asInstanceOf[Div]
+        slotsContainer.setAttribute("style", "margin-top: 10px; max-width: 900px; overflow-x: auto;")
+        calendarContainer.appendChild(slotsContainer)
+
+        // Add both to main container
+        mainContainer.appendChild(formContainer)
+        mainContainer.appendChild(calendarContainer)
+
+        // Clear and append to body
+        clearPage()
+        document.body.appendChild(mainContainer)
+
+        fetchAndDisplaySlots()
+      }
     )
   }
 
@@ -134,59 +172,112 @@ object BookingDashboard {
       }
       .foreach { json =>
         val slots = json.asInstanceOf[js.Array[js.Dynamic]]
-
-        slotsContainer.innerHTML = ""
-
-        if (slots.isEmpty) {
-          val noSlotsMsg = document.createElement("p")
-          noSlotsMsg.textContent = "No slots available."
-          slotsContainer.appendChild(noSlotsMsg)
-        } else {
-          val sortedSlots = slots.sort((a, b) => {
-            val timeA = js.Date.parse(a.slotTime.asInstanceOf[String])
-            val timeB = js.Date.parse(b.slotTime.asInstanceOf[String])
-            if (timeA < timeB) -1 else if (timeA > timeB) 1 else 0
-          })
-          sortedSlots.foreach { slot =>
-            val slotDiv = document.createElement("div").asInstanceOf[Div]
-            slotDiv.style.marginTop = "20px"
-            slotDiv.style.marginLeft = "auto"
-            slotDiv.style.marginRight = "auto"
-            slotDiv.style.width = "80%"
-            slotDiv.style.padding = "20px"
-            slotDiv.style.border = "1px solid #ccc"
-            slotDiv.style.borderRadius = "8px"
-            slotDiv.style.backgroundColor = "#f9f9f9"
-            slotDiv.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)"
-
-            val formattedTime = formatSlotTime(slot.slotTime.asInstanceOf[String])
-
-            val title = document.createElement("h3")
-            title.textContent = "Your Clinic"
-            slotDiv.appendChild(title)
-
-            val timeP = document.createElement("p")
-            timeP.textContent = formattedTime
-            slotDiv.appendChild(timeP)
-
-            val lengthP = document.createElement("p")
-            lengthP.textContent = s"Length: ${slot.slotLength} minutes"
-            slotDiv.appendChild(lengthP)
-
-            val isTaken = slot.isTaken.asInstanceOf[Boolean]
-            val statusP = document.createElement("p")
-            statusP.textContent = s"Status: ${if (isTaken) "Booked" else "Available"}"
-            slotDiv.appendChild(statusP)
-
-            slotDiv.style.cursor = "pointer"
-            slotDiv.addEventListener("click", { (_: dom.MouseEvent) =>
-              showSlotDetails(slot)
-            })
-
-            slotsContainer.appendChild(slotDiv)
-          }
-        }
+        renderWeekCalendar(slots)
       }
+  }
+
+  def renderWeekCalendar(slots: js.Array[js.Dynamic]): Unit = {
+    slotsContainer.innerHTML = ""
+
+    // Set week label
+    val weekLabel = document.getElementById("weekLabel")
+    val weekStart = new js.Date(currentWeekStart.getTime())
+    val weekEnd = addDays(weekStart, 4)
+    weekLabel.textContent = s"${formatDate(weekStart)} - ${formatDate(weekEnd)}"
+
+    // Prepare calendar grid
+    val days = (0 to 4).map(i => addDays(weekStart, i))
+    val times = (9 * 60 until 17 * 60 by 30).toArray
+
+    val table = document.createElement("table").asInstanceOf[Table]
+    table.setAttribute("style",
+      """
+      |border-collapse: collapse;
+      |width: 100%;
+      |background: #fff;
+      """.stripMargin)
+
+    // Header row
+    val headerRow = document.createElement("tr")
+    val emptyTh = document.createElement("th")
+    emptyTh.textContent = ""
+    headerRow.appendChild(emptyTh)
+    days.foreach { d =>
+      val th = document.createElement("th")
+      th.textContent = formatDay(d)
+      th.setAttribute("style", "padding: 4px; border: 1px solid #ccc; background: #f0f0f0;")
+      headerRow.appendChild(th)
+    }
+    table.appendChild(headerRow)
+
+    // Build a map for quick slot lookup
+    val slotMap = scala.collection.mutable.Map[String, js.Dynamic]()
+    slots.foreach { slot =>
+      val dt = new js.Date(slot.slotTime.asInstanceOf[String])
+      val key = s"${dt.getUTCFullYear()}-${dt.getUTCMonth()}-${dt.getUTCDate()}-${dt.getUTCHours()}-${dt.getUTCMinutes()}"
+      slotMap(key) = slot
+    }
+
+    // Time rows
+    times.foreach { min =>
+      val tr = document.createElement("tr")
+      val timeTd = document.createElement("td")
+      timeTd.textContent = f"${min / 60}%02d:${min % 60}%02d"
+      timeTd.setAttribute("style", "padding: 4px; border: 1px solid #ccc; background: #f0f0f0; width: 60px;")
+      tr.appendChild(timeTd)
+
+      days.foreach { day =>
+        val cell = document.createElement("td")
+        cell.setAttribute("style", "padding: 2px; border: 1px solid #ccc; height: 28px; position: relative;")
+        val key = s"${day.getUTCFullYear()}-${day.getUTCMonth()}-${day.getUTCDate()}-${min / 60}-${min % 60}"
+        if (slotMap.contains(key)) {
+          val slot = slotMap(key)
+          val btn = document.createElement("button").asInstanceOf[Button]
+          btn.textContent = if (slot.isTaken.asInstanceOf[Boolean]) "Booked" else "Available"
+          btn.setAttribute(
+            "style",
+            if (slot.isTaken.asInstanceOf[Boolean])
+              "width: 100%; background: #ffe066; color: #333; border-radius: 4px; border: none; cursor: pointer;" // yellow
+            else
+              "width: 100%; background: #4caf50; color: #fff; border-radius: 4px; border: none; cursor: pointer;" // green
+          )
+          btn.onclick = (_: dom.MouseEvent) => showSlotDetails(slot)
+          cell.appendChild(btn)
+        }
+        tr.appendChild(cell)
+      }
+      table.appendChild(tr)
+    }
+
+    slotsContainer.appendChild(table)
+  }
+
+  // --- Utility functions for week navigation and formatting ---
+
+  def getStartOfWeek(date: js.Date): js.Date = {
+    val d = new js.Date(date.getTime())
+    val day = d.getUTCDay()
+    val diff = if (day == 0) -6 else 1 - day // Monday as start
+    d.setUTCDate(d.getUTCDate() + diff)
+    d.setUTCHours(0, 0, 0, 0)
+    d
+  }
+
+  def addDays(date: js.Date, days: Int): js.Date = {
+    val d = new js.Date(date.getTime())
+    d.setUTCDate(d.getUTCDate() + days)
+    d
+  }
+
+  def formatDate(date: js.Date): String =
+    f"${date.getUTCDate().toInt}%02d/${(date.getUTCMonth().toInt + 1)}%02d/${date.getUTCFullYear().toInt}"
+
+  def formatDay(date: js.Date): String = {
+    val days = Array("Mon", "Tue", "Wed", "Thu", "Fri")
+    val idx = date.getUTCDay() match {
+      case 1 => 0; case 2 => 1; case 3 => 2; case 4 => 3; case 5 => 4; case _ => 0
+    }
+    s"${days(idx)}\n${formatDate(date)}"
   }
 
   def showSlotDetails(slot: js.Dynamic): Unit = {
