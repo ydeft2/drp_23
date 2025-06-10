@@ -1,8 +1,253 @@
 package frontend
 
-object ChatPage {
-  def render(): Unit = {
-   
+import org.scalajs.dom
+import org.scalajs.dom.document
+import org.scalajs.dom.html.{Div, Button, TextArea, UList, LI, Span}
+import scala.scalajs.js
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import java.util.UUID
+import java.time.*
+import java.time.format.DateTimeFormatter
 
+case class MessageResponse(
+  messageId : UUID,
+  senderId  : UUID,
+  receiverId: UUID,
+  message   : String,
+  sentAt    : Instant
+)
+
+object ChatPage {
+
+  /* ---------- time-zone helper ---------- */
+  private val safeZone: ZoneId =
+    try ZoneId.systemDefault()
+    catch case _: DateTimeException => ZoneOffset.UTC   // works in Scala-JS core
+
+  /* ---------- state ---------- */
+  private var all         : List[MessageResponse]            = Nil
+  private var grouped     : Map[UUID, List[MessageResponse]] = Map.empty
+  private var currentPeer : Option[UUID]                     = None
+  private var selfId      : UUID                             = _
+
+  /* ---------- DOM refs ---------- */
+  private var listPane : Div = _
+  private var convPane : Div = _
+
+  def render(): Unit = {
+    Spinner.show()
+
+    val uidStr = dom.window.localStorage.getItem("userId")
+    if uidStr == null then { dom.window.alert("You are not logged in."); return }
+    selfId = UUID.fromString(uidStr)
+
+    fetchMessages { () =>
+      buildThreads()
+      Layout.renderPage(
+        leftButton = Some(createHomeButton()),
+        contentRender = () => {
+          val box = renderMessagesBox()
+          document.body.appendChild(box)
+          renderList()
+          currentPeer.orElse(grouped.keys.headOption).foreach(showConversation)
+          Spinner.hide()
+        }
+      )
+    }
   }
+
+
+  private def parseIsoToInstant(s: String): Instant =
+    Instant.parse(s.takeWhile(_ != '['))            // strips “[Europe/London]”
+
+  private def parseMessages(arr: js.Array[js.Dynamic]): List[MessageResponse] =
+    arr.toList.flatMap { o =>
+      try Some(
+        MessageResponse(
+          UUID.fromString(o.message_id.asInstanceOf[String]),
+          UUID.fromString(o.sender_id.asInstanceOf[String]),
+          UUID.fromString(o.receiver_id.asInstanceOf[String]),
+          o.message.asInstanceOf[String],
+          parseIsoToInstant(o.sent_at.asInstanceOf[String])
+        )
+      ) catch { case _ => None }
+    }
+
+  private def fetchMessages(onSuccess: () => Unit): Unit = {
+    val accessToken = dom.window.localStorage.getItem("accessToken")
+    val uid         = dom.window.localStorage.getItem("userId")
+    if accessToken == null || uid == null then { dom.window.alert("Not logged in."); return }
+
+    val hdr = new dom.Headers()
+    hdr.append("Authorization", s"Bearer $accessToken")
+    val init = new dom.RequestInit { method = dom.HttpMethod.GET; headers = hdr }
+
+    dom.fetch(s"/api/messages/fetch/$uid", init)
+      .toFuture
+      .flatMap(_.json().toFuture)
+      .foreach {
+        case arr: js.Array[js.Dynamic] =>
+          all = parseMessages(arr); onSuccess()
+        case other =>
+          Spinner.hide(); dom.window.alert("Invalid response: " + other)
+      }
+  }
+
+  private def sendMessage(peer: UUID, text: String, onOK: () => Unit): Unit = {
+    val token = dom.window.localStorage.getItem("accessToken")
+    if token == null then { dom.window.alert("No token"); return }
+
+    val hdr = new dom.Headers()
+    hdr.append("Content-Type",  "application/json")
+    hdr.append("Authorization", s"Bearer $token")
+
+    val payload = js.Dynamic.literal(
+      "sender_id"   -> selfId.toString,
+      "receiver_id" -> peer.toString,
+      "message"     -> text
+    )
+    val init = new dom.RequestInit {
+      method = dom.HttpMethod.POST
+      headers = hdr
+      this.body = js.JSON.stringify(payload)
+    }
+
+    dom.fetch("/api/messages/send", init).toFuture.foreach(_ => onOK())
+  }
+
+  private def buildThreads(): Unit =
+    grouped = all.groupBy { m =>
+      if m.senderId == selfId then m.receiverId else m.senderId
+    }.view.mapValues(_.sortBy(_.sentAt)).toMap
+
+  private def renderList(): Unit = {
+    listPane.innerHTML = ""
+
+    // empty-inbox placeholder
+    if grouped.isEmpty then
+      val note = span("You have no messages yet.", center = true, grey = true)
+      note.style.marginTop = "30px"
+      listPane.appendChild(note)
+      convPane.innerHTML = ""
+      return
+
+    val ul = document.createElement("ul").asInstanceOf[UList]
+    ul.style.listStyle = "none"; ul.style.padding = "0"; ul.style.margin = "0"
+
+    val fmt = DateTimeFormatter.ofPattern("MMM d, HH:mm").withZone(safeZone)
+
+    grouped.toSeq.sortBy(_._2.last.sentAt).reverse.foreach { (peer, msgs) =>
+      val li = document.createElement("li").asInstanceOf[LI]
+      li.style.cursor  = "pointer"
+      li.style.padding = "10px"
+      if currentPeer.contains(peer) then li.style.backgroundColor = "#eef4ff"
+      li.onclick = (_: dom.MouseEvent) => { currentPeer = Some(peer); renderList(); showConversation(peer) }
+
+      li.appendChild(span(peer.toString.take(8), bold = true))
+      li.appendChild(span(" " + msgs.last.message.take(20)))
+      li.appendChild(span(fmt.format(msgs.last.sentAt), right = true))
+      ul.appendChild(li)
+    }
+
+    listPane.appendChild(ul)
+  }
+
+
+  private def showConversation(peer: UUID): Unit = {
+    convPane.innerHTML = ""
+    val msgs = grouped.getOrElse(peer, Nil)
+
+    val scrollBox = div()
+    scrollBox.style.setProperty("flex-grow", "1")
+    scrollBox.style.overflowY    = "auto"
+    scrollBox.style.paddingRight = "6px"
+    convPane.appendChild(scrollBox)
+
+    val dayFmt  = DateTimeFormatter.ofPattern("MMM d").withZone(safeZone)
+    val timeFmt = DateTimeFormatter.ofPattern("HH:mm").withZone(safeZone)
+    var lastDay = ""
+
+    msgs.foreach { m =>
+      val d = dayFmt.format(m.sentAt)
+      if d != lastDay then { scrollBox.appendChild(span(d, center = true, grey = true)); lastDay = d }
+
+      val bubble = div()
+      bubble.textContent = m.message + "  " + timeFmt.format(m.sentAt)
+      bubble.style.maxWidth = "70%"
+      bubble.style.margin   = "4px"
+      bubble.style.padding  = "6px 8px"
+      bubble.style.borderRadius = "6px"
+      if m.senderId == selfId then
+        bubble.style.marginLeft = "auto"; bubble.style.backgroundColor = "#d0e6ff"
+      else
+        bubble.style.marginRight = "auto"; bubble.style.backgroundColor = "#e6e6e6"
+      scrollBox.appendChild(bubble)
+    }
+
+    // compose bar
+    val bar = div()
+    bar.style.display = "flex"; bar.style.marginTop = "8px"
+
+    val ta = document.createElement("textarea").asInstanceOf[TextArea]
+    ta.rows = 2; ta.style.setProperty("flex-grow", "1")
+
+    val send = button("Send")
+    send.onclick = (_: dom.MouseEvent) => {
+      val txt = ta.value.trim
+      if txt.nonEmpty then
+        sendMessage(peer, txt, () => {
+          ta.value = ""
+          fetchMessages(() => { buildThreads(); renderList(); showConversation(peer) })
+        })
+    }
+
+    bar.appendChild(ta); bar.appendChild(send)
+    convPane.appendChild(bar)
+
+    scrollBox.scrollTop = scrollBox.scrollHeight
+  }
+
+  private def renderMessagesBox(): Div = {
+    val outer = div()
+    outer.style.marginTop    = "70px"
+    outer.style.marginLeft   = "auto"
+    outer.style.marginRight  = "auto"
+    outer.style.width        = "80%"
+    outer.style.height       = "500px"
+    outer.style.display      = "flex"
+    outer.style.border       = "1px solid #ccc"
+    outer.style.borderRadius = "8px"
+    outer.style.boxShadow    = "0 2px 8px rgba(0,0,0,0.1)"
+    outer.style.backgroundColor = "#f9f9f9"
+
+    listPane = div(width = "35%"); listPane.style.borderRight = "1px solid #ddd"
+    convPane = div(); convPane.style.display = "flex"
+    convPane.style.setProperty("flex-direction", "column")
+    convPane.style.setProperty("flex-grow", "1")
+    convPane.style.padding = "12px"
+
+    outer.appendChild(listPane); outer.appendChild(convPane)
+    outer
+  }
+
+  private inline def div(width: String = ""): Div =
+    val d = document.createElement("div").asInstanceOf[Div]
+    if width.nonEmpty then d.style.width = width
+    d
+
+  private inline def span(txt: String, bold: Boolean = false,
+                          right: Boolean = false, center: Boolean = false,
+                          grey: Boolean = false): Span = {
+    val s = document.createElement("span").asInstanceOf[Span]
+    s.textContent = txt
+    if bold   then s.style.fontWeight = "bold"
+    if right  then { s.style.setProperty("float", "right"); s.style.color = "#666" }
+    if center then { s.style.textAlign = "center"; s.style.display = "block" }
+    if grey   then { s.style.color = "#999"; s.style.display = "block"; s.style.margin = "8px 0" }
+    s
+  }
+
+  private inline def button(lbl: String): Button =
+    val b = document.createElement("button").asInstanceOf[Button]
+    b.textContent = lbl; b
 }

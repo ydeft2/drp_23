@@ -32,6 +32,7 @@ object HomePage {
       val inboxLabel = if (unreadNotifications > 0) s"Inbox ($unreadNotifications)" else "Inbox"
       val inboxBtn = createHeaderButton(inboxLabel)
       inboxBtn.addEventListener("click", (_: dom.MouseEvent) => Inbox.render())
+      println("in homepage")
 
       Layout.renderPage(
         leftButton = Some(accountBtn),
