@@ -210,16 +210,26 @@ object BookingDashboard {
     }
     table.appendChild(headerRow)
 
-    // Build a map for quick slot lookup
+    // Build a map for quick slot lookup and track multi-slot spans
     val slotMap = scala.collection.mutable.Map[String, js.Dynamic]()
+    val slotSpanMap = scala.collection.mutable.Map[String, Int]()
     slots.foreach { slot =>
       val dt = new js.Date(slot.slotTime.asInstanceOf[String])
       val key = s"${dt.getUTCFullYear()}-${dt.getUTCMonth()}-${dt.getUTCDate()}-${dt.getUTCHours()}-${dt.getUTCMinutes()}"
       slotMap(key) = slot
+      // Calculate how many 30-min intervals this slot covers
+      val length = slot.slotLength.asInstanceOf[Double].toInt
+      val span = Math.ceil(length / 30.0).toInt
+      slotSpanMap(key) = span
     }
 
-    // Time rows
-    times.foreach { min =>
+    // Track cells that should be skipped due to rowspan
+    val skipCells = scala.collection.mutable.Set[String]()
+
+    val baseHeight = 28 // px, height for a 30-min slot
+
+    times.indices.foreach { tIdx =>
+      val min = times(tIdx)
       val tr = document.createElement("tr")
       val timeTd = document.createElement("td")
       timeTd.textContent = f"${min / 60}%02d:${min % 60}%02d"
@@ -227,24 +237,44 @@ object BookingDashboard {
       tr.appendChild(timeTd)
 
       days.foreach { day =>
-        val cell = document.createElement("td")
-        cell.setAttribute("style", "padding: 2px; border: 1px solid #ccc; height: 28px; position: relative;")
-        val key = s"${day.getUTCFullYear()}-${day.getUTCMonth()}-${day.getUTCDate()}-${min / 60}-${min % 60}"
-        if (slotMap.contains(key)) {
-          val slot = slotMap(key)
+        val cellKey = s"${day.getUTCFullYear()}-${day.getUTCMonth()}-${day.getUTCDate()}-${min / 60}-${min % 60}"
+        if (skipCells.contains(cellKey)) {
+          // This cell is covered by a previous slot's rowspan, skip it
+        } else if (slotMap.contains(cellKey)) {
+          val slot = slotMap(cellKey)
+          val span = slotSpanMap(cellKey) // <-- Move this line up!
           val btn = document.createElement("button").asInstanceOf[Button]
           btn.textContent = if (slot.isTaken.asInstanceOf[Boolean]) "Booked" else "Available"
           btn.setAttribute(
             "style",
-            if (slot.isTaken.asInstanceOf[Boolean])
-              "width: 100%; background: #ffe066; color: #333; border-radius: 4px; border: none; cursor: pointer;" // yellow
+            (if (slot.isTaken.asInstanceOf[Boolean])
+              "width: 100%; background: #ffe066; color: #333; border-radius: 4px; border: none; cursor: pointer;"
             else
-              "width: 100%; background: #4caf50; color: #fff; border-radius: 4px; border: none; cursor: pointer;" // green
+              "width: 100%; background: #4caf50; color: #fff; border-radius: 4px; border: none; cursor: pointer;")
+              + s"height: ${baseHeight * span}px;"
           )
           btn.onclick = (_: dom.MouseEvent) => showSlotDetails(slot)
-          cell.appendChild(btn)
+
+          val td = document.createElement("td")
+          td.appendChild(btn)
+          td.setAttribute("style", s"padding: 2px; border: 1px solid #ccc; position: relative;")
+
+          // Set rowspan if slot is longer than 30min
+          if (span > 1) {
+            td.setAttribute("rowspan", span.toString)
+            // Mark the next (span-1) cells in this column to be skipped
+            for (i <- 1 until span if tIdx + i < times.length) {
+              val nextMin = times(tIdx + i)
+              val skipKey = s"${day.getUTCFullYear()}-${day.getUTCMonth()}-${day.getUTCDate()}-${nextMin / 60}-${nextMin % 60}"
+              skipCells += skipKey
+            }
+          }
+          tr.appendChild(td)
+        } else {
+          val cell = document.createElement("td")
+          cell.setAttribute("style", s"padding: 2px; border: 1px solid #ccc; height: ${baseHeight}px; position: relative;")
+          tr.appendChild(cell)
         }
-        tr.appendChild(cell)
       }
       table.appendChild(tr)
     }
