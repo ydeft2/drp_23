@@ -40,6 +40,7 @@ object HomePage {
         {
           document.body.appendChild(buildBookingsBox())
           document.body.appendChild(createBookingButton())
+          document.body.appendChild(createChatButton())
           Spinner.hide()
         }
       )
@@ -128,6 +129,48 @@ object HomePage {
       <div id="cancel-booking-btn-container"></div>
     """
   }
+
+  private def createChatButton(): Div = {
+  val button = document.createElement("div").asInstanceOf[Div]
+  button.textContent = "Chats"
+
+  button.style.position  = "fixed"
+  button.style.left      = "50%"
+  button.style.top       = "100px"
+  button.style.transform = "translate(-50%, 0)"          // keep it centred
+
+  
+  button.style.backgroundImage = "linear-gradient(135deg,#7b2ff7,#f107a3)"
+  button.style.color           = "white"
+  button.style.padding         = "24px 48px"
+  button.style.fontSize        = "1.2em"
+  button.style.fontWeight      = "bold"
+  button.style.borderRadius    = "60px"
+  button.style.cursor          = "pointer"
+  button.style.boxShadow       = "0 6px 14px rgba(0,0,0,.20)"
+  button.style.transition      =
+    "transform .2s ease, box-shadow .2s ease, background-position .5s ease"
+  button.style.backgroundSize  = "200% 200%"
+  button.style.backgroundRepeat = "no-repeat"
+  button.style.setProperty("will-change", "transform")
+
+  button.addEventListener("mouseover", (_: dom.MouseEvent) => {
+    button.style.transform = "translate(-50%, -4px)"     // lift up
+    button.style.boxShadow = "0 8px 18px rgba(0,0,0,.25)"
+  })
+
+  button.addEventListener("mouseout", (_: dom.MouseEvent) => {
+    button.style.transform = "translate(-50%, 0)"        // reset
+    button.style.boxShadow = "0 6px 14px rgba(0,0,0,.20)"
+  })
+
+  button.addEventListener("click", (_: dom.MouseEvent) => {
+    ChatPage.render()
+  })
+
+  button
+}
+
 
   private def createBookingButton(): Div = {
     val button = document.createElement("div").asInstanceOf[Div]
