@@ -103,7 +103,8 @@ object DbBookings {
   ): IO[Either[DbError, List[BookingResponse]]] = {
 
     val baseSelect =
-      "booking_id,patient_id,clinic_id,confirmed,slot_time,slot_length,clinic_info)"
+      "booking_id,patient_id,clinic_id,confirmed,slot_time,slot_length,clinic_info,appointment_type"
+      
     val selectQuery = s"?select=$baseSelect"
 
     val filterClauses = List(

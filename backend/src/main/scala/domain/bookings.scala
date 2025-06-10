@@ -23,7 +23,8 @@ object bookings {
       slotTime: Instant,
       slotLength: Long,
       clinicInfo: Option[String],
-      isConfirmed: Boolean
+      isConfirmed: Boolean,
+      appointmentType: AppointmentType
   )
   
   object BookingResponse {
@@ -37,14 +38,15 @@ object bookings {
       }
     }
 
-    given Decoder[BookingResponse] = Decoder.forProduct7(
+    given Decoder[BookingResponse] = Decoder.forProduct8(
       "booking_id",
       "patient_id",
       "clinic_id",
       "slot_time",
       "slot_length",
       "clinic_info",
-      "confirmed"
+      "confirmed",
+      "appointment_type"
     )(BookingResponse.apply)
 
     given Encoder[BookingResponse] = Encoder.instance { br =>
@@ -55,50 +57,16 @@ object bookings {
         "slot_time"    -> br.slotTime.asJson,
         "slot_length"  -> br.slotLength.asJson,
         "clinic_info"  -> br.clinicInfo.asJson,
-        "confirmed"    -> br.isConfirmed.asJson
+        "confirmed"    -> br.isConfirmed.asJson,
+        "appointment_type" -> br.appointmentType.asJson
       )
     }
 
   }
 
-  final case class SlotInfo(
-    slot_time: Instant,
-    slot_length: Long,
-    clinic_info: Option[String]
-  )
-
-  final case class BookingDto(
-    booking_id: UUID, 
-    patient_id: UUID,
-    clinic_id: UUID,
-    confirmed: Boolean,
-    slot: SlotInfo
-  )
-
-  given Decoder[SlotInfo] = Decoder.forProduct3(
-    "slot_time", "slot_length", "clinic_info"
-  )(SlotInfo.apply)
-
-  given Decoder[BookingDto] = Decoder.forProduct5(
-    "booking_id", "patient_id", "clinic_id", "confirmed", "slot"
-  )(BookingDto.apply)
-
-
-
   enum AppointmentType {
     case CHECKUP, EXTRACTION, FILLING, ROOT_CANAL, HYGIENE, OTHER, NOT_SET
   }
-
-//  val toBookingResponse: BookingDto => BookingResponse = dto =>
-//    BookingResponse(
-//      patientId = dto.patient_id,
-//      clinicId = dto.clinic_id,
-//      slotTime = dto.slot.slot_time,
-//      slotLength = dto.slot.slot_length,
-//      clinicInfo = dto.slot.clinic_info,
-//      isConfirmed = dto.confirmed
-//    )
-
 
   object AppointmentType {
     // encode as a JSON string of the enum’s name
