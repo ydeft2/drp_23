@@ -7,6 +7,7 @@ import scala.concurrent.Future
 import scala.scalajs.js
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js.Thenable.Implicits._
+import scala.scalajs.js.JSON // <-- Add this import at the top
 
 
 object AdminPatientBookingsPage {
@@ -118,6 +119,10 @@ object AdminPatientBookingsPage {
     modalDiv.appendChild(infoRow("Length:", s"$slotLength min"))
 
     // Only show editable fields if booking is not confirmed
+    // Declare these outside the if so they're visible in the handler
+    var clinicBox: dom.html.TextArea = null
+    var typeSelect: dom.html.Select = null
+
     if (!confirmed) {
       // Clinic info textarea
       val clinicLabel = document.createElement("label")
@@ -125,7 +130,7 @@ object AdminPatientBookingsPage {
       clinicLabel.setAttribute("for", "clinic-info-box")
       modalDiv.appendChild(clinicLabel)
       modalDiv.appendChild(document.createElement("br"))
-      val clinicBox = document.createElement("textarea").asInstanceOf[dom.html.TextArea]
+      clinicBox = document.createElement("textarea").asInstanceOf[dom.html.TextArea]
       clinicBox.id = "clinic-info-box"
       clinicBox.value = clinicInfo
       clinicBox.style.width = "100%"
@@ -139,7 +144,7 @@ object AdminPatientBookingsPage {
       typeLabel.setAttribute("for", "appointment-type-select")
       modalDiv.appendChild(typeLabel)
       modalDiv.appendChild(document.createElement("br"))
-      val typeSelect = document.createElement("select").asInstanceOf[dom.html.Select]
+      typeSelect = document.createElement("select").asInstanceOf[dom.html.Select]
       typeSelect.id = "appointment-type-select"
       typeSelect.style.width = "100%"
       typeSelect.style.padding = "8px"
@@ -180,7 +185,23 @@ object AdminPatientBookingsPage {
       
       // TODO: Add click handler for confirming booking
       confirmBtn.onclick = (_: dom.MouseEvent) => {
-        dom.window.alert("Confirm booking functionality will be implemented with backend integration")
+        val updatedClinicInfo = clinicBox.value
+        val updatedAppointmentType = typeSelect.value
+
+        // Call backend API to confirm booking
+        confirmBooking(bookingId, updatedClinicInfo, updatedAppointmentType).foreach { success =>
+          if (success) {
+            replaceModalContent(
+              s"""
+              <h3>Booking Confirmed</h3>
+              <p>Booking has been successfully confirmed.</p>
+              <img src="images/Confirmation.png" alt="Confirmation Icon" style="width: 80px;;">
+              """
+            )
+          } else {
+            dom.window.alert("Failed to confirm booking.")
+          }
+        }
       }
       
       modalDiv.appendChild(confirmBtn)
@@ -200,12 +221,98 @@ object AdminPatientBookingsPage {
     
     // TODO: Add click handler for canceling booking
     cancelBtn.onclick = (_: dom.MouseEvent) => {
-      dom.window.alert("Cancel booking functionality will be implemented with backend integration")
+      cancelBooking(bookingId).foreach { success =>
+        if (success) {
+          replaceModalContent(
+            s"""
+            <h3>Booking Cancelled</h3>
+            <p>Booking has been successfully cancelled.</p>
+            <img src="images/Cancelled.png" alt="Cancelled Icon" style="width: 80px;">
+            """
+          )
+        } else {
+          dom.window.alert("Failed to cancel booking.")
+        }
+      }
     }
     
     modalDiv.appendChild(cancelBtn)
 
     modalDiv
+  }
+
+  def cancelBooking(bookingId: String): Future[Boolean] = {
+    val accessToken = dom.window.localStorage.getItem("accessToken")
+    if (accessToken == null) {
+      dom.window.alert("You are not logged in.")
+      return Future.successful(false)
+    }
+
+    val requestHeaders = new dom.Headers()
+    requestHeaders.append("Content-Type", "application/json")
+    requestHeaders.append("Authorization", s"Bearer $accessToken")
+    requestHeaders.append("apikey", SUPABASE_ANON_KEY)
+
+    val requestInit = new dom.RequestInit {
+      method = dom.HttpMethod.DELETE
+      headers = requestHeaders
+    }
+
+    dom.fetch(s"/api/bookings/cancel/$bookingId", requestInit)
+      .flatMap { response =>
+        if (response.ok) {
+          response.json().toFuture.map { _ =>
+            true // Successfully parsed response
+          }.recover {
+            case _ => true // Even if JSON parsing fails, cancellation was successful
+          }
+        } else {
+          Future.successful(false)
+        }
+      }
+      .recover {
+        case e =>
+          dom.window.alert(s"Failed to cancel booking: ${e.getMessage}")
+          false
+      }
+  }
+
+  def confirmBooking(
+    bookingId: String,
+    clinicInfo: String,
+    appointmentType: String
+  ): Future[Boolean] = {
+    val accessToken = dom.window.localStorage.getItem("accessToken")
+    if (accessToken == null) {
+      dom.window.alert("You are not logged in.")
+      return Future.successful(false)
+    }
+
+    val requestHeaders = new dom.Headers()
+    requestHeaders.append("Content-Type", "application/json")
+    requestHeaders.append("Authorization", s"Bearer $accessToken")
+    requestHeaders.append("apikey", SUPABASE_ANON_KEY)
+
+    val payload = js.Dynamic.literal(
+      clinic_info = clinicInfo,
+      appointment_type = appointmentType
+    )
+
+    val requestInit = new dom.RequestInit {
+      method = dom.HttpMethod.PUT
+      headers = requestHeaders
+      body = JSON.stringify(payload)
+    }
+
+    dom.fetch(s"/api/bookings/confirm/$bookingId", requestInit)
+      .flatMap { response =>
+        if (response.ok) {
+          response.json().toFuture.map(_ => true)
+        } else {
+          dom.window.alert("Failed to confirm booking.")
+          Future.successful(false)
+        }
+      }
   }
 
   def renderBookings(bookings: js.Array[js.Dynamic]): Element = {
@@ -265,7 +372,7 @@ object AdminPatientBookingsPage {
             appointmentType,
             confirmed
           )
-          showModal(modalDiv.outerHTML)
+          showModal(modalDiv)
         }
       }
 

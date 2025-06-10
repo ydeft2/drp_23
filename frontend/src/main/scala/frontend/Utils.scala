@@ -581,6 +581,23 @@ def createModal(): Unit = {
   }
 }
 
+def showModal(contentElement: dom.html.Element): Unit = {
+  createModal()
+  val overlay = document.getElementById("modal-overlay")
+  val content = document.getElementById("modal-content")
+
+  if (content != null) {
+    // Clear existing content
+    content.innerHTML = ""
+    // Append the DOM element
+    content.appendChild(contentElement)
+  }
+
+  if (overlay != null) {
+    overlay.classList.remove("hidden")
+  }
+}
+
 def showModal(contentHtml: String, forceReplace: Boolean = true): Unit = {
   createModal()
   val overlay = document.getElementById("modal-overlay")
@@ -676,4 +693,4 @@ def formatSlotTime(slotTime: String): String = {
     val hour = dt.getUTCHours().toInt
     val minute = dt.getUTCMinutes().toInt
     f"$year-$month%02d-$day%02d $hour%02d:$minute%02d UTC"
-  }
+}

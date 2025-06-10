@@ -104,18 +104,22 @@ object bookings {
     )(BookingRequestPayload.apply)
   }
 
-  final case class ConfirmBookingPayload(appointmentType: AppointmentType)
+  final case class ConfirmBookingPayload(appointmentType: AppointmentType, clinicInfo: Option[String] = None)
 
   object ConfirmBookingPayload {
     given encoder: Encoder[ConfirmBookingPayload] = Encoder.instance { cb =>
       io.circe.Json.obj(
         "appointment_type" -> cb.appointmentType.asJson,
+        "clinic_info"      -> cb.clinicInfo.asJson,
         "confirmed"        -> io.circe.Json.True
       )
     }
 
     given decoder: Decoder[ConfirmBookingPayload] = Decoder.instance { c =>
-      c.downField("appointment_type").as[AppointmentType].map(ConfirmBookingPayload.apply)
+      for {
+        appointmentType <- c.downField("appointment_type").as[AppointmentType]
+        clinicInfo      <- c.downField("clinic_info").as[Option[String]]
+      } yield ConfirmBookingPayload(appointmentType, clinicInfo)
     }
     
   }
