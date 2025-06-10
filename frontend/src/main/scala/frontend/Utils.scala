@@ -182,7 +182,7 @@ def verifyToken(accessToken: String): scala.concurrent.Future[Boolean] = {
 
 // account pages
 
-    def buildProfileCard(user: User, isPatient:Boolean): Div = {
+  def buildProfileCard(user: User, isPatient:Boolean): Div = {
     val card = document.createElement("div").asInstanceOf[Div]
     card.style.marginTop = "70px"
     card.style.marginLeft = "auto"
@@ -341,6 +341,40 @@ def verifyToken(accessToken: String): scala.concurrent.Future[Boolean] = {
           Spinner.hide()
           dom.window.alert(s"Error: ${e.getMessage}")
           User("Unknown", "Unknown", "Unknown")
+      }
+  }
+
+  def fetchClinicDetails(): Future[String] = {
+    val accessToken = dom.window.localStorage.getItem("accessToken")
+    val uid = dom.window.localStorage.getItem("userId")
+
+    if (accessToken == null || uid == null) {
+      dom.window.alert("You are not logged in.")
+      return Future.successful("Unknown Clinic")
+    }
+
+    val requestHeaders = new dom.Headers()
+    requestHeaders.append("Content-Type", "application/json")
+    requestHeaders.append("Authorization", s"Bearer $accessToken")
+    requestHeaders.append("apikey", SUPABASE_ANON_KEY)
+
+    val requestInit = new dom.RequestInit {
+      method = dom.HttpMethod.GET
+      headers = requestHeaders
+    }
+    val requestUrl = s"https://djkrryzafuofyevgcyic.supabase.co/rest/v1/clinics?select=name&clinic_id=eq.${uid}"
+    dom.fetch(requestUrl, requestInit)
+      .toFuture
+      .flatMap(_.json().toFuture)
+      .map { json =>
+        val clinics = json.asInstanceOf[js.Array[js.Dynamic]]
+        if (clinics.nonEmpty) clinics(0).name.asInstanceOf[String]
+        else "Unknown Clinic"
+      }
+      .recover {
+      case e =>
+        dom.window.alert(s"Error: ${e.getMessage}")
+        "Unknown Clinic"
       }
   }
   
