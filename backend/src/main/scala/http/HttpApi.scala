@@ -18,6 +18,8 @@ class HttpApi private {
   private val slotRoutes = SlotRoutes().routes
   private val bookingRoutes = BookingRoutes().routes
   private val messageRoutes = MessageRoutes().routes
+  private val clinicRoutes = ClinicRoutes().routes
+  private val interestRoutes = InterestRoutes().routes
 
 
   val endpoints = Router(
@@ -27,7 +29,9 @@ class HttpApi private {
       bookingRoutes <+>
       authRoutes <+>
       notificationRoutes <+>
-      messageRoutes
+      messageRoutes <+>
+      clinicRoutes <+>
+      interestRoutes
     ),
     "/" -> fileService[IO](FileService.Config("public", pathPrefix = ""))
   )

@@ -13,7 +13,7 @@ import org.http4s.server.*
 import backend.database.DbInterests
 import backend.domain.interests.InterestRequest
 
-class InterestRoutes extends Http4sDsl[IO] {
+class InterestRoutes private extends Http4sDsl[IO] {
   
   private val create: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case req @ POST -> Root =>
