@@ -305,11 +305,10 @@ def verifyToken(accessToken: String): scala.concurrent.Future[Boolean] = {
     deleteBtn
   }
 
-  def fetchUserDetails(): Future[User] = {
+  def fetchUserDetails(userId: String): Future[User] = {
     val accessToken = dom.window.localStorage.getItem("accessToken")
-    val uid = dom.window.localStorage.getItem("userId")
 
-    if (accessToken == null || uid == null) {
+    if (accessToken == null) {
       dom.window.alert("You are not logged in.")
       User("Unknown", "Unknown", "Unknown")
     }
@@ -318,7 +317,7 @@ def verifyToken(accessToken: String): scala.concurrent.Future[Boolean] = {
     requestHeaders.append("Content-Type", "application/json")
     requestHeaders.append("Authorization", s"Bearer $accessToken")
 
-    val requestBody = uid
+    val requestBody = userId.toString
 
     val requestInit = new dom.RequestInit {
       method = dom.HttpMethod.POST
@@ -668,3 +667,13 @@ private def fetchUnreadCount(): Future[Int] = {
       }
   }
 }
+
+def formatSlotTime(slotTime: String): String = {
+    val dt = new js.Date(slotTime)
+    val year = dt.getUTCFullYear()
+    val month = (dt.getUTCMonth() + 1).toInt
+    val day = dt.getUTCDate().toInt
+    val hour = dt.getUTCHours().toInt
+    val minute = dt.getUTCMinutes().toInt
+    f"$year-$month%02d-$day%02d $hour%02d:$minute%02d UTC"
+  }

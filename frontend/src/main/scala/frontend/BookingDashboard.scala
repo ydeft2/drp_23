@@ -334,15 +334,6 @@ object BookingDashboard {
     (day >= 1 && day <= 5) && (hour >= 9 && hour < 17)
   }
 
-  def formatSlotTime(slotTime: String): String = {
-    val dt = new js.Date(slotTime)
-    val year = dt.getUTCFullYear()
-    val month = (dt.getUTCMonth() + 1).toInt
-    val day = dt.getUTCDate().toInt
-    val hour = dt.getUTCHours().toInt
-    val minute = dt.getUTCMinutes().toInt
-    f"$year-$month%02d-$day%02d $hour%02d:$minute%02d UTC"
-  }
 
   def resetForm(): Unit = {
     dateInput.value = ""
