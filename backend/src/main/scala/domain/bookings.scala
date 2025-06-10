@@ -3,7 +3,7 @@ package backend.domain
 import io.circe.{Decoder, Encoder}
 import io.circe.syntax.*
 import java.util.UUID
-import java.time.Instant
+import java.time.{Instant, OffsetDateTime}
 
 object bookings {
 
@@ -27,26 +27,38 @@ object bookings {
   )
   
   object BookingResponse {
-    given Decoder[BookingResponse] = Decoder.instance { c =>
-      for {
-        bookingId  <- c.downField("booking_id").as[UUID]
-        patientId  <- c.downField("patient_id").as[UUID]
-        clinicId   <- c.downField("clinic_id").as[UUID]
-        confirmed  <- c.downField("confirmed").as[Boolean]
-        slotField   = c.downField("slot")
-        slotTime   <- slotField.downField("slot_time").as[Instant]
-        slotLength <- slotField.downField("slot_length").as[Long]
-        clinicInfo <- slotField.downField("clinic_info").as[Option[String]]
-      } yield BookingResponse(
-        bookingId,
-        patientId,
-        clinicId,
-        slotTime,
-        slotLength,
-        clinicInfo,
-        confirmed
+
+    given Decoder[Instant] = Decoder.decodeString.emap { str =>
+      try {
+        val odt = OffsetDateTime.parse(str)
+        Right(odt.toInstant)
+      } catch {
+        case e: Exception => Left(s"Could not parse Instant: $str - ${e.getMessage}")
+      }
+    }
+
+    given Decoder[BookingResponse] = Decoder.forProduct7(
+      "booking_id",
+      "patient_id",
+      "clinic_id",
+      "slot_time",
+      "slot_length",
+      "clinic_info",
+      "confirmed"
+    )(BookingResponse.apply)
+
+    given Encoder[BookingResponse] = Encoder.instance { br =>
+      io.circe.Json.obj(
+        "booking_id"   -> br.bookingId.asJson,
+        "patient_id"   -> br.patientId.asJson,
+        "clinic_id"    -> br.clinicId.asJson,
+        "slot_time"    -> br.slotTime.asJson,
+        "slot_length"  -> br.slotLength.asJson,
+        "clinic_info"  -> br.clinicInfo.asJson,
+        "confirmed"    -> br.isConfirmed.asJson
       )
     }
+
   }
 
   final case class SlotInfo(

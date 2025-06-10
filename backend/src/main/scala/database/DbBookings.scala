@@ -103,7 +103,7 @@ object DbBookings {
   ): IO[Either[DbError, List[BookingResponse]]] = {
 
     val baseSelect =
-      "booking_id,patient_id,clinic_id,confirmed,slot:slot_id(slot_time,slot_length,clinic_info)"
+      "booking_id,patient_id,clinic_id,confirmed,slot_time,slot_length,clinic_info)"
     val selectQuery = s"?select=$baseSelect"
 
     val filterClauses = List(
@@ -120,7 +120,7 @@ object DbBookings {
     val paginationClauses = s"&limit=${pagination.limit}&offset=${pagination.offset}"
 
     val fullUri = Uri.unsafeFromString(
-      s"$supabaseUrl/rest/v1/bookings$selectQuery$filterClauses$paginationClauses"
+      s"$supabaseUrl/rest/v1/bookings_with_slots$selectQuery$filterClauses$paginationClauses"
     )
     
     val req = Request[IO](
