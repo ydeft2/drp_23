@@ -15,7 +15,8 @@ object Account {
 
   Spinner.show()
 
-  fetchUserDetails()
+
+  fetchUserDetails(dom.window.localStorage.getItem("userId"))
     .map { currentUser =>
       Layout.renderPage(
         leftButton = Some(createHomeButton()), 

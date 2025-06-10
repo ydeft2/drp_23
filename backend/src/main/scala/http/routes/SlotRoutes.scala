@@ -1,7 +1,7 @@
 package backend.http.routes
 
 
-import backend.database.{DbError, DbSlots}
+import backend.database.{DbError, DbSlots, notifyUser, newSlotCreatedMessage}
 import io.circe.generic.auto.*
 import org.http4s.circe.CirceEntityCodec.*
 import org.http4s.circe.CirceEntityEncoder.*
@@ -140,7 +140,7 @@ class SlotRoutes private extends Http4sDsl[IO] {
         ret <- DbSlots.addSlot(newSlot)
         resp <- ret match {
           case Right(_) =>
-            Created()
+            notifyUser(slotReq.clinicId, newSlotCreatedMessage(newSlot)) *> Created()
 
           case Left(DbError.DecodeError(msg)) =>
             BadRequest(Json.obj("error" -> Json.fromString(s"Invalid JSON: $msg")))
@@ -163,7 +163,6 @@ class SlotRoutes private extends Http4sDsl[IO] {
       DbSlots.deleteSlot(slotId).flatMap {
         case Right(_) =>
           NoContent()
-
         case Left(DbError.NotFound(_, _)) =>
           NotFound(Json.obj("error" -> Json.fromString("Slot not found")))
 
@@ -192,5 +191,4 @@ class SlotRoutes private extends Http4sDsl[IO] {
 
 object SlotRoutes {
   def apply(): SlotRoutes = new SlotRoutes
-
 }

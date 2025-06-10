@@ -16,9 +16,27 @@ import backend.domain.notifications.*
 import backend.domain.notifications.Notification.given
 import org.http4s.circe.CirceEntityDecoder.circeEntityDecoder
 import io.circe.Decoder
+import backend.domain.slots.SlotRequest
+import java.time.format.DateTimeFormatter
+import java.time.ZoneId
 
 given Decoder[Notification] = Notification.decoder
 given EntityDecoder[IO, List[Notification]] = jsonOf[IO, List[Notification]]
+
+def formatSlotTime(slotTime: java.time.OffsetDateTime): String = {
+  val formatter = DateTimeFormatter.ofPattern("MMM dd 'at' HH:mm")
+  slotTime.format(formatter)
+}
+
+// If slotTime is an Instant, convert to OffsetDateTime first:
+def formatSlotTime(slotTime: java.time.Instant): String = {
+  val formatter = DateTimeFormatter.ofPattern("MMM dd 'at' HH:mm")
+  slotTime.atZone(ZoneId.systemDefault()).format(formatter)
+}
+
+def newSlotCreatedMessage(slotRequest: SlotRequest): String = {
+  s"You created new availability for ${formatSlotTime(slotRequest.slotTime)}."
+}
 
 
 // This is intended to be a function only used by the backend to notify users when necessary.

@@ -69,70 +69,62 @@ package frontend
 import org.scalajs.dom
 import org.scalajs.dom.document
 import org.scalajs.dom.html._
+import concurrent.ExecutionContext.Implicits.global
 
 object AdminPage {
 
+  private var unreadNotifications: Int = 0
+  case class DashboardItem(title: String, iconUrl: String, onClick: () => Unit)
+
   def render(): Unit = {
-    
-    val accountBtn = createHeaderButton("Account")
-    accountBtn.addEventListener("click", (_: dom.MouseEvent) => AdminAccount.render())
-    Layout.renderPage(
-      leftButton = Some(accountBtn),
-      contentRender = () => 
-      {
-        document.body.appendChild(createAdminDashboardBox())
-        document.body.appendChild(createBookingDashboardBox())
-      }
-    )
+    Spinner.show()
+    fetchUnreadCount().foreach { unreadCount =>
+      unreadNotifications = unreadCount
+      Layout.renderPage(
+        contentRender = () =>
+        {
+          buildAdminPage()
+          Spinner.hide()
+        }
+      )
+    }
   }
 
+  private def buildAdminPage(): Unit = {
+    val contentDiv = document.createElement("div").asInstanceOf[Div]
+    contentDiv.className = "dashboard-grid"
 
-
-  // Admin Dashboard box
-  def createAdminDashboardBox(): Div = {
-    val box = document.createElement("div").asInstanceOf[Div]
-    box.setAttribute("style",
-      """
-        margin: 50px auto;
-        width: 600px;
-        padding: 20px;
-        background-color: lightgrey;
-        border-radius: 5px;
-        text-align: center;
-      """.stripMargin
+    val items = Seq(
+      DashboardItem("My Account", "images/icons/Account.png", () => AdminAccount.render()),
+      DashboardItem(s"Inbox", "images/icons/Inbox.png", () => Inbox.render()),
+      DashboardItem("Patient Bookings", "images/icons/Bookings.png", () => AdminPatientBookingsPage.render()),
+      DashboardItem("Set Availability", "images/icons/Availability.png", () => BookingDashboard.render()),
+      DashboardItem("Messages", "images/icons/Messages.png", () => MessagesPage.render())
     )
 
-    val heading = document.createElement("h2").asInstanceOf[Heading]
-    heading.textContent = "Admin Dashboard"
-    box.appendChild(heading)
+    items.foreach { item =>
+      val box = document.createElement("div").asInstanceOf[Div]
+      box.className = "dashboard-item"
 
-    box
-  }
+      val badgeHtml = 
+        if (item.title == "Inbox" && unreadNotifications > 0) 
+          s"""<span class="notification-badge">$unreadNotifications</span>"""
+        else ""
 
-  // Booking Dashboard box
-  def createBookingDashboardBox(): Div = {
-    val box = document.createElement("div").asInstanceOf[Div]
-    box.setAttribute("style",
-      """
-        margin: 50px auto;
-        width: 600px;
-        padding: 20px;
-        background-color: lightgrey;
-        border-radius: 5px;
-        text-align: center;
-      """.stripMargin
-    )
+      box.innerHTML =
+        s"""
+          |<div class="dashboard-title">${item.title}</div>
+          |<div class="dashboard-icon icon-with-badge">
+          |  <img src="${item.iconUrl}" alt="${item.title} icon"/>
+          |  $badgeHtml
+          |</div>
+        """.stripMargin
 
-    val heading = document.createElement("h2").asInstanceOf[Heading]
-    heading.textContent = "Booking Dashboard"
-    box.appendChild(heading)
+      box.addEventListener("click", (_: dom.MouseEvent) => item.onClick())
+      contentDiv.appendChild(box)
+    }
 
-    val button = document.createElement("button").asInstanceOf[Button]
-    button.textContent = "Go to Booking Dashboard"
-    button.setAttribute("style", "margin-top: 20px; padding: 10px 20px;")
-    button.onclick = (_: dom.MouseEvent) => BookingDashboard.render()
-    box.appendChild(button)
 
-    box
+    document.body.appendChild(contentDiv)
   }
 }

@@ -3,7 +3,7 @@ package backend.domain
 import io.circe.{Decoder, Encoder}
 import io.circe.syntax.*
 import java.util.UUID
-import java.time.Instant
+import java.time.{Instant, OffsetDateTime}
 
 object bookings {
 
@@ -17,52 +17,56 @@ object bookings {
   )
 
   final case class BookingResponse(
+      bookingId: UUID,
       patientId: UUID,
       clinicId: UUID,
       slotTime: Instant,
       slotLength: Long,
       clinicInfo: Option[String],
-      isConfirmed: Boolean
+      isConfirmed: Boolean,
+      appointmentType: AppointmentType
   )
+  
+  object BookingResponse {
 
-  final case class SlotInfo(
-    slot_time: Instant,
-    slot_length: Long,
-    clinic_info: Option[String]
-  )
+    given Decoder[Instant] = Decoder.decodeString.emap { str =>
+      try {
+        val odt = OffsetDateTime.parse(str)
+        Right(odt.toInstant)
+      } catch {
+        case e: Exception => Left(s"Could not parse Instant: $str - ${e.getMessage}")
+      }
+    }
 
-  final case class BookingDto(
-    booking_id: UUID, 
-    patient_id: UUID,
-    clinic_id: UUID,
-    confirmed: Boolean,
-    slot: SlotInfo
-  )
+    given Decoder[BookingResponse] = Decoder.forProduct8(
+      "booking_id",
+      "patient_id",
+      "clinic_id",
+      "slot_time",
+      "slot_length",
+      "clinic_info",
+      "confirmed",
+      "appointment_type"
+    )(BookingResponse.apply)
 
-  given Decoder[SlotInfo] = Decoder.forProduct3(
-    "slot_time", "slot_length", "clinic_info"
-  )(SlotInfo.apply)
+    given Encoder[BookingResponse] = Encoder.instance { br =>
+      io.circe.Json.obj(
+        "booking_id"   -> br.bookingId.asJson,
+        "patient_id"   -> br.patientId.asJson,
+        "clinic_id"    -> br.clinicId.asJson,
+        "slot_time"    -> br.slotTime.asJson,
+        "slot_length"  -> br.slotLength.asJson,
+        "clinic_info"  -> br.clinicInfo.asJson,
+        "confirmed"    -> br.isConfirmed.asJson,
+        "appointment_type" -> br.appointmentType.asJson
+      )
+    }
 
-  given Decoder[BookingDto] = Decoder.forProduct5(
-    "booking_id", "patient_id", "clinic_id", "confirmed", "slot"
-  )(BookingDto.apply)
-
-
+  }
 
   enum AppointmentType {
     case CHECKUP, EXTRACTION, FILLING, ROOT_CANAL, HYGIENE, OTHER, NOT_SET
   }
-
-  val toBookingResponse: BookingDto => BookingResponse = dto =>
-    BookingResponse(
-      patientId = dto.patient_id,
-      clinicId = dto.clinic_id,
-      slotTime = dto.slot.slot_time,
-      slotLength = dto.slot.slot_length,
-      clinicInfo = dto.slot.clinic_info,
-      isConfirmed = dto.confirmed
-    )
-
 
   object AppointmentType {
     // encode as a JSON string of the enum’s name
@@ -100,18 +104,22 @@ object bookings {
     )(BookingRequestPayload.apply)
   }
 
-  final case class ConfirmBookingPayload(appointmentType: AppointmentType)
+  final case class ConfirmBookingPayload(appointmentType: AppointmentType, clinicInfo: Option[String] = None)
 
   object ConfirmBookingPayload {
     given encoder: Encoder[ConfirmBookingPayload] = Encoder.instance { cb =>
       io.circe.Json.obj(
         "appointment_type" -> cb.appointmentType.asJson,
+        "clinic_info"      -> cb.clinicInfo.asJson,
         "confirmed"        -> io.circe.Json.True
       )
     }
 
     given decoder: Decoder[ConfirmBookingPayload] = Decoder.instance { c =>
-      c.downField("appointment_type").as[AppointmentType].map(ConfirmBookingPayload.apply)
+      for {
+        appointmentType <- c.downField("appointment_type").as[AppointmentType]
+        clinicInfo      <- c.downField("clinic_info").as[Option[String]]
+      } yield ConfirmBookingPayload(appointmentType, clinicInfo)
     }
     
   }

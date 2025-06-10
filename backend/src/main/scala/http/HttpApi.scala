@@ -8,7 +8,6 @@ import cats.effect.*
 import cats.implicits.*
 import backend.http.routes.*
 import cats.Monad
-import backend.http.routes.*
 import org.http4s.server.staticcontent._
 
 class HttpApi private {
@@ -18,6 +17,7 @@ class HttpApi private {
   private val notificationRoutes = NotificationRoutes().routes
   private val slotRoutes = SlotRoutes().routes
   private val bookingRoutes = BookingRoutes().routes
+  private val messageRoutes = MessageRoutes().routes
 
 
   val endpoints = Router(
@@ -26,7 +26,8 @@ class HttpApi private {
       slotRoutes <+>
       bookingRoutes <+>
       authRoutes <+>
-      notificationRoutes
+      notificationRoutes <+>
+      messageRoutes
     ),
     "/" -> fileService[IO](FileService.Config("public", pathPrefix = ""))
   )

@@ -182,7 +182,7 @@ def verifyToken(accessToken: String): scala.concurrent.Future[Boolean] = {
 
 // account pages
 
-    def buildProfileCard(user: User, isPatient:Boolean): Div = {
+  def buildProfileCard(user: User, isPatient:Boolean): Div = {
     val card = document.createElement("div").asInstanceOf[Div]
     card.style.marginTop = "70px"
     card.style.marginLeft = "auto"
@@ -305,11 +305,10 @@ def verifyToken(accessToken: String): scala.concurrent.Future[Boolean] = {
     deleteBtn
   }
 
-  def fetchUserDetails(): Future[User] = {
+  def fetchUserDetails(userId: String): Future[User] = {
     val accessToken = dom.window.localStorage.getItem("accessToken")
-    val uid = dom.window.localStorage.getItem("userId")
 
-    if (accessToken == null || uid == null) {
+    if (accessToken == null) {
       dom.window.alert("You are not logged in.")
       User("Unknown", "Unknown", "Unknown")
     }
@@ -318,7 +317,7 @@ def verifyToken(accessToken: String): scala.concurrent.Future[Boolean] = {
     requestHeaders.append("Content-Type", "application/json")
     requestHeaders.append("Authorization", s"Bearer $accessToken")
 
-    val requestBody = uid
+    val requestBody = userId.toString
 
     val requestInit = new dom.RequestInit {
       method = dom.HttpMethod.POST
@@ -341,6 +340,40 @@ def verifyToken(accessToken: String): scala.concurrent.Future[Boolean] = {
           Spinner.hide()
           dom.window.alert(s"Error: ${e.getMessage}")
           User("Unknown", "Unknown", "Unknown")
+      }
+  }
+
+  def fetchClinicDetails(): Future[String] = {
+    val accessToken = dom.window.localStorage.getItem("accessToken")
+    val uid = dom.window.localStorage.getItem("userId")
+
+    if (accessToken == null || uid == null) {
+      dom.window.alert("You are not logged in.")
+      return Future.successful("Unknown Clinic")
+    }
+
+    val requestHeaders = new dom.Headers()
+    requestHeaders.append("Content-Type", "application/json")
+    requestHeaders.append("Authorization", s"Bearer $accessToken")
+    requestHeaders.append("apikey", SUPABASE_ANON_KEY)
+
+    val requestInit = new dom.RequestInit {
+      method = dom.HttpMethod.GET
+      headers = requestHeaders
+    }
+    val requestUrl = s"https://djkrryzafuofyevgcyic.supabase.co/rest/v1/clinics?select=name&clinic_id=eq.${uid}"
+    dom.fetch(requestUrl, requestInit)
+      .toFuture
+      .flatMap(_.json().toFuture)
+      .map { json =>
+        val clinics = json.asInstanceOf[js.Array[js.Dynamic]]
+        if (clinics.nonEmpty) clinics(0).name.asInstanceOf[String]
+        else "Unknown Clinic"
+      }
+      .recover {
+      case e =>
+        dom.window.alert(s"Error: ${e.getMessage}")
+        "Unknown Clinic"
       }
   }
   
@@ -548,6 +581,23 @@ def createModal(): Unit = {
   }
 }
 
+def showModal(contentElement: dom.html.Element): Unit = {
+  createModal()
+  val overlay = document.getElementById("modal-overlay")
+  val content = document.getElementById("modal-content")
+
+  if (content != null) {
+    // Clear existing content
+    content.innerHTML = ""
+    // Append the DOM element
+    content.appendChild(contentElement)
+  }
+
+  if (overlay != null) {
+    overlay.classList.remove("hidden")
+  }
+}
+
 def showModal(contentHtml: String, forceReplace: Boolean = true): Unit = {
   createModal()
   val overlay = document.getElementById("modal-overlay")
@@ -589,4 +639,58 @@ def happyLogo(): html.Element = {
   img.width = 50
   img.style.margin = "20px"
   img
+}
+
+private def fetchUnreadCount(): Future[Int] = {
+  val accessToken = dom.window.localStorage.getItem("accessToken")
+  val uid = dom.window.localStorage.getItem("userId")
+
+  if (accessToken == null || uid == null) {
+    dom.window.alert("You are not logged in.")
+    Future.successful(0)
+  } else {
+    val requestHeaders = new dom.Headers()
+    requestHeaders.append("Content-Type", "application/json")
+    requestHeaders.append("Authorization", s"Bearer $accessToken")
+
+    val requestBody = js.Dynamic.literal(
+      "user_id" -> uid,
+      "message" -> ""
+    )
+
+    val requestInit = new dom.RequestInit {
+      method = dom.HttpMethod.POST
+      headers = requestHeaders
+      body = JSON.stringify(requestBody)
+    }
+
+    dom.fetch("/api/notifications/fetch", requestInit)
+      .toFuture
+      .flatMap(_.json().toFuture)
+      .map { jsValue =>
+        if (js.Array.isArray(jsValue)) {
+          val arr = jsValue.asInstanceOf[js.Array[js.Dynamic]]
+          val parsed = Inbox.parseNotifications(arr)
+          parsed.count(!_.isRead)
+        } else {
+          println("Unexpected response format")
+          0
+        }
+      }
+      .recover {
+        case e =>
+          println(s"Failed to fetch unread notifications: ${e.getMessage}")
+          0
+      }
+  }
+}
+
+def formatSlotTime(slotTime: String): String = {
+    val dt = new js.Date(slotTime)
+    val year = dt.getUTCFullYear()
+    val month = (dt.getUTCMonth() + 1).toInt
+    val day = dt.getUTCDate().toInt
+    val hour = dt.getUTCHours().toInt
+    val minute = dt.getUTCMinutes().toInt
+    f"$year-$month%02d-$day%02d $hour%02d:$minute%02d UTC"
 }
