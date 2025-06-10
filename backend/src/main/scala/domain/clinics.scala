@@ -1,6 +1,7 @@
 package backend.domain
 
-import io.circe.Decoder
+import io.circe.{Decoder, Encoder}
+
 import java.util.UUID
 
 object clinics {
@@ -15,9 +16,14 @@ object clinics {
   )
 
   object Clinic {
+
+    given Encoder[Clinic] = Encoder.forProduct5(
+      "clinic_id", "name", "address", "latitude", "longitude"
+    )(c => (c.clinicId, c.name, c.address, c.latitude, c.longitude))
+
     given Decoder[Clinic] = Decoder.forProduct5(
       "clinic_id", "name", "address", "latitude", "longitude"
     )(Clinic.apply)
   }
-  
+
 }
