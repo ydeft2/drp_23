@@ -11,15 +11,12 @@ import scala.collection.immutable.Map
 
 object BookingDashboard {
 
-  // Backend API base URL (replace with your actual backend URL)
-  val BACKEND_URL = "/api"  // adjust accordingly
+  val BACKEND_URL = "/api"
   var dateInput: Input = _
   var timeInput: Input = _
-  var clinicSelect: Select = _
   var lengthInput: Input = _
 
   var slotsContainer: Div = _
-  var clinicMap: Map[String, String] = Map.empty
 
   def createRow(labelText: String, inputElement: Element): Div = {
     val row = document.createElement("div").asInstanceOf[Div]
@@ -39,7 +36,7 @@ object BookingDashboard {
   def render(): Unit = {
     Layout.renderPage(
       leftButton = Some(createHomeButton()),
-      contentRender = () => 
+      contentRender = () =>
         {
           val container = document.createElement("div").asInstanceOf[Div]
           container.setAttribute("style",
@@ -66,9 +63,6 @@ object BookingDashboard {
           timeInput.setAttribute("required", "true")
           container.appendChild(createRow("Select time:", timeInput))
 
-          clinicSelect = document.createElement("select").asInstanceOf[Select]
-          container.appendChild(createRow("Clinic:", clinicSelect))
-
           lengthInput = document.createElement("input").asInstanceOf[Input]
           lengthInput.setAttribute("type", "number")
           lengthInput.setAttribute("min", "5")
@@ -90,7 +84,6 @@ object BookingDashboard {
             createSlot(
               dateInput.value,
               timeInput.value,
-              clinicSelect.value,
               lengthInput.value.toLong
             )
           })
@@ -108,67 +101,21 @@ object BookingDashboard {
               """.stripMargin)
           document.body.appendChild(slotsContainer)
 
-          fetchClinics(clinicSelect).foreach { _ =>
-            fetchAndDisplaySlots()
-          }
-  
+          fetchAndDisplaySlots()
         }
     )
   }
 
-  def fetchClinics(clinicSelect: Select): scala.concurrent.Future[Unit] = {
-    // Keep fetching clinics from Supabase or your backend if you add endpoint
-    val clinicsApiUrl = s"https://djkrryzafuofyevgcyic.supabase.co/rest/v1/clinics?select=clinic_id,name"
-
-    val requestHeaders = new dom.Headers()
-    // Replace with your Supabase anon key or switch to backend API for clinics if available
-    requestHeaders.append("apikey", SUPABASE_ANON_KEY)
-    requestHeaders.append("Authorization", s"Bearer $SUPABASE_ANON_KEY")
-    requestHeaders.append("Content-Type", "application/json")
-
-    val requestInit = new dom.RequestInit {
-      method = dom.HttpMethod.GET
-      headers = requestHeaders
-    }
-
-    dom.fetch(clinicsApiUrl, requestInit).toFuture
-      .flatMap { response =>
-        if (response.ok) response.json().toFuture
-        else {
-          dom.window.alert(s"Failed to fetch clinics: ${response.statusText}")
-          scala.concurrent.Future.failed(new Exception("Fetch clinics failed"))
-        }
-      }
-      .map { json =>
-        val clinics = json.asInstanceOf[js.Array[js.Dynamic]]
-        clinicSelect.innerHTML = ""
-        clinics.foreach { clinic =>
-          val clinicId = clinic.clinic_id.asInstanceOf[String]
-          val clinicName = clinic.name.asInstanceOf[String]
-
-          val option = document.createElement("option").asInstanceOf[Option]
-          option.textContent = clinicName
-          option.value = clinicId
-          clinicSelect.appendChild(option)
-          clinicMap += (clinicId -> clinicName)
-        }
-      }
-  }
-
   def fetchAndDisplaySlots(): Unit = {
-    val userIdOpt = Option(dom.window.localStorage.getItem("userId"))
+    val clinicId = dom.window.localStorage.getItem("userId")
+    if (clinicId == null || clinicId.isEmpty) {
+      dom.window.alert("No clinic ID found in local storage.")
+      return
+    }
 
     val baseUrl = s"$BACKEND_URL/slots/list"
+    val slotsApiUrl = s"$baseUrl?clinic_id=$clinicId"
 
-    // Build query parameters, starting with clinicId if available
-    val queryParams = userIdOpt match {
-      case Some(userId) if userId.nonEmpty => s"?clinic_id=$userId"
-      case _ => ""
-    }
-
-    val slotsApiUrl = baseUrl + queryParams
-
-    
     val requestHeaders = new dom.Headers()
     requestHeaders.append("Content-Type", "application/json")
 
@@ -212,11 +159,10 @@ object BookingDashboard {
             slotDiv.style.backgroundColor = "#f9f9f9"
             slotDiv.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)"
 
-            val clinicName = clinicMap.getOrElse(slot.clinicId.asInstanceOf[String], "Unknown Clinic")
             val formattedTime = formatSlotTime(slot.slotTime.asInstanceOf[String])
 
             val title = document.createElement("h3")
-            title.textContent = s"$clinicName"
+            title.textContent = "Your Clinic"
             slotDiv.appendChild(title)
 
             val timeP = document.createElement("p")
@@ -244,9 +190,9 @@ object BookingDashboard {
   }
 
   def showSlotDetails(slot: js.Dynamic): Unit = {
+    val formattedTime = formatSlotTime(slot.slotTime.asInstanceOf[String])
     val confirmDelete = dom.window.confirm(
-      s"""Clinic: ${clinicMap.getOrElse(slot.clinicId.asInstanceOf[String], "Unknown Clinic")}
-         |Time: ${formatSlotTime(slot.slotTime.asInstanceOf[String])}
+      s"""Time: $formattedTime
          |Length: ${slot.slotLength} minutes
          |Status: ${if (slot.isTaken.asInstanceOf[Boolean]) "Booked" else "Available"}
          |Delete this slot?
@@ -279,13 +225,14 @@ object BookingDashboard {
       }
   }
 
-  def createSlot(date: String, time: String, clinicId: String, length: Long): Unit = {
-    if (!isValidDateTime(date, time)) {
-      dom.window.alert("Please select a weekday between 09:00 and 17:00.")
+  def createSlot(date: String, time: String, length: Long): Unit = {
+    val clinicId = dom.window.localStorage.getItem("userId")
+    if (clinicId == null || clinicId.isEmpty) {
+      dom.window.alert("No clinic ID found in local storage.")
       return
     }
-    if (clinicId.isEmpty) {
-      dom.window.alert("Please select a clinic.")
+    if (!isValidDateTime(date, time)) {
+      dom.window.alert("Please select a weekday between 09:00 and 17:00.")
       return
     }
     if (length < 5) {
@@ -333,7 +280,6 @@ object BookingDashboard {
     // Weekdays 1 to 5, 09:00 to 17:00 UTC
     (day >= 1 && day <= 5) && (hour >= 9 && hour < 17)
   }
-
 
   def resetForm(): Unit = {
     dateInput.value = ""
