@@ -9,10 +9,12 @@ object clinics {
 
   final case class Clinic(
    clinicId: UUID,
+      // TODO: name is nullable on supabase currently.. not sure about this
+      // TODO: similarly for address.
    name: String,
-   address: String,
-   latitude: Double,
-   longitude: Double
+   address: Option[String],
+   latitude: Option[Double],
+   longitude: Option[Double]
   )
 
   object Clinic {
