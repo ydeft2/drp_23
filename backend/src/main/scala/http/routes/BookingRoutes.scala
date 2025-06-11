@@ -13,8 +13,9 @@ import org.http4s.*
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.*
-import backend.database.{DbBookings, DbError}
+import backend.database.{DbBookings, DbError, DbInterests, notifyUser}
 import backend.domain.bookings.*
+import backend.domain.interests.PatientInterestRecord
 import cats.implicits.*
 
 import java.time.Instant
@@ -234,6 +235,100 @@ class BookingRoutes private extends Http4sDsl[IO] {
               InternalServerError(Json.obj("error" -> Json.fromString(msg)))
             case Left(DbError.DecodeError(msg)) =>
               BadRequest(Json.obj("error" -> Json.fromString(s"Decode error: $msg")))
+          }
+      }
+  }
+
+  // TODO: can refactor to use a for comp i believe
+  private val cancelBookingRoute_v2: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case DELETE -> Root / "cancel" / UUIDVar(bookingId) =>
+      // 1) Look up the booking so we know the clinicId
+      DbBookings.getSlotAndClinicForBooking(bookingId).flatMap {
+        case Left(_) =>
+          NotFound(Json.obj("error" -> Json.fromString("Booking not found")))
+        case Right((slotId, clinicId)) =>
+          // 2) Unlink and delete
+          DbBookings.unlinkSlotWithBooking(bookingId) *>
+            DbBookings.deleteBooking(bookingId).flatMap {
+              case Left(DbError.NotFound(_, _)) =>
+                NotFound(Json.obj("error" -> Json.fromString("Booking not found")))
+              case Left(DbError.SqlError(code, body)) =>
+                InternalServerError(Json.obj("error" -> Json.fromString(s"DB error $code: $body")))
+              case Left(DbError.DecodeError(msg)) =>
+                BadRequest(Json.obj("error" -> Json.fromString(s"Decode error: $msg")))
+              case Left(DbError.Unknown(msg)) =>
+                InternalServerError(Json.obj("error" -> Json.fromString(msg)))
+              case Right(_) =>
+                // 3) Fetch all watchers of that clinic
+                DbInterests.getInterestsForClinic(clinicId).flatMap {
+                  case Left(_) =>
+                    // Even if we can’t load watchers, the cancel succeeded
+                    NoContent()
+                  case Right(watchers: List[PatientInterestRecord]) =>
+                    // 4) Notify each watcher
+                    watchers.traverse_ { pr =>
+                      notifyUser(
+                        pr.patient_id,
+                        s"A slot has just opened at clinic $clinicId!"
+                      )
+                    } *> NoContent()
+                }
+            }
+      }
+  }
+
+  // I think this is better for data consistency... but worse for user ux
+  // TODO: can refactor to use a for comp i believe
+  private val cancelBookingRoute_v3: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case DELETE -> Root / "cancel" / UUIDVar(bookingId) =>
+      // 1) Lookup booking to get (slotId, clinicId)
+      DbBookings.getSlotAndClinicForBooking(bookingId).flatMap {
+        case Left(_) =>
+          // Booking doesn't exist
+          NotFound(Json.obj("error" -> Json.fromString("Booking not found")))
+
+        case Right((slotId, clinicId)) =>
+          // 2) First unlink the slot; if that fails, abort
+          DbBookings.unlinkSlotWithBooking(bookingId).flatMap {
+            case Left(err) =>
+              // Could not free the slot → rollback
+              InternalServerError(Json.obj("error" -> Json.fromString(
+                s"Failed to free slot: $err"
+              )))
+            case Right(_) =>
+              // 3) Now delete the booking row
+              DbBookings.deleteBooking(bookingId).flatMap {
+                case Left(DbError.NotFound(_, _)) =>
+                  NotFound(Json.obj("error" -> Json.fromString("Booking not found")))
+
+                case Left(DbError.SqlError(code, body)) =>
+                  InternalServerError(Json.obj(
+                    "error" -> Json.fromString(s"DB error $code"),
+                    "details" -> Json.fromString(body)
+                  ))
+
+                case Left(DbError.DecodeError(msg)) =>
+                  BadRequest(Json.obj("error" -> Json.fromString(s"Decode error: $msg")))
+
+                case Left(DbError.Unknown(msg)) =>
+                  InternalServerError(Json.obj("error" -> Json.fromString(msg)))
+
+                case Right(_) =>
+                  // 4) Fetch all watchers of that clinic and notify them
+                  DbInterests.getInterestsForClinic(clinicId).flatMap {
+                    case Left(_) =>
+                      // If we can't load watchers, still return success
+                      NoContent()
+
+                    case Right(watchers: List[PatientInterestRecord]) =>
+                      watchers.traverse_ { pr =>
+                        notifyUser(
+                          pr.patient_id,
+                          s"A slot has just opened at clinic $clinicId!"
+                        )
+                      } *> NoContent()
+                  }
+              }
           }
       }
   }
