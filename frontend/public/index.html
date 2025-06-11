@@ -4,20 +4,20 @@
   <meta charset="UTF-8">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+
+  <!-- Leaflet CSS without integrity/crossorigin -->
   <link
           rel="stylesheet"
           href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
-          integrity="sha256-sA+e2jSOBZkDy06DvQqG1b+XG1kuL/LS8iTquqtmG4o="
-          crossorigin=""
   />
+
   <title>Dentana</title>
 </head>
 <body>
-<script
-        src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
-        integrity="sha256-QkwXK8UozhT1nv0hF/Pvx1lrv2irD8V+U1X0FMcSPQo="
-        crossorigin=""
-></script>
-  <script src="frontend.js"></script>
+<!-- Leaflet JS first, without integrity/crossorigin -->
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+
+<!-- Then your compiled frontend code -->
+<script src="frontend.js"></script>
 </body>
 </html>

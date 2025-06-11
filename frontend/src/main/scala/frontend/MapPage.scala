@@ -8,97 +8,115 @@ import scala.scalajs.js
 import scala.scalajs.js.JSON
 import scala.scalajs.js.Dynamic.{ literal => jsObj, global => jsGlobal }
 
+import scala.scalajs.js.UndefOr
+import scala.scalajs.js.annotation.JSGlobal
+
+
+@js.native
+@JSGlobal("L")
+object Leaflet extends js.Object {
+  def map(id: String): js.Dynamic = js.native
+
+  def tileLayer(url: String, options: js.Dynamic): js.Dynamic = js.native
+
+  def icon(options: js.Dynamic): js.Dynamic = js.native
+
+  def marker(latlng: js.Array[Double], options: js.Dynamic): js.Dynamic = js.native
+}
+
 object MapPage {
-
   def render(): Unit = {
-    // Clear out previous content
     document.body.innerHTML = ""
-
-    // Back button
     val back = document.createElement("button").asInstanceOf[dom.html.Button]
     back.textContent = "← Back"
     back.onclick = (_: dom.MouseEvent) => HomePage.render()
     back.style.margin = "16px"
     document.body.appendChild(back)
 
-    // Map container
     val mapDiv = document.createElement("div").asInstanceOf[Div]
     mapDiv.id = "map"
-    mapDiv.style.width  = "100vw"
+    mapDiv.style.width = "100vw"
     mapDiv.style.height = "90vh"
     document.body.appendChild(mapDiv)
 
-    // Delay initializing until CSS/layout applied
-    dom.window.setTimeout(() => initMap(), 100)
+    // Give the browser a moment to apply styles
+    dom.window.setTimeout(() => initMap(), 0)
   }
 
   private def initMap(): Unit = {
-    // Initialize Leaflet map at a default center/zoom
-    val map = jsGlobal.L.map("map").callMethod("setView", js.Array(js.Array(51.5, -0.09), 13))
+    // 1) create the map and immediately set view
+    val map = Leaflet
+      .map("map")
+      .setView(js.Array(51.5, -0.09), 13)
 
-    // Add OpenStreetMap tiles
-    jsGlobal.L.tileLayer(
-      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      jsObj(attribution = "&copy; OpenStreetMap contributors")
-    ).callMethod("addTo", js.Array(map))
+    // 2) add OSM tiles
+    Leaflet
+      .tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        js.Dynamic.literal(attribution = "&copy; OpenStreetMap contributors")
+      )
+      .addTo(map)
 
-    // Fetch clinics with lat/lng
+    // 3) fetch clinics
     dom.fetch("/api/clinics?select=clinic_id,name,address,latitude,longitude")
       .toFuture
       .flatMap(_.json().toFuture)
-      .foreach { data =>
-        val clinics = data.asInstanceOf[js.Array[js.Dynamic]]
-        clinics.foreach { c =>
-          val lat     = c.latitude.asInstanceOf[Double]
-          val lon     = c.longitude.asInstanceOf[Double]
-          val name    = c.name.asInstanceOf[String]
-          val address = c.address.asInstanceOf[String]
-          val id      = c.clinic_id.asInstanceOf[String]
+      .foreach { raw =>
+        val clinics = raw.asInstanceOf[js.Array[js.Dynamic]]
+        clinics.filter(c =>
+          c.latitude.asInstanceOf[UndefOr[Double]].isDefined &&
+            c.longitude.asInstanceOf[UndefOr[Double]].isDefined
+        ).foreach { c =>
+          val lat = c.latitude.asInstanceOf[Double]
+          val lon = c.longitude.asInstanceOf[Double]
+          val name = c.name.asInstanceOf[String]
+          val address = c.address.asInstanceOf[UndefOr[String]].getOrElse("")
 
-          // Tooth icon
-          val toothIcon = jsGlobal.L.icon(jsObj(
-            iconUrl    = "/images/tooth.png",
-            iconSize   = js.Array(40, 40),
+          // 4) drop tooth icon markers
+          val toothIcon = Leaflet.icon(js.Dynamic.literal(
+            iconUrl = "/images/tooth.png",
+            iconSize = js.Array(40, 40),
             iconAnchor = js.Array(20, 40)
           ))
 
-          val marker = jsGlobal.L.marker(js.Array(lat, lon), jsObj(icon = toothIcon))
-            .callMethod("addTo", js.Array(map))
+          val marker = Leaflet
+            .marker(js.Array(lat, lon), js.Dynamic.literal(icon = toothIcon))
+            .addTo(map)
 
-          // Popup HTML with Register Interest button
+          // 5) bind popup with a button
           val popupHtml =
             s"""
-              <strong>$name</strong><br/>
-              $address<br/>
-              <button id="interest-$id">Register Interest</button>
-            """
-          marker.callMethod("bindPopup", js.Array(popupHtml))
+                <strong>${name}</strong><br/>
+                <em>${address}</em><br/>
+                <button id="interest-$c.clinic_id">Register Interest</button>
+              """
+          marker.bindPopup(popupHtml)
 
-          // Hook up button when popup opens
-          marker.callMethod("on", js.Array("popupopen", (e: js.Dynamic) => {
-            val btn = document.getElementById(s"interest-$id")
-            if (btn != null) {
-              btn.addEventListener("click", (_: dom.MouseEvent) => registerInterest(id))
-            }
-          }))
+          marker.on("popupopen", (_: js.Dynamic) => {
+            val btnId = s"interest-${c.clinic_id.toString}"
+            val btn = document.getElementById(btnId)
+            if (btn != null) btn.addEventListener("click", (_: dom.MouseEvent) => {
+              registerInterest(c.clinic_id.asInstanceOf[String])
+            })
+          })
         }
         Spinner.hide()
       }
   }
 
   private def registerInterest(clinicId: String): Unit = {
-    val payload = jsObj(clinic_id = clinicId)
-    dom.fetch(
-        "/api/interests",
-        jsObj(
-          method  = "POST",
-          headers = jsObj("Content-Type" -> "application/json"),
-          body    = JSON.stringify(payload)
-        ).asInstanceOf[dom.RequestInit]
-      ).toFuture
+    val payload = js.Dynamic.literal(clinic_id = clinicId)
+
+    // Build a JS literal and cast it to RequestInit
+    val init = js.Dynamic.literal(
+      method  = "POST",
+      headers = js.Dynamic.literal("Content-Type" -> "application/json"),
+      body    = JSON.stringify(payload)
+    ).asInstanceOf[dom.RequestInit]
+
+    dom.fetch("/api/interests", init)
+      .toFuture
       .flatMap(_.text().toFuture)
-      .foreach { _ =>
-        dom.window.alert("Interest registered!")
-      }
+      .foreach(_ => dom.window.alert("Interest registered!"))
   }
 }
