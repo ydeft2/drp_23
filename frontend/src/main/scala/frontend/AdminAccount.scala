@@ -11,6 +11,17 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 
 object AdminAccount {
+
+  val logOutButton = document.createElement("button").asInstanceOf[Button]
+    logOutButton.textContent = "Log Out"
+    styleButton(logOutButton, background = "red", color = "white", border = "none")
+    logOutButton.onclick = (_: dom.MouseEvent) => {
+      dom.window.localStorage.removeItem("accessToken")
+      dom.window.localStorage.removeItem("userId")
+      dom.window.location.href = "/"
+    }
+
+
   def render(): Unit = {
     Spinner.show()
     fetchClinicDetails()
@@ -21,6 +32,7 @@ object AdminAccount {
             val container = document.createElement("div")
             val textNode = document.createTextNode(currentUser)
             container.appendChild(textNode)
+            container.appendChild(logOutButton)
             container.appendChild(buildDeleteAccountButton())
             document.body.appendChild(container)
           }

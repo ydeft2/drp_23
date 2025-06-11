@@ -12,7 +12,9 @@ object messages {
     senderId:  UUID,
     receiverId: UUID,
     message: String,
-    sentAt: Instant
+    sentAt: Instant,
+    senderName: String,   
+    receiverName: String 
   )
 
   object Message {
@@ -26,19 +28,21 @@ object messages {
       }
     }
 
-    given decoder: Decoder[Message] = Decoder.forProduct5(
-      "message_id", "sender_id", "receiver_id", "message", "sent_at"
+    given decoder: Decoder[Message] = Decoder.forProduct7(
+      "message_id", "sender_id", "receiver_id", "message", "sent_at", "sender_name", "receiver_name"
     )(Message.apply)
 
-    given encoder: Encoder[Message] = Encoder.forProduct5(
-      "message_id", "sender_id", "receiver_id", "message", "sent_at"
-    )(m => (m.messageId, m.senderId, m.receiverId, m.message, m.sentAt))
+    given encoder: Encoder[Message] = Encoder.forProduct7(
+      "message_id", "sender_id", "receiver_id", "message", "sent_at", "sender_name", "receiver_name"
+    )(m => (m.messageId, m.senderId, m.receiverId, m.message, m.sentAt, m.senderName, m.receiverName))
   }
 
   case class MessageRequest(
     senderId: UUID,
     receiverId: UUID,
-    message: String
+    message: String,
+    senderName   : String,   
+    receiverName : String 
   )
 
   object MessageRequest {
@@ -46,12 +50,14 @@ object messages {
       Json.obj(
         "sender_id"   -> m.senderId.asJson,
         "receiver_id" -> m.receiverId.asJson,
-        "message"     -> m.message.asJson
+        "message"     -> m.message.asJson,
+        "sender_name"   -> m.senderName.asJson,
+        "receiver_name" -> m.receiverName.asJson
       )
     }
 
-    given decoder: Decoder[MessageRequest] = Decoder.forProduct3(
-      "sender_id", "receiver_id", "message"
+    given decoder: Decoder[MessageRequest] = Decoder.forProduct5(
+      "sender_id", "receiver_id", "message", "sender_name", "receiver_name"
     )(MessageRequest.apply)
   }
 

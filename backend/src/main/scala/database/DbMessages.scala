@@ -30,7 +30,7 @@ object DbMessages {
   }
 
   def fetchMessages(userId: UUID): IO[Either[DbError, List[Message]]] = {
-    val selectQuery = "?select=message_id,sender_id,receiver_id,message,sent_at"
+    val selectQuery = "?select=message_id,sender_id,receiver_id,message,sent_at,sender_name,receiver_name"
     val filterClause = s"&or=(sender_id.eq.$userId,receiver_id.eq.$userId)"
 
     val fullUri = Uri.unsafeFromString(
