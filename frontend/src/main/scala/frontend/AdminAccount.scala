@@ -13,19 +13,16 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 object AdminAccount {
   def render(): Unit = {
     Spinner.show()
-    fetchClinicDetails(dom.window.localStorage.getItem("userId"))
-      .map { currentUser =>
-        Layout.renderPage(
-          leftButton = Some(createHomeButton()),
-          contentRender = () => {
-            val container = document.createElement("div")
-            val textNode = document.createTextNode(currentUser.toString)
-            container.appendChild(textNode)
-            container.appendChild(buildDeleteAccountButton())
-            document.body.appendChild(container)
-          }
-        )
-        Spinner.hide()
-      }
+    val clinicId = dom.window.localStorage.getItem("userId")
+    fetchClinicDetails(clinicId).map { clinic =>
+      Layout.renderPage(
+        leftButton = Some(createHomeButton()),
+        contentRender = () => {
+          document.body.appendChild(buildClinicProfileCard(clinic))
+          document.body.appendChild(buildDeleteAccountButton())
+          Spinner.hide()
+        }
+      )
+    }
   }
 }

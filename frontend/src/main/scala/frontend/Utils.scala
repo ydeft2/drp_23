@@ -712,3 +712,44 @@ def formatSlotTime(slotTime: String): String = {
     val minute = dt.getUTCMinutes().toInt
     f"$year-$month%02d-$day%02d $hour%02d:$minute%02d UTC"
 }
+
+def buildClinicProfileCard(clinic: Clinic): Div = {
+  val card = document.createElement("div").asInstanceOf[Div]
+  card.style.marginTop = "70px"
+  card.style.marginLeft = "auto"
+  card.style.marginRight = "auto"
+  card.style.width = "60%"
+  card.style.maxHeight = "400px"
+  card.style.border = "1px solid #ccc"
+  card.style.borderRadius = "8px"
+  card.style.padding = "20px"
+  card.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)"
+  card.style.backgroundColor = "#f9f9f9"
+
+  val heading = document.createElement("h2").asInstanceOf[Heading]
+  heading.textContent = "Clinic Details"
+  heading.style.marginBottom = "24px"
+  card.appendChild(heading)
+
+  def infoRow(label: String, value: String): Div = {
+    val row = styledDiv("marginBottom" -> "20px")
+    row.innerHTML = s"<strong>$label</strong> $value"
+    row
+  }
+
+  card.appendChild(infoRow("Clinic Name:", clinic.name))
+  card.appendChild(infoRow("Address:", clinic.address))
+
+
+  val logOutButton = document.createElement("button").asInstanceOf[Button]
+  logOutButton.textContent = "Log Out"
+  styleButton(logOutButton, background = "red", color = "white", border = "none")
+  logOutButton.onclick = (_: dom.MouseEvent) => {
+    dom.window.localStorage.removeItem("accessToken")
+    dom.window.localStorage.removeItem("userId")
+    dom.window.location.href = "/"
+  }
+  card.appendChild(logOutButton)
+
+  card
+}
