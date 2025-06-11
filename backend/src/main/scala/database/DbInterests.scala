@@ -48,5 +48,29 @@ object DbInterests {
     fetchAndDecode[List[InterestRecord]](req, "interests")
   }
 
+  def removeInterest(reqBody: InterestRequest): IO[Either[DbError, Unit]] = {
+    val uri = Uri.unsafeFromString(
+      s"$supabaseUrl/rest/v1/interests" +
+      s"?patient_id=eq.${reqBody.patient_id}&clinic_id=eq.${reqBody.clinic_id}"
+    )
 
+    val req = Request[IO](Method.DELETE, uri, headers = commonHeaders)
+
+    EmberClientBuilder
+      .default[IO]
+      .build
+      .use { client =>
+        client.fetch(req) { resp =>
+          resp.as[String].flatMap { body =>
+            IO.pure(
+              resp.status match {
+                case Status.NoContent => Right(())
+                case Status.NotFound  => Left(DbError.NotFound("interest", ""))
+                case other            => Left(DbError.SqlError(other.code, body))
+              }
+            )
+          }
+        }
+      }
+  }
 }

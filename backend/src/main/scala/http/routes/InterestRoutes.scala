@@ -87,11 +87,37 @@ class InterestRoutes private extends Http4sDsl[IO] {
       }
   }
 
+  val deleteInterestRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case req @ DELETE -> Root =>
+      req.as[InterestRequest].flatMap { ir =>
+        DbInterests.removeInterest(ir).flatMap {
+          case Right(_) =>
+            NoContent()
+
+          case Left(DbError.NotFound(_, _)) =>
+            NotFound(Json.obj("error" -> Json.fromString("Interest not found")))
+
+          case Left(DbError.DecodeError(msg)) =>
+            BadRequest(Json.obj("error" -> Json.fromString(s"Decode error: $msg")))
+
+          case Left(DbError.SqlError(code, body)) if code >= 400 && code < 500 =>
+            BadRequest(Json.obj("error" -> Json.fromString("Invalid request"), "details" -> Json.fromString(body)))
+
+          case Left(DbError.Unknown(msg)) =>
+            InternalServerError(Json.obj("error" -> Json.fromString(msg)))
+
+          case Left(DbError.SqlError(code, body)) =>
+            InternalServerError(Json.obj("error" -> Json.fromString(s"Database error $code"), "details" -> Json.fromString(body)))
+        }
+      }
+  }
+
 
   val routes: HttpRoutes[IO] = Router(
     "/interests" -> (
       createInterestRoute <+>
-      listForPatientRoute
+      listForPatientRoute <+>
+      deleteInterestRoute
     )
   )
 }
