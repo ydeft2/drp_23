@@ -26,5 +26,14 @@ object interests {
     given Decoder[InterestRecord] =
       Decoder.forProduct1("clinic_id")(InterestRecord.apply)
   }
+
+
+  /** For GET /interests?select=patient_id */
+  final case class PatientInterestRecord(patient_id: UUID)
+
+  object PatientInterestRecord {
+    given Decoder[PatientInterestRecord] =
+      Decoder.forProduct1("patient_id")(PatientInterestRecord.apply)
+  }
   
 }

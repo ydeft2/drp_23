@@ -87,7 +87,7 @@ class InterestRoutes private extends Http4sDsl[IO] {
       }
   }
 
-  val deleteInterestRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
+  private val deleteInterestRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case req @ DELETE -> Root =>
       req.as[InterestRequest].flatMap { ir =>
         DbInterests.removeInterest(ir).flatMap {

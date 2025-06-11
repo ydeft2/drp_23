@@ -6,7 +6,7 @@ import org.http4s.*
 import org.http4s.circe.*
 import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.ci.CIStringSyntax
-import backend.domain.interests.{InterestRecord, InterestRequest}
+import backend.domain.interests.{InterestRecord, InterestRequest, PatientInterestRecord}
 
 import java.util.UUID
 
@@ -73,4 +73,19 @@ object DbInterests {
         }
       }
   }
+
+
+  /** List all patients watching a given clinic */
+  def getInterestsForClinic(
+                             clinicId: UUID
+                           ): IO[Either[DbError, List[PatientInterestRecord]]] = {
+    val uri = Uri.unsafeFromString(
+      s"$supabaseUrl/rest/v1/interests?select=patient_id&clinic_id=eq.$clinicId"
+    )
+    val req = Request[IO](Method.GET, uri, headers = commonHeaders)
+    // This decodes List[PatientInterestRecord]
+    fetchAndDecode[List[PatientInterestRecord]](req, "interests")
+  }
+  
+  
 }
