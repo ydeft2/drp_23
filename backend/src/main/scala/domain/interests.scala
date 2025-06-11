@@ -19,4 +19,12 @@ object interests {
       "patient_id", "clinic_id"
     )(InterestRequest.apply)
   }
+  
+  final case class InterestRecord(clinic_id: UUID)
+  
+  object InterestRecord {
+    given Decoder[InterestRecord] =
+      Decoder.forProduct1("clinic_id")(InterestRecord.apply)
+  }
+  
 }

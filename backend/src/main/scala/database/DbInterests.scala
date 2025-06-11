@@ -1,12 +1,14 @@
 package backend.database
 
 import cats.effect.IO
-import io.circe.syntax._
-import org.http4s._
-import org.http4s.circe._
+import io.circe.syntax.*
+import org.http4s.*
+import org.http4s.circe.*
 import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.ci.CIStringSyntax
-import backend.domain.interests.InterestRequest
+import backend.domain.interests.{InterestRecord, InterestRequest}
+
+import java.util.UUID
 
 object DbInterests {
 
@@ -34,5 +36,17 @@ object DbInterests {
         }
       }
   }
+
+  def getInterestsForPatient(
+    patientId: UUID
+  ): IO[Either[DbError, List[InterestRecord]]] = {
+    val uri = Uri.unsafeFromString(
+      s"$supabaseUrl/rest/v1/interests?select=clinic_id&patient_id=eq.$patientId"
+    )
+    val req = Request[IO](Method.GET, uri, headers = commonHeaders)
+    // fetchAndDecode lifts into IO[Either[DbError, ...]]
+    fetchAndDecode[List[InterestRecord]](req, "interests")
+  }
+
 
 }
