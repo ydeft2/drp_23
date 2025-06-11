@@ -343,40 +343,58 @@ def verifyToken(accessToken: String): scala.concurrent.Future[Boolean] = {
       }
   }
 
-  def fetchClinicDetails(): Future[String] = {
-    val accessToken = dom.window.localStorage.getItem("accessToken")
-    val uid = dom.window.localStorage.getItem("userId")
+case class Clinic(
+  clinicId: String,
+  name: String,
+  latitude: Double,
+  longitude: Double,
+  address: String
+)
 
-    if (accessToken == null || uid == null) {
-      dom.window.alert("You are not logged in.")
-      return Future.successful("Unknown Clinic")
-    }
+def fetchClinicDetails(clinicId: String): Future[Clinic] = {
+  val accessToken = dom.window.localStorage.getItem("accessToken")
+  val uid = clinicId
 
-    val requestHeaders = new dom.Headers()
-    requestHeaders.append("Content-Type", "application/json")
-    requestHeaders.append("Authorization", s"Bearer $accessToken")
-    requestHeaders.append("apikey", SUPABASE_ANON_KEY)
+  if (accessToken == null || uid == null) {
+    dom.window.alert("You are not logged in.")
+    return Future.successful(Clinic("unknown", "Unknown Clinic", 0.0, 0.0, ""))
+  }
 
-    val requestInit = new dom.RequestInit {
-      method = dom.HttpMethod.GET
-      headers = requestHeaders
-    }
-    val requestUrl = s"https://djkrryzafuofyevgcyic.supabase.co/rest/v1/clinics?select=name&clinic_id=eq.${uid}"
-    dom.fetch(requestUrl, requestInit)
-      .toFuture
-      .flatMap(_.json().toFuture)
-      .map { json =>
-        val clinics = json.asInstanceOf[js.Array[js.Dynamic]]
-        if (clinics.nonEmpty) clinics(0).name.asInstanceOf[String]
-        else "Unknown Clinic"
+  val requestHeaders = new dom.Headers()
+  requestHeaders.append("Content-Type", "application/json")
+  requestHeaders.append("Authorization", s"Bearer $accessToken")
+  requestHeaders.append("apikey", SUPABASE_ANON_KEY)
+
+  val requestInit = new dom.RequestInit {
+    method = dom.HttpMethod.GET
+    headers = requestHeaders
+  }
+  val requestUrl = s"https://djkrryzafuofyevgcyic.supabase.co/rest/v1/clinics?select=clinic_id,name,latitude,longitude,address&clinic_id=eq.${uid}"
+  dom.fetch(requestUrl, requestInit)
+    .toFuture
+    .flatMap(_.json().toFuture)
+    .map { json =>
+      val clinics = json.asInstanceOf[js.Array[js.Dynamic]]
+      if (clinics.nonEmpty) {
+        val c = clinics(0)
+        Clinic(
+          clinicId = c.clinic_id.asInstanceOf[String],
+          name = c.name.asInstanceOf[String],
+          latitude = c.latitude.asInstanceOf[Double],
+          longitude = c.longitude.asInstanceOf[Double],
+          address = c.address.asInstanceOf[String]
+        )
+      } else {
+        Clinic("unknown", "Unknown Clinic", 0.0, 0.0, "")
       }
-      .recover {
+    }
+    .recover {
       case e =>
         dom.window.alert(s"Error: ${e.getMessage}")
-        "Unknown Clinic"
-      }
-  }
-  
+        Clinic("unknown", "Unknown Clinic", 0.0, 0.0, "")
+    }
+}
+
 
 object Spinner {
 

@@ -13,13 +13,13 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 object AdminAccount {
   def render(): Unit = {
     Spinner.show()
-    fetchClinicDetails()
+    fetchClinicDetails(dom.window.localStorage.getItem("userId"))
       .map { currentUser =>
         Layout.renderPage(
           leftButton = Some(createHomeButton()),
           contentRender = () => {
             val container = document.createElement("div")
-            val textNode = document.createTextNode(currentUser)
+            val textNode = document.createTextNode(currentUser.toString)
             container.appendChild(textNode)
             container.appendChild(buildDeleteAccountButton())
             document.body.appendChild(container)

@@ -6,49 +6,58 @@ import org.scalajs.dom.html._
 import concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
 import scala.scalajs.js.JSON
-
-
+import scalajs.js.JSConverters.JSRichFutureNonThenable
+import scala.Option
+import scala.Some
+import scala.None
 
 object HomePage {
-  case class Booking(name: String, time: String, location: String)
-
-  private var bookings: List[Booking] = List(
-    Booking("Dental Test", "10:00 AM", "Downtown Clinic"),
-    Booking("Root Canal", "2:30 PM", "East Side Dental"),
-    Booking("Checkup", "9:15 AM", "Northview Dental Office")
+  case class Booking(
+    bookingId: String,
+    clinicId: String,
+    slotTime: String,
+    clinicInfo: String,
+    appointmentType: String
   )
+
+
+  private var bookings: List[Booking] = List()
 
   private var unreadNotifications: Int = 0
 
-  // def main(args: Array[String]): Unit = render()
-
   def render(): Unit = {
     Spinner.show()
+    val userId = dom.window.localStorage.getItem("userId")
+
     fetchUnreadCount().foreach { unreadCount =>
       unreadNotifications = unreadCount
+
       val accountBtn = createHeaderButton("Account")
       accountBtn.addEventListener("click", (_: dom.MouseEvent) => Account.render())
 
       val inboxLabel = if (unreadNotifications > 0) s"Inbox ($unreadNotifications)" else "Inbox"
       val inboxBtn = createHeaderButton(inboxLabel)
       inboxBtn.addEventListener("click", (_: dom.MouseEvent) => Inbox.render())
-
       Layout.renderPage(
         leftButton = Some(accountBtn),
         rightButton = Some(inboxBtn),
-        contentRender = () =>
-        {
-          document.body.appendChild(buildBookingsBox())
-          document.body.appendChild(createBookingButton())
-          document.body.appendChild(createChatButton())
-          Spinner.hide()
+        contentRender = () => {
+          fetchBookings(userId).toFuture.foreach { fetchedBookings =>
+            bookings = fetchedBookings
+            document.body.appendChild(buildBookingsBox())
+            document.body.appendChild(createBookingButton())
+            document.body.appendChild(createChatButton())
+            Spinner.hide()
+          }
         }
       )
     }
   }
 
+
   private def buildBookingsBox(): Div = {
     val outerBox = document.createElement("div").asInstanceOf[Div]
+    outerBox.id = "bookings-box" // Add this line
     outerBox.style.marginTop = "20px"
     outerBox.style.marginLeft = "auto"
     outerBox.style.marginRight = "auto"
@@ -75,7 +84,26 @@ object HomePage {
     scrollArea.style.overflowY = "auto"
     scrollArea.style.padding = "20px"
 
-    bookings.foreach(b => scrollArea.appendChild(buildBookingEntry(b)))
+    if (bookings.isEmpty) {
+      val noBookingsMsg = document.createElement("div").asInstanceOf[Div]
+      noBookingsMsg.textContent = "You have no outstanding bookings."
+      noBookingsMsg.style.textAlign = "center"
+      noBookingsMsg.style.fontSize = "1.2em"
+      noBookingsMsg.style.marginBottom = "20px"
+
+      val img = document.createElement("img").asInstanceOf[dom.html.Image]
+      img.src = "images/Waiting.png"
+      img.alt = "No bookings"
+      img.style.display = "block"
+      img.style.margin = "0 auto"
+      img.style.width = "120px"
+      img.style.height = "120px"
+
+      scrollArea.appendChild(noBookingsMsg)
+      scrollArea.appendChild(img)
+    } else {
+      bookings.foreach(b => scrollArea.appendChild(buildBookingEntry(b)))
+    }
 
     outerBox.appendChild(title)
     outerBox.appendChild(scrollArea)
@@ -86,49 +114,87 @@ object HomePage {
 
   private def buildBookingEntry(booking: Booking): Div = {
     val entry = document.createElement("div").asInstanceOf[Div]
+    val isPending = booking.appointmentType == "NOT_SET"
+    val titleText = if (isPending) "Pending Confirmation"
+                    else booking.appointmentType.replace("_", " ").toLowerCase.capitalize
 
-    entry.style.backgroundColor = "#ffffff"
-    entry.style.borderRadius = "12px"
-    entry.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.1)"
-    entry.style.marginBottom = "16px"
-    entry.style.padding = "16px"
-    entry.style.transition = "transform 0.2s ease, box-shadow 0.2s ease"
-    entry.style.cursor = "pointer"
-    entry.style.backgroundImage = "linear-gradient(135deg, #ffffff 0%, #f7f7f7 100%)"
+    // Create dot element
+    val dot = document.createElement("span").asInstanceOf[dom.html.Span]
+    dot.style.display = "inline-block"
+    dot.style.width = "12px"
+    dot.style.height = "12px"
+    dot.style.borderRadius = "50%"
+    dot.style.marginRight = "8px"
+    dot.style.verticalAlign = "middle"
+    dot.style.backgroundColor = if (isPending) "orange" else "green"
 
-    entry.addEventListener("mouseover", (_: dom.MouseEvent) => {
-      entry.style.transform = "translateY(-2px)"
-      entry.style.boxShadow = "0 6px 16px rgba(0, 0, 0, 0.15)"
-    })
-    entry.addEventListener("mouseout", (_: dom.MouseEvent) => {
-      entry.style.transform = "translateY(0)"
-      entry.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.1)"
-    })
+    // Title container
+    val titleContainer = document.createElement("span").asInstanceOf[dom.html.Span]
+    titleContainer.appendChild(dot)
+    titleContainer.appendChild(document.createTextNode(titleText))
 
+    val date = new js.Date(booking.slotTime)
+    val months = js.Array("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+    val minutes = {
+      val min = date.getMinutes().toInt
+      if (min < 10) s"0$min" else s"$min"
+    }
+    val formattedTime = s" ${date.getHours()}:$minutes ${months(date.getMonth().toInt)} ${date.getDate()}"
+
+    // Placeholder for clinic name
+    val clinicNameSpan = document.createElement("span").asInstanceOf[dom.html.Span]
+    clinicNameSpan.textContent = "Loading clinic..."
+
+    // Compose entry HTML
     entry.innerHTML =
       s"""
-        <strong style="font-size: 1.2em;">${booking.name}</strong><br>
-        <span><strong>Time:</strong> ${booking.time}</span><br>
-        <span><strong>Location:</strong> ${booking.location}</span>
+        <span id="booking-dot-title"></span><br>
+        <span><strong>Time:</strong> $formattedTime</span><br>
+        <span><strong>Clinic:</strong> </span>
       """
 
+    entry.querySelector("#booking-dot-title").appendChild(titleContainer)
+    entry.querySelector("span + br + span + br + span").appendChild(clinicNameSpan)
+
+    // Fetch and display clinic name
+    fetchClinicDetails(booking.clinicId).foreach { clinic =>
+      clinicNameSpan.textContent = clinic.name
+    }
+
     entry.addEventListener("click", (_: dom.MouseEvent) => {
-      showModal(renderBookingDetails(booking))
-      addCancelBookingButton(booking)
+      fetchClinicDetails(booking.clinicId).foreach { clinic =>
+        showModal(renderBookingDetails(booking, Some(clinic)))
+        addCancelBookingButton(booking)
+      }
     })
 
     entry
   }
 
-  def renderBookingDetails(booking: Booking): String = {
+
+  def renderBookingDetails(booking: Booking, clinicOpt: Option[Clinic] = None): String = {
+    val title = if (booking.appointmentType == "NOT_SET") "Pending Confirmation"
+                else booking.appointmentType.replace("_", " ").toLowerCase.capitalize
+    val date = new js.Date(booking.slotTime)
+    val months = js.Array("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+    val minutes = {
+      val min = date.getMinutes().toInt
+      if (min < 10) s"0$min" else s"$min"
+    }
+    val formattedTime = s"${date.getHours()}:$minutes ${months(date.getMonth().toInt)} ${date.getDate()}"
+
+    val clinicName = clinicOpt.map(_.name).getOrElse("Loading...")
+    val clinicAddress = clinicOpt.map(_.address).getOrElse("")
+
     s"""
-      <h3>${booking.name}</h3>
-      <p><strong>Time:</strong> ${booking.time}</p>
-      <p><strong>Location:</strong> ${booking.location}</p>
-      <p><strong>Details:</strong> This is a detailed description of the booking.</p>
+      <h3>$title</h3>
+      <p><strong>Time:</strong> $formattedTime</p>
+      <p><strong>Clinic:</strong> $clinicName</p>
+      ${if (clinicAddress.nonEmpty) s"<p><strong>Address:</strong> $clinicAddress</p>" else ""}
       <div id="cancel-booking-btn-container"></div>
     """
   }
+
 
   private def createChatButton(): Div = {
   val button = document.createElement("div").asInstanceOf[Div]
@@ -242,8 +308,28 @@ object HomePage {
     }
   }
 
+  private def fetchBookings(userId: String): js.Promise[List[Booking]] = {
+    val url = s"/api/bookings/list?patient_id=$userId"
+
+    dom.fetch(url)
+      .toFuture
+      .flatMap(_.json().toFuture)
+      .map { json =>
+        val jsArr = json.asInstanceOf[js.Array[js.Dynamic]]
+        jsArr.map { item =>
+          Booking(
+            bookingId = item.booking_id.toString,
+            clinicId = item.clinic_id.toString,
+            slotTime = item.slot_time.toString,
+            clinicInfo = item.clinic_info.asInstanceOf[js.UndefOr[String]].getOrElse("No info"),
+            appointmentType = item.appointment_type.toString
+          )
+        }.toList
+      }
+      .toJSPromise
+  }
+
   def cancelBooking(booking: Booking): Unit = {
-    
     replaceModalContent(
       """
       <h3>Cancellation Successful</h3>
@@ -252,21 +338,30 @@ object HomePage {
       """
     )
 
-    // val bookingId = "12345678-1234-1234-1234-123456789012"
-
-    // val req = new dom.Request(
-    //   s"/api/bookings/cancel/$bookingId",
-    //   new dom.RequestInit {
-    //     method = "DELETE"
-    //     headers = new dom.Headers {
-    //       append("Content-Type", "application/json")
-    //       val accessToken = dom.window.localStorage.getItem("accessToken")
-    //       if (accessToken != null) {
-    //         append("Authorization", s"Bearer $accessToken")
-    //       }
-    //     }
-    //   }
-    // )
+    val req = new dom.Request(
+      s"/api/bookings/cancel/${booking.bookingId}",
+      new dom.RequestInit {
+        method = org.scalajs.dom.HttpMethod.DELETE
+        headers = new dom.Headers {
+          append("Content-Type", "application/json")
+          val accessToken = dom.window.localStorage.getItem("accessToken")
+          if (accessToken != null) {
+            append("Authorization", s"Bearer $accessToken")
+          }
+        }
+      }
+    )
+    dom.fetch(req).toFuture.onComplete { _ =>
+      // Remove the cancelled booking from the list
+      bookings = bookings.filterNot(_.bookingId == booking.bookingId)
+      // Replace only the bookings box
+      dom.document.getElementById("bookings-box") match {
+        case box: Div =>
+          val newBox = buildBookingsBox()
+          box.parentNode.replaceChild(newBox, box)
+        case _ => 
+      }
+    }
   }
 }
 
