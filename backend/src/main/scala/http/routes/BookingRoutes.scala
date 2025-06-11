@@ -342,7 +342,7 @@ class BookingRoutes private extends Http4sDsl[IO] {
       requestBookingRoute <+>
       confirmBookingRoute <+>
       updateBookingsRoute <+>
-      cancelBookingRoute
+      cancelBookingRoute_v3
       )
   )
 
