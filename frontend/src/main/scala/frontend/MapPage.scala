@@ -74,7 +74,8 @@ object MapPage {
 
           // 4) drop tooth icon markers
           val toothIcon = Leaflet.icon(js.Dynamic.literal(
-            iconUrl = "/images/tooth.png",
+            // TODO: we want to
+            iconUrl = "/images/DentanaLogoHappy.png",
             iconSize = js.Array(40, 40),
             iconAnchor = js.Array(20, 40)
           ))
