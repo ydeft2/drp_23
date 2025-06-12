@@ -194,8 +194,8 @@ def buildProfileCard(user: User): Div = {
   card.style.border = "1px solid #ccc"
   card.style.borderRadius = "8px"
   card.style.padding = "20px"
-  card.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)"
-  card.style.backgroundColor = "#f9f9f9"
+  card.style.background = "linear-gradient(to bottom right, #ffffff, #f1f1f1)"
+  card.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.1)" 
   card.style.position = "relative"
 
   val initials = user.name
@@ -209,8 +209,12 @@ def buildProfileCard(user: User): Div = {
   circle.textContent = initials
   circle.style.width = "72px"
   circle.style.height = "72px"
-  circle.style.background = "#bbb"
+  circle.style.background = "linear-gradient(135deg, #7f53ac, #647dee)"
+  circle.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.2)"
   circle.style.color = "#fff"
+  circle.style.transition = "transform 0.3s ease"
+  circle.onmouseenter = _ => circle.style.transform = "scale(1.05)"
+  circle.onmouseleave = _ => circle.style.transform = "scale(1)"
   circle.style.borderRadius = "50%"
   circle.style.display = "flex"
   circle.style.setProperty("align-items", "center")
@@ -228,14 +232,21 @@ def buildProfileCard(user: User): Div = {
   card.appendChild(heading)
 
   def infoRow(label: String, value: String): Div = {
-    val row = styledDiv("marginBottom" -> "20px")
-    row.innerHTML = s"<strong>$label</strong> $value"
+    val row = styledDiv(
+      "marginBottom" -> "16px",
+      "display" -> "flex",
+      "justifyContent" -> "space-between",
+      "fontSize" -> "1rem",
+      "color" -> "#333"
+    )
+    row.innerHTML = s"<span style='font-weight:600;'>$label</span><span>$value</span>"
     row
   }
 
-  card.appendChild(infoRow("Name:", user.name))
-  card.appendChild(infoRow("Date of Birth:", user.dob))
-  card.appendChild(infoRow("Address:", user.address))
+
+  card.appendChild(infoRow("Name: ", user.name))
+  card.appendChild(infoRow("Date of Birth: ", user.dob))
+  card.appendChild(infoRow("Address: ", user.address))
 
   val mapDiv = document.createElement("div").asInstanceOf[Div]
   mapDiv.id = "profile-map"
@@ -244,6 +255,9 @@ def buildProfileCard(user: User): Div = {
   mapDiv.style.margin = "20px 0"
   mapDiv.style.borderRadius = "8px"
   mapDiv.style.boxShadow = "0 1px 4px rgba(0,0,0,0.08)"
+  mapDiv.style.border = "1px solid #ddd"
+  mapDiv.style.overflow = "hidden"
+  mapDiv.style.backgroundColor = "#eaeaea"
   card.appendChild(mapDiv)
 
   // Fetch patient location and render map
@@ -278,17 +292,40 @@ def buildProfileCard(user: User): Div = {
   styleButton(editBtn, background = "transparent", color = "purple", border = "2px solid purple")
   editBtn.style.display = "block"
   editBtn.style.margin = "20px auto 0"
+    styleButton(editBtn,
+    background = "#fff",
+    color = "purple",
+    border = "2px solid purple"
+  )
+  editBtn.style.padding = "10px 20px"
+  editBtn.style.borderRadius = "6px"
+  editBtn.style.cursor = "pointer"
+  editBtn.onmouseover = _ => editBtn.style.background = "#f3e8ff"
+  editBtn.onmouseout = _ => editBtn.style.background = "#fff"
   editBtn.onclick = _ => dom.window.alert("Please contact your dental practice in order to edit your profile.")
   card.appendChild(editBtn)
 
   val logOutButton = document.createElement("button").asInstanceOf[Button]
   logOutButton.textContent = "Log Out"
   styleButton(logOutButton, background = "red", color = "white", border = "none")
+  styleButton(logOutButton,
+    background = "#e63946",
+    color = "white",
+    border = "none"
+  )
+  logOutButton.style.padding = "10px 20px"
+  logOutButton.style.borderRadius = "6px"
+  logOutButton.style.cursor = "pointer"
+  logOutButton.style.marginTop = "12px"
+  logOutButton.onmouseover = _ => logOutButton.style.background = "#d62839"
+  logOutButton.onmouseout = _ => logOutButton.style.background = "#e63946"
+
   logOutButton.onclick = (_: dom.MouseEvent) => {
     dom.window.localStorage.removeItem("accessToken")
     dom.window.localStorage.removeItem("userId")
     dom.window.location.href = "/"
   }
+
   card.appendChild(logOutButton)
 
   card

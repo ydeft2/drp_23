@@ -247,7 +247,7 @@ object Inbox {
     deleteBtn.style.padding = "2px"
     
     deleteBtn.onmouseover = (_: dom.MouseEvent) => {
-      deleteBtn.style.color = "#e53935" // Red-ish text on hover (no background change)
+      deleteBtn.style.color = "#e53935"
       deleteBtn.style.transform = "scale(1.1)"
     }
     deleteBtn.onmouseout = (_: dom.MouseEvent) => {
