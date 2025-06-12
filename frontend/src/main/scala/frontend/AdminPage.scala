@@ -99,7 +99,7 @@ object AdminPage {
       DashboardItem(s"Inbox", "images/icons/Inbox.png", () => Inbox.render()),
       DashboardItem("Patient Bookings", "images/icons/Bookings.png", () => AdminPatientBookingsPage.render()),
       DashboardItem("Set Availability", "images/icons/Availability.png", () => BookingDashboard.render()),
-      DashboardItem("Messages", "images/icons/Messages.png", () => ChatPage.render())
+      DashboardItem("Messages", "images/icons/Messages.png", () => ChatPage.render()),
       DashboardItem("Help", "images/icons/Help.png", () => HelpPage.render())
     )
 
