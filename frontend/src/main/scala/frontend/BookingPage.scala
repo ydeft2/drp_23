@@ -2,282 +2,253 @@ package frontend
 
 import org.scalajs.dom
 import org.scalajs.dom.document
-import org.scalajs.dom.html.{Div, Button, Span, Table, TableCell, TableRow}
-
+import org.scalajs.dom.html.{Button, Div, Input, Table, TableCell, TableRow}
 import scala.scalajs.js
 import scala.scalajs.js.JSON
-
-import java.time.*
+import java.time._
 import java.time.format.DateTimeFormatter
 import java.util.UUID
-import scala.util.Random
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-// replace with backend
-final case class Slot(
-  slotId: UUID,
-  bookingId: UUID,
-  clinicId: UUID,
-  isTaken: Boolean,
-  slotTime: Instant,
-  slotLength: Long,
-  clinicInfo: String,
-  createdAt: Instant
-)
-
 object BookingPage {
-
-
+  // the hours we display
   private val timeStrings = Seq("09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00")
-  private val fmt         = DateTimeFormatter.ofPattern("HH:mm")
   private val zoneId      = ZoneOffset.UTC
 
+  // filter state
+  private var onlyFree     = true
+  private var clinicFilter = ""
+  private var fromFilter   = Option.empty[String] // ISO datetime string
+  private var toFilter     = Option.empty[String]
 
-  private def randUuid(): UUID = {
-    val hex = List.fill(32)(Random.nextInt(16).toHexString).mkString
-    val dashed =
-      s"${hex.substring(0, 8)}-" +
-      s"${hex.substring(8,12)}-" +
-      s"${hex.substring(12,16)}-" +
-      s"${hex.substring(16,20)}-" +
-      hex.substring(20)
-    UUID.fromString(dashed)
-  }
-
-  private def dummySlots(weekStart: LocalDate): Future[Seq[Slot]] = {
-
-    val accessToken = dom.window.localStorage.getItem("accessToken")
-    val uid = dom.window.localStorage.getItem("userId")
-
-    if (accessToken == null || uid == null) {
-      dom.window.alert("You are not logged in.")
-      User("Unknown", "Unknown", "Unknown")
-    }
-
-    val requestHeaders = new dom.Headers()
-    requestHeaders.append("Content-Type", "application/json")
-    requestHeaders.append("Authorization", s"Bearer $accessToken")
-
-
-    val requestInit = new dom.RequestInit {
-      method = dom.HttpMethod.GET
-      headers = requestHeaders
-    }
-
-    dom.fetch("/api/slots/list?is_taken=false").toFuture.flatMap { response =>
-      if (response.ok) {
-        response.json().toFuture.map { data =>
-          val arr = data.asInstanceOf[js.Array[js.Dynamic]]
-          arr.map { obj =>
-            Slot(
-              slotId     = UUID.fromString(obj.slotId.asInstanceOf[String]),
-              bookingId  = randUuid(), // Placeholder until real booking ID is provided
-              clinicId   = UUID.fromString(obj.clinicId.asInstanceOf[String]),
-              isTaken    = obj.isTaken.asInstanceOf[Boolean],
-              slotTime   = Instant.parse(obj.slotTime.asInstanceOf[String]),
-              slotLength = obj.slotLength.asInstanceOf[Double].toLong,
-              clinicInfo = obj.clinicInfo.asInstanceOf[js.UndefOr[String]].getOrElse("Unknown Clinic"),
-              createdAt  = Instant.now() // Placeholder
-            )
-          }.toSeq
-        }
-      } else {
-        Future.failed(new RuntimeException(s"Failed to fetch slots: ${response.status}"))
-      }
-    }
-  }
+  // page‐top elements
+  private var filterOnlyFreeCheckbox: Input = _
+  private var filterClinicInput:        Input = _
+  private var filterFromInput:          Input = _
+  private var filterToInput:            Input = _
 
   def render(): Unit = {
     Layout.renderPage(
-      leftButton = Some(createHomeButton()),
-      contentRender = () => 
-        {
-          val main = document.createElement("div").asInstanceOf[Div]
-          main.style.marginTop   = "80px"
-          main.style.width       = "90%"
-          main.style.marginLeft  = "auto"
-          main.style.marginRight = "auto"
-          main.style.maxWidth    = "1200px"
-          main.style.padding     = "20px"
-          main.style.backgroundColor = "#f9f9f9"
-          main.style.borderRadius = "8px"
-          main.style.boxShadow    = "0 2px 8px rgba(0, 0, 0, 0.1)"
+      leftButton    = Some(createHomeButton()),
+      contentRender = () => {
+        // compute week bounds
+        val today        = LocalDate.now(Clock.systemUTC())
+        val daysFromSun  = today.getDayOfWeek.getValue % 7
+        val weekStart0   = today.minusDays(daysFromSun.toLong)
+        var currentStart = weekStart0
+        val lastStart    = weekStart0.plusWeeks(52)
 
+        val tableHolder = document.createElement("div").asInstanceOf[Div]
+
+        val prevBtn = navButton("< Prev Week")
+        val nextBtn = navButton("Next Week >")
+        val weekLabel = document.createElement("span").asInstanceOf[Div]
+        weekLabel.style.cssText = "font-weight: bold;"
         
-          val today = LocalDate.now(java.time.Clock.systemUTC())
-          val daysFromSunday  = today.getDayOfWeek.getValue % 7 // Sunday -> 0, Monday -> 1 …
-          val startToday      = today.minusDays(daysFromSunday.toLong)
-          var currentWeekStart = startToday
-          val lastWeekStart    = startToday.plusWeeks(52)   // 12‑month horizon
+        // update nav label & buttons
+        def updateNav(): Unit = {
+          val end = currentStart.plusDays(6)
+          weekLabel.textContent = s"${currentStart} → ${end}"
+          prevBtn.disabled = currentStart == weekStart0
+          nextBtn.disabled = currentStart == lastStart
+        }
+        
+        // --- fetch & draw ---
+        def drawWeek(): Unit = {
+          tableHolder.innerHTML = "<em>Loading…</em>"
+          updateNav()
 
-          
-          val navBar = document.createElement("div").asInstanceOf[Div]
-          navBar.style.display = "flex"
-          navBar.style.setProperty("justify-content", "center")
-          navBar.style.setProperty("align-items", "center")
-          navBar.style.marginBottom = "15px"
-          navBar.style.padding = "10px"
-          navBar.style.backgroundColor = "#e0e0e0"
-          navBar.style.borderRadius = "5px"
-          navBar.style.boxShadow = "0 1px 3px rgba(23, 21, 21, 0.1)"
-
-          val prevBtn = navButton("< Prev Week")
-          val nextBtn = navButton("Next Week >")
-          val weekLab = document.createElement("span").asInstanceOf[Span]
-          weekLab.style.margin = "0 12px"
-
-          navBar.appendChild(prevBtn)
-          navBar.appendChild(weekLab)
-          navBar.appendChild(nextBtn)
-          main.appendChild(navBar)
-          
-
-          val tableHolder = document.createElement("div").asInstanceOf[Div]
-          main.appendChild(tableHolder)
-
-          def updateLabel(): Unit = {
-            weekLab.textContent = s"${currentWeekStart} – ${currentWeekStart.plusDays(6)}"
+          fetchSlots(currentStart).foreach { slots =>
+            tableHolder.innerHTML = ""
+            tableHolder.appendChild(buildTable(currentStart, slots))
           }
+        }
+        
+        // container
+        val container = document.createElement("div").asInstanceOf[Div]
+        container.style.cssText =
+          """
+            margin-top: 80px;
+            width: 90%; max-width: 1200px;
+            margin-left: auto; margin-right: auto;
+          """
 
-          def updateButtons(): Unit = {
-            prevBtn.disabled = currentWeekStart == startToday
-            nextBtn.disabled = currentWeekStart == lastWeekStart
-          }
+        // --- 1) Filter bar ---
+        val fbar = document.createElement("div").asInstanceOf[Div]
+        fbar.style.cssText =
+          """
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+          """
 
-          def drawWeek(): Unit = {
-            tableHolder.innerHTML = "Loading..."// todo cute
-
-            dummySlots(currentWeekStart).foreach { slots =>
-              val slotsByDay: Map[LocalDate, Seq[Slot]] =
-                slots.groupBy(s => s.slotTime.atZone(zoneId).toLocalDate)
-
-              tableHolder.innerHTML = ""
-              tableHolder.appendChild(buildTable(currentWeekStart, slotsByDay))
-              updateLabel()
-              updateButtons()
-            }
-          }
-
-
-          prevBtn.onclick = (_: dom.MouseEvent) => {
-            if (currentWeekStart.isAfter(startToday)) {
-              currentWeekStart = currentWeekStart.minusWeeks(1)
-              drawWeek()
-            }
-          }
-
-          nextBtn.onclick = (_: dom.MouseEvent) => {
-            if (currentWeekStart.isBefore(lastWeekStart)) {
-              currentWeekStart = currentWeekStart.plusWeeks(1)
-              drawWeek()
-            }
-          }
-
-          document.body.appendChild(main)
+        // only‐free checkbox
+        filterOnlyFreeCheckbox = document.createElement("input").asInstanceOf[Input]
+        filterOnlyFreeCheckbox.`type`    = "checkbox"
+        filterOnlyFreeCheckbox.checked   = onlyFree
+        filterOnlyFreeCheckbox.onchange  = (_: dom.Event) => {
+          onlyFree = filterOnlyFreeCheckbox.checked
           drawWeek()
         }
+        val freeLabel = document.createElement("label")
+        freeLabel.textContent = "Only available "
+        freeLabel.appendChild(filterOnlyFreeCheckbox)
+        fbar.appendChild(freeLabel)
+
+        // clinic‐info text
+        filterClinicInput = document.createElement("input").asInstanceOf[Input]
+        filterClinicInput.placeholder    = "Clinic info contains…"
+        filterClinicInput.oninput       = (_: dom.Event) => {
+          clinicFilter = filterClinicInput.value.trim
+          drawWeek()
+        }
+        fbar.appendChild(filterClinicInput)
+
+        // from / to datetime
+        filterFromInput = document.createElement("input").asInstanceOf[Input]
+        filterFromInput.`type`          = "datetime-local"
+        filterFromInput.onchange        = (_: dom.Event) => {
+          fromFilter = Option(filterFromInput.value).filter(_.nonEmpty)
+          drawWeek()
+        }
+        fbar.appendChild(filterFromInput)
+
+        filterToInput = document.createElement("input").asInstanceOf[Input]
+        filterToInput.`type`            = "datetime-local"
+        filterToInput.onchange          = (_: dom.Event) => {
+          toFilter = Option(filterToInput.value).filter(_.nonEmpty)
+          drawWeek()
+        }
+        fbar.appendChild(filterToInput)
+
+        container.appendChild(fbar)
+
+        // --- 2) Week nav ---
+        val navBar = document.createElement("div").asInstanceOf[Div]
+        navBar.style.cssText =
+          """
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(23,21,21,0.1);
+          """
+
+        navBar.appendChild(prevBtn)
+        navBar.appendChild(weekLabel)
+        navBar.appendChild(nextBtn)
+        container.appendChild(navBar)
+
+        // --- 3) Table placeholder ---
+        container.appendChild(tableHolder)
+
+
+
+        // wire up nav
+        prevBtn.onclick = (_: dom.MouseEvent) => {
+          if (currentStart.isAfter(weekStart0)) {
+            currentStart = currentStart.minusWeeks(1)
+            drawWeek()
+          }
+        }
+        nextBtn.onclick = (_: dom.MouseEvent) => {
+          if (currentStart.isBefore(lastStart)) {
+            currentStart = currentStart.plusWeeks(1)
+            drawWeek()
+          }
+        }
+
+        // initial draw
+        document.body.appendChild(container)
+        drawWeek()
+
+
+      }
     )
   }
 
+  // make the HTTP request to our filterable endpoint
+  private def fetchSlots(weekStart: LocalDate): Future[Seq[js.Dynamic]] = {
+    // build query params
+    val base   = "/api/slots/list"
+    val parts  = scala.collection.mutable.ArrayBuffer.empty[String]
+    if (onlyFree)   parts += "is_taken=false"
+    if (clinicFilter.nonEmpty)
+      parts += s"clinic_info=${encode(clinicFilter)}"
+    fromFilter.foreach(f => parts += s"slot_time_gte=${encode(f)}")
+    toFilter.foreach  (t => parts += s"slot_time_lte=${encode(t)}")
+    // always bring back entire week: limit=100 offset=0
+    parts += "limit=100"; parts += "offset=0"
 
-  private def buildTable(weekStart: LocalDate, slotsByDay: Map[LocalDate, Seq[Slot]]): Table = {
+    val url = if (parts.isEmpty) base else base + "?" + parts.mkString("&")
+
+    dom.fetch(url).toFuture
+      .flatMap(_.json().toFuture)
+      .map(_.asInstanceOf[js.Array[js.Dynamic]].toSeq)
+  }
+
+  // build the 7×rows grid
+  private def buildTable(weekStart: LocalDate, slots: Seq[js.Dynamic]): Table = {
+    // group by date → time
+    val byDay = slots.groupBy { s =>
+      Instant.parse(s.slotTime.asInstanceOf[String])
+        .atZone(zoneId).toLocalDate
+    }.view.mapValues(_.toList).toMap
 
     val tbl = document.createElement("table").asInstanceOf[Table]
-    tbl.style.borderCollapse = "collapse"
-    tbl.style.width          = "100%"
-    tbl.style.border         = "1px solid #ddd"
+    tbl.style.cssText =
+      """
+        border-collapse: collapse;
+        width: 100%;
+        background: white;
+      """
 
-    def th(txt: String): TableCell = {
-      val c = document.createElement("th").asInstanceOf[TableCell]
-      c.textContent = txt
-      c.style.border = "1px solid #999"
-      c.style.padding = "6px"
-      c
+    // header row
+    val hdr = document.createElement("tr").asInstanceOf[TableRow]
+    hdr.appendChild(th(""))
+    (0 to 6).foreach { d =>
+      hdr.appendChild(th(weekStart.plusDays(d).getDayOfWeek.toString.take(3)))
     }
+    tbl.appendChild(hdr)
 
-    def td(txt: String, clickable: Boolean): TableCell = {
-      val c = document.createElement("td").asInstanceOf[TableCell]
-      c.textContent = txt
-      c.style.border = "1px solid #ccc"
-      c.style.padding = "6px"
-      if (clickable) {
-        c.style.cursor = "pointer"
-        c.style.backgroundColor = "#e0ffe0"
-      }
-      c
-    }
-
-    val headerRow = document.createElement("tr").asInstanceOf[TableRow]
-    headerRow.appendChild(th(""))
-    for (i <- 0 until 7)
-      headerRow.appendChild(th(weekStart.plusDays(i).getDayOfWeek.toString.take(3)))
-    tbl.appendChild(headerRow)
-
-
-    for (tStr <- timeStrings) {
+    // each time row
+    timeStrings.foreach { t =>
       val row = document.createElement("tr").asInstanceOf[TableRow]
-      row.appendChild(th(tStr))
+      row.appendChild(th(t))
 
-      val targetTime = LocalTime.parse(tStr)
+      (0 to 6).foreach { d =>
+        val date = weekStart.plusDays(d)
+        val slotAtTime = byDay.get(date).flatMap(_.find { s =>
+          Instant.parse(s.slotTime.asInstanceOf[String])
+            .atZone(zoneId).toLocalTime.format(DateTimeFormatter.ofPattern("HH:mm")) == t
+        })
 
-      for (i <- 0 until 7) {
-        val day     = weekStart.plusDays(i)
-        val slotOpt = slotsByDay.getOrElse(day, Nil).find(s =>
-          s.slotTime.atZone(zoneId).toLocalTime == targetTime
-        )
-
-        slotOpt match {
-          case Some(slt) =>
-            val cell = td("Book", clickable = true)
-            cell.addEventListener("click", (_: dom.MouseEvent) => {
-              // Get patientId from localStorage (or elsewhere)
-              val patientIdStr = dom.window.localStorage.getItem("userId")
-              
-              if (patientIdStr == null) {
-                dom.window.alert("You must be logged in to request a booking.")
-                ()
-              } else {
-                val payload = js.Dynamic.literal(
-                  slot_id   = slt.slotId.toString,
-                  patient_id = patientIdStr,
-                  clinic_id = slt.clinicId.toString
-                )
-
-                val requestHeaders = new dom.Headers()
-                requestHeaders.append("Content-Type", "application/json")
-
-                // Also include authorization header if needed
-                val accessToken = dom.window.localStorage.getItem("accessToken")
-                if (accessToken != null) {
-                  requestHeaders.append("Authorization", s"Bearer $accessToken")
-                }
-
-                val requestInit = new dom.RequestInit {
-                  method = dom.HttpMethod.POST
-                  headers = requestHeaders
-                  body = JSON.stringify(payload)
-                }
-
-                dom.fetch("/api/bookings/request", requestInit).toFuture.flatMap { response =>
-                  if (response.ok) {
-                    response.json().toFuture.map { json =>
-                      dom.window.alert("Booking requested successfully!")
-                    }
-                  } else {
-                    response.text().toFuture.map { text =>
-                      dom.window.alert(s"Failed to request booking: ${response.status} - $text")
-                    }
-                  }
-                }.recover {
-                  case ex =>
-                    dom.window.alert(s"Error requesting booking: ${ex.getMessage}")
-                }
-              }
-            })
+        slotAtTime match {
+          case Some(s) =>
+            val btn = document.createElement("button").asInstanceOf[Button]
+            btn.textContent = "Book"
+            btn.style.cssText =
+              """
+                width: 100%; height: 100%;
+                background: #4caf50; color: white;
+                border: none; cursor: pointer;
+              """
+            btn.onclick = (_: dom.MouseEvent) => requestBooking(s)
+            val cell = document.createElement("td").asInstanceOf[TableCell]
+            cell.style.cssText = "border:1px solid #ccc; padding:4px; background:#e0ffe0;"
+            cell.appendChild(btn)
             row.appendChild(cell)
+
           case None =>
-            row.appendChild(td("-", clickable = false))
+            val cell = document.createElement("td").asInstanceOf[TableCell]
+            cell.textContent = "-"
+            cell.style.cssText = "border:1px solid #ccc; padding:4px; color:#999;"
+            row.appendChild(cell)
         }
       }
 
@@ -287,15 +258,45 @@ object BookingPage {
     tbl
   }
 
+  // send POST /api/bookings/request
+  private def requestBooking(slot: js.Dynamic): Unit = {
+    val payload = js.Dynamic.literal(
+      slot_id    = slot.slotId.asInstanceOf[String],
+      patient_id = dom.window.localStorage.getItem("userId"),
+      clinic_id  = slot.clinicId.asInstanceOf[String]
+    )
 
-    private def navButton(text: String): Button = {
-      val b = document.createElement("button").asInstanceOf[Button]
-      b.textContent = text
-      b.style.padding = "6px 12px"
-      b
+    val reqInit = new dom.RequestInit {
+      method = dom.HttpMethod.POST
+      headers = new dom.Headers {
+        append("Content-Type", "application/json")
+        Option(dom.window.localStorage.getItem("accessToken"))
+          .foreach(t => append("Authorization", s"Bearer $t"))
+      }
+      body = JSON.stringify(payload)
     }
 
+    dom.fetch("/api/bookings/request", reqInit).toFuture
+      .flatMap { r =>
+        if (r.ok) r.json().toFuture.map(_ => dom.window.alert("Requested!"))
+        else      r.text().toFuture.map(err => dom.window.alert(s"Failed: $err"))
+      }
+  }
 
-    extension (d: DayOfWeek) private def isWeekend: Boolean =
-      d == DayOfWeek.SATURDAY || d == DayOfWeek.SUNDAY
+  private def th(txt: String): TableCell = {
+    val c = document.createElement("th").asInstanceOf[TableCell]
+    c.textContent = txt
+    c.style.cssText = "border:1px solid #999; padding:6px; background:#f0f0f0;"
+    c
+  }
+
+  private def navButton(text: String): Button = {
+    val b = document.createElement("button").asInstanceOf[Button]
+    b.textContent = text
+    b.style.cssText = "padding:6px 12px;"
+    b
+  }
+
+  private def encode(s: String): String =
+    js.URIUtils.encodeURIComponent(s)
 }
