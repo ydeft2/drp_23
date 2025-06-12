@@ -16,6 +16,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object LoginPage {
   def render(): Unit = {
 
+    document.body.innerHTML = ""
+
     val mainContainer = document.createElement("div")
     mainContainer.setAttribute("style", "display: flex; flex-direction: column; align-items: center; gap: 10px;")
 
