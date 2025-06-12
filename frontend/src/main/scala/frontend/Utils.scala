@@ -2,7 +2,7 @@ package frontend
 
 import org.scalajs.dom
 import org.scalajs.dom.document
-import org.scalajs.dom.html._
+import org.scalajs.dom.html.{Button, Div, Heading, Input}
 import org.scalajs.dom.html
 import scala.scalajs.js
 import scala.scalajs.js.Dynamic.literal
@@ -15,6 +15,8 @@ import scala.concurrent.Future
 import scala.scalajs.js.JSON
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSGlobal
+import scala.Option
+import scala.None
 
 @js.native
 trait Role extends js.Object {
@@ -182,166 +184,258 @@ def verifyToken(accessToken: String): scala.concurrent.Future[Boolean] = {
 
 // account pages
 
-  def buildProfileCard(user: User, isPatient:Boolean): Div = {
-    val card = document.createElement("div").asInstanceOf[Div]
-    card.style.marginTop = "70px"
-    card.style.marginLeft = "auto"
-    card.style.marginRight = "auto"
-    card.style.width = "60%"
-    card.style.maxHeight = "400px"
-    card.style.border = "1px solid #ccc"
-    card.style.borderRadius = "8px"
-    card.style.padding = "20px"
-    card.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)"
-    card.style.backgroundColor = "#f9f9f9"
+def buildProfileCard(user: User): Div = {
+  val card = document.createElement("div").asInstanceOf[Div]
+  card.style.marginTop = "70px"
+  card.style.marginLeft = "auto"
+  card.style.marginRight = "auto"
+  card.style.width = "60%"
+  card.style.maxHeight = "600px"
+  card.style.border = "1px solid #ccc"
+  card.style.borderRadius = "8px"
+  card.style.padding = "20px"
+  card.style.background = "linear-gradient(to bottom right, #ffffff, #f1f1f1)"
+  card.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.1)" 
+  card.style.position = "relative"
 
+  val initials = user.name
+    .split(" ")
+    .filter(_.nonEmpty)
+    .take(2)
+    .map(_.head.toUpper)
+    .mkString
 
+  val circle = document.createElement("div").asInstanceOf[Div]
+  circle.textContent = initials
+  circle.style.width = "72px"
+  circle.style.height = "72px"
+  circle.style.background = "linear-gradient(135deg, #7f53ac, #647dee)"
+  circle.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.2)"
+  circle.style.color = "#fff"
+  circle.style.transition = "transform 0.3s ease"
+  circle.onmouseenter = _ => circle.style.transform = "scale(1.05)"
+  circle.onmouseleave = _ => circle.style.transform = "scale(1)"
+  circle.style.borderRadius = "50%"
+  circle.style.display = "flex"
+  circle.style.setProperty("align-items", "center")
+  circle.style.setProperty("justify-content", "center")
+  circle.style.fontSize = "2.2rem"
+  circle.style.fontWeight = "bold"
+  circle.style.position = "absolute"
+  circle.style.top = "24px"
+  circle.style.right = "24px"
+  card.appendChild(circle)
 
+  val heading = document.createElement("h2").asInstanceOf[Heading]
+  heading.textContent = "Account Details"
+  heading.style.marginBottom = "24px"
+  card.appendChild(heading)
 
-    val heading = document.createElement("h2").asInstanceOf[Heading]
-    heading.textContent    = "Account Details"
-    heading.style.marginBottom = "24px"
-    card.appendChild(heading)
-
-
-    def infoRow(label: String, value: String): Div = {
-      val row = styledDiv("marginBottom" -> "20px")
-      row.innerHTML = s"<strong>$label</strong> $value"
-      row
-    }
-
-    card.appendChild(infoRow("Name:", user.name))
-    card.appendChild(infoRow("Date of Birth:", user.dob))
-    if (isPatient)
-      card.appendChild(infoRow("Address:", user.address))
-
- 
-    val editBtn = document.createElement("button").asInstanceOf[Button]
-    editBtn.textContent = "Edit Profile"
-    styleButton(editBtn, background = "transparent", color = "purple", border = "2px solid purple")
-    editBtn.style.display = "block"
-    editBtn.style.margin  = "20px auto 0"
-    editBtn.onclick = _ => dom.window.alert("Please contact your dental practice in order to edit your profile.")
-    card.appendChild(editBtn)
-
-    val logOutButton = document.createElement("button").asInstanceOf[Button]
-    logOutButton.textContent = "Log Out"
-    styleButton(logOutButton, background = "red", color = "white", border = "none")
-    logOutButton.onclick = (_: dom.MouseEvent) => {
-      dom.window.localStorage.removeItem("accessToken")
-      dom.window.localStorage.removeItem("userId")
-      dom.window.location.href = "/"
-    }
-    card.appendChild(logOutButton)
-
-    card
-  }
-
-  private def styledDiv(styles: (String, String)*): Div = {
-    val d = document.createElement("div").asInstanceOf[Div]
-    styles.foreach { case (k, v) => d.style.setProperty(k, v) }
-    d
-  }
-
-  private def styleButton(b: Button, background: String, color: String, border: String): Unit = {
-    b.style.background   = background
-    b.style.color        = color
-    b.style.border       = border
-    b.style.padding      = "10px 24px"
-    b.style.cursor       = "pointer"
-    b.style.borderRadius = "4px"
-    b.style.fontSize     = "16px"
+  def infoRow(label: String, value: String): Div = {
+    val row = styledDiv(
+      "marginBottom" -> "16px",
+      "display" -> "flex",
+      "justifyContent" -> "space-between",
+      "fontSize" -> "1rem",
+      "color" -> "#333"
+    )
+    row.innerHTML = s"<span style='font-weight:600;'>$label </span><span>$value</span>"
+    row
   }
 
 
-   def buildDeleteAccountButton(): Button = {
-    val deleteBtn = document.createElement("button").asInstanceOf[Button]
-    deleteBtn.textContent = "Delete Account"
-    styleButton(deleteBtn, background = "red", color = "white", border = "none")
-    deleteBtn.onclick = (_: dom.MouseEvent) => {
-      // Ask for confirmation before deleting
-      val confirmed = dom.window.confirm("Are you sure you want to delete your account? This action cannot be undone.")
-      if (confirmed) {
-        val accessToken = dom.window.localStorage.getItem("accessToken")
-        val uid = dom.window.localStorage.getItem("userId")
+  card.appendChild(infoRow("Name: ", user.name))
+  card.appendChild(infoRow("Date of Birth: ", user.dob))
+  card.appendChild(infoRow("Address: ", user.address))
 
-        if (accessToken == null || uid == null) {
-          dom.window.alert("You are not logged in.")
-        }
+  val mapDiv = document.createElement("div").asInstanceOf[Div]
+  mapDiv.id = "profile-map"
+  mapDiv.style.width = "100%"
+  mapDiv.style.height = "180px"
+  mapDiv.style.margin = "20px 0"
+  mapDiv.style.borderRadius = "8px"
+  mapDiv.style.boxShadow = "0 1px 4px rgba(0,0,0,0.08)"
+  mapDiv.style.border = "1px solid #ddd"
+  mapDiv.style.overflow = "hidden"
+  mapDiv.style.backgroundColor = "#eaeaea"
+  card.appendChild(mapDiv)
 
-        val requestHeaders = new dom.Headers()
-        requestHeaders.append("Content-Type", "application/json")
-        requestHeaders.append("Authorization", s"Bearer $accessToken")
+  // Fetch patient location and render map
+  fetchPatientLocation().foreach {
+    case Some((lat, lon)) =>
+      println(s"Map coords: $lat, $lon")
+      // Give the browser a moment to add the div
+      dom.window.setTimeout(() => {
+        val map = frontend.Leaflet
+          .map("profile-map")
+          .setView(js.Array(lat, lon), 15)
 
-        val requestBody = js.Dynamic.literal(
-          "uid" -> uid,
-          "accessToken" -> accessToken
+        val osmLayer = frontend.Leaflet.tileLayer(
+          "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+          js.Dynamic.literal(attribution = "&copy; OpenStreetMap contributors")
         )
+        osmLayer.addTo(map)
 
-        val requestInit = new dom.RequestInit {
-          method = dom.HttpMethod.POST
-          headers = requestHeaders
-          body = JSON.stringify(requestBody)
+        val marker = frontend.Leaflet.marker(
+          js.Array(lat, lon),
+          js.Dynamic.literal()
+        )
+        marker.addTo(map)
+      }, 0)
+    case None =>
+      println("No location available")
+      mapDiv.innerHTML = "<div style='color: #888; text-align: center; margin-top: 60px;'>No location available</div>"
+  }
+
+  val editBtn = document.createElement("button").asInstanceOf[Button]
+  editBtn.textContent = "Edit Profile"
+  styleButton(editBtn, background = "transparent", color = "purple", border = "2px solid purple")
+  editBtn.style.display = "block"
+  editBtn.style.margin = "20px auto 0"
+    styleButton(editBtn,
+    background = "#fff",
+    color = "purple",
+    border = "2px solid purple"
+  )
+  editBtn.style.padding = "10px 20px"
+  editBtn.style.borderRadius = "6px"
+  editBtn.style.cursor = "pointer"
+  editBtn.onmouseover = _ => editBtn.style.background = "#f3e8ff"
+  editBtn.onmouseout = _ => editBtn.style.background = "#fff"
+  editBtn.onclick = _ => dom.window.alert("Please contact your dental practice in order to edit your profile.")
+  card.appendChild(editBtn)
+
+  val logOutButton = document.createElement("button").asInstanceOf[Button]
+  logOutButton.textContent = "Log Out"
+  styleButton(logOutButton, background = "red", color = "white", border = "none")
+  styleButton(logOutButton,
+    background = "#e63946",
+    color = "white",
+    border = "none"
+  )
+  logOutButton.style.padding = "10px 20px"
+  logOutButton.style.borderRadius = "6px"
+  logOutButton.style.cursor = "pointer"
+  logOutButton.style.marginTop = "12px"
+  logOutButton.onmouseover = _ => logOutButton.style.background = "#d62839"
+  logOutButton.onmouseout = _ => logOutButton.style.background = "#e63946"
+
+  logOutButton.onclick = (_: dom.MouseEvent) => {
+    dom.window.localStorage.removeItem("accessToken")
+    dom.window.localStorage.removeItem("userId")
+    dom.window.location.href = "/"
+  }
+
+  card.appendChild(logOutButton)
+
+  card
+}
+
+private def styledDiv(styles: (String, String)*): Div = {
+  val d = document.createElement("div").asInstanceOf[Div]
+  styles.foreach { case (k, v) => d.style.setProperty(k, v) }
+  d
+}
+
+private def styleButton(b: Button, background: String, color: String, border: String): Unit = {
+  b.style.background   = background
+  b.style.color        = color
+  b.style.border       = border
+  b.style.padding      = "10px 24px"
+  b.style.cursor       = "pointer"
+  b.style.borderRadius = "4px"
+  b.style.fontSize     = "16px"
+}
+
+
+  def buildDeleteAccountButton(): Button = {
+  val deleteBtn = document.createElement("button").asInstanceOf[Button]
+  deleteBtn.textContent = "Delete Account"
+  styleButton(deleteBtn, background = "red", color = "white", border = "none")
+  deleteBtn.onclick = (_: dom.MouseEvent) => {
+    // Ask for confirmation before deleting
+    val confirmed = dom.window.confirm("Are you sure you want to delete your account? This action cannot be undone.")
+    if (confirmed) {
+      val accessToken = dom.window.localStorage.getItem("accessToken")
+      val uid = dom.window.localStorage.getItem("userId")
+
+      if (accessToken == null || uid == null) {
+        dom.window.alert("You are not logged in.")
+      }
+
+      val requestHeaders = new dom.Headers()
+      requestHeaders.append("Content-Type", "application/json")
+      requestHeaders.append("Authorization", s"Bearer $accessToken")
+
+      val requestBody = js.Dynamic.literal(
+        "uid" -> uid,
+        "accessToken" -> accessToken
+      )
+
+      val requestInit = new dom.RequestInit {
+        method = dom.HttpMethod.POST
+        headers = requestHeaders
+        body = JSON.stringify(requestBody)
+      }
+
+      dom.fetch("/api/auth/deleteAccount", requestInit)
+        .toFuture
+        .flatMap(_.json().toFuture)
+        .map { json =>
+          dom.window.alert("Your account has been successfully deleted.")
+          dom.window.localStorage.removeItem("accessToken")
+          dom.window.localStorage.removeItem("userId")
+          dom.window.location.href = "/"
         }
-
-        dom.fetch("/api/auth/deleteAccount", requestInit)
-          .toFuture
-          .flatMap(_.json().toFuture)
-          .map { json =>
-            dom.window.alert("Your account has been successfully deleted.")
-            dom.window.localStorage.removeItem("accessToken")
-            dom.window.localStorage.removeItem("userId")
-            dom.window.location.href = "/"
-          }
-          .recover {
-            case e =>
-              dom.window.alert(s"Error: ${e.getMessage}")
-          }
-      }
-      else {
-        dom.window.alert("Account deletion cancelled.")
-      }
+        .recover {
+          case e =>
+            dom.window.alert(s"Error: ${e.getMessage}")
+        }
     }
-    deleteBtn
+    else {
+      dom.window.alert("Account deletion cancelled.")
+    }
+  }
+  deleteBtn
+}
+
+def fetchUserDetails(userId: String): Future[User] = {
+  val accessToken = dom.window.localStorage.getItem("accessToken")
+
+  if (accessToken == null) {
+    dom.window.alert("You are not logged in.")
+    User("Unknown", "Unknown", "Unknown")
   }
 
-  def fetchUserDetails(userId: String): Future[User] = {
-    val accessToken = dom.window.localStorage.getItem("accessToken")
+  val requestHeaders = new dom.Headers()
+  requestHeaders.append("Content-Type", "application/json")
+  requestHeaders.append("Authorization", s"Bearer $accessToken")
 
-    if (accessToken == null) {
-      dom.window.alert("You are not logged in.")
-      User("Unknown", "Unknown", "Unknown")
-    }
+  val requestBody = userId.toString
 
-    val requestHeaders = new dom.Headers()
-    requestHeaders.append("Content-Type", "application/json")
-    requestHeaders.append("Authorization", s"Bearer $accessToken")
-
-    val requestBody = userId.toString
-
-    val requestInit = new dom.RequestInit {
-      method = dom.HttpMethod.POST
-      headers = requestHeaders
-      body = JSON.stringify(requestBody)
-    }
-
-    dom.fetch("/api/auth/accountDetails", requestInit)
-      .toFuture
-      .flatMap(_.json().toFuture)
-      .map { json =>
-        val user = json.asInstanceOf[js.Dynamic]
-        val name = s"${user.first_name.asInstanceOf[String]} ${user.last_name.asInstanceOf[String]}"
-        val dob = user.dob.asInstanceOf[String]
-        val address = "placeholder address" 
-        User(name, dob, address)
-      }
-      .recover {
-        case e =>
-          Spinner.hide()
-          dom.window.alert(s"Error: ${e.getMessage}")
-          User("Unknown", "Unknown", "Unknown")
-      }
+  val requestInit = new dom.RequestInit {
+    method = dom.HttpMethod.POST
+    headers = requestHeaders
+    body = JSON.stringify(requestBody)
   }
+
+  dom.fetch("/api/auth/accountDetails", requestInit)
+    .toFuture
+    .flatMap(_.json().toFuture)
+    .map { json =>
+      val user = json.asInstanceOf[js.Dynamic]
+      val name = s"${user.first_name.asInstanceOf[String]} ${user.last_name.asInstanceOf[String]}"
+      val dob = user.dob.asInstanceOf[String]
+      val address = user.address.asInstanceOf[String] 
+      User(name, dob, address)
+    }
+    .recover {
+      case e =>
+        Spinner.hide()
+        dom.window.alert(s"Error: ${e.getMessage}")
+        User("Unknown", "Unknown", "Unknown")
+    }
+}
 
 case class Clinic(
   clinicId: String,
@@ -752,4 +846,42 @@ def buildClinicProfileCard(clinic: Clinic): Div = {
   card.appendChild(logOutButton)
 
   card
+}
+
+def fetchPatientLocation(): Future[Option[(Double, Double)]] = {
+  val accessToken = dom.window.localStorage.getItem("accessToken")
+  val uid = dom.window.localStorage.getItem("userId")
+
+  if (accessToken == null || uid == null) {
+    dom.window.alert("You are not logged in.")
+    return Future.successful(None)
+  }
+
+  val requestHeaders = new dom.Headers()
+  requestHeaders.append("Content-Type", "application/json")
+  requestHeaders.append("Authorization", s"Bearer $accessToken")
+  requestHeaders.append("apikey", SUPABASE_ANON_KEY)
+
+  val requestInit = new dom.RequestInit {
+    method = dom.HttpMethod.GET
+    headers = requestHeaders
+  }
+
+  dom.fetch(s"https://djkrryzafuofyevgcyic.supabase.co/rest/v1/patients?select=latitude,longitude&uid=eq.${uid}", requestInit)
+    .toFuture
+    .flatMap(_.json().toFuture)
+    .map { json =>
+      val patients = json.asInstanceOf[js.Array[js.Dynamic]]
+      if (patients.nonEmpty) {
+        val p = patients(0)
+        Some((p.latitude.asInstanceOf[Double], p.longitude.asInstanceOf[Double]))
+      } else {
+        None
+      }
+    }
+    .recover {
+      case e =>
+        dom.window.alert(s"Error: ${e.getMessage}")
+        None
+    }
 }
