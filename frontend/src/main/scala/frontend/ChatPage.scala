@@ -36,19 +36,12 @@ object ChatPage {
   private var convPane: Div = _
 
 
-  def render(): Unit = {
+  def render(peer: String = ""): Unit = {
+
+    currentPeer = if peer.nonEmpty then Some(UUID.fromString(peer)) else None
     Spinner.show()
     println("ChatPage.render() called")
 
-    // todo get user name and peername lists from supabase 
-    /*val token = dom.window.localStorage.getItem("accessToken")
-    val uid   = dom.window.localStorage.getItem("userId")
-    if token == null || uid == null then { dom.window.alert("Not logged in."); return }
-
-    val hdr = new dom.Headers(); hdr.append("Authorization", s"Bearer $token")
-    val init = new dom.RequestInit { method = dom.HttpMethod.GET; headers = hdr }
-
-    dom.fetch(s"/api/messages/fetch/$uid", init) */
 
     val uidStr = dom.window.localStorage.getItem("userId")
     if uidStr == null then { dom.window.alert("You are not logged in."); return }
@@ -160,9 +153,6 @@ object ChatPage {
   private def buildThreads(): Unit = {
     grouped = all.groupBy(m => if m.senderId == selfId then m.receiverId else m.senderId)
                 .view.mapValues(_.sortBy(_.sentAt)).toMap
-
-                println("ChatPage.buildThreads: grouped messages: " + grouped)
-
     
     peerName = grouped.map { case (peerId, msgs) =>
       val first = msgs.head
@@ -278,10 +268,6 @@ object ChatPage {
   private inline def button(lbl: String): Button =
     val b = document.createElement("button").asInstanceOf[Button]; b.textContent = lbl; b
 
-  def createChat(clinic_id: String, clinic_name: String): Unit = {
-    println(s"Creating chat with clinic $clinic_id ($clinic_name)")
-    
-  }
 }
 
 
