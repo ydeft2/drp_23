@@ -143,7 +143,10 @@ def createPatientEntry(userId: UUID, reg: RegisterRequest): IO[Either[String, Un
     uid = userId.toString,
     first_name = reg.firstName,
     last_name = reg.lastName,
-    dob = reg.dob
+    dob = reg.dob,
+    address = reg.address,
+    latitude = reg.latitude,
+    longitude = reg.longitude
   )
 
   val payload = patient.asJson
@@ -183,7 +186,10 @@ def registerUserWithSupabase(reg: RegisterRequest): IO[Response[IO]] = {
     "data" := Json.obj(
       "first_name" := reg.firstName,
       "last_name" := reg.lastName,
-      "dob" := reg.dob
+      "dob" := reg.dob,
+      "address" := reg.address,
+      "latitude" := reg.latitude,
+      "longitude" := reg.longitude
     )
   )
 

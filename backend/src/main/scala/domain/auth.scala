@@ -29,7 +29,8 @@ object auth {
   case class AccountDetailsResponse(
     first_name: String,
     last_name: String,
-    dob: String
+    dob: String,
+    address: String
   )
 
   object AccountDetailsResponse {
@@ -39,21 +40,26 @@ object auth {
         firstName <- c.downField("first_name").as[String]
         lastName <- c.downField("last_name").as[String]
         dob <- c.downField("dob").as[String]
-      } yield AccountDetailsResponse.create(firstName, lastName, dob)
+        address <- c.downField("address").as[String]
+      } yield AccountDetailsResponse.create(firstName, lastName, dob, address)
     }
 
     def create(
       firstName: String,
       lastName: String,
-      dob: String
-    ): AccountDetailsResponse = AccountDetailsResponse(firstName, lastName, dob)
+      dob: String,
+      address: String
+    ): AccountDetailsResponse = AccountDetailsResponse(firstName, lastName, dob, address)
   }
 
   case class PatientInsert(
     uid: String,
     first_name: String,
     last_name: String,
-    dob: String
+    dob: String,
+    address: String,
+    latitude: Float,
+    longitude: Float
   )
   
   case class RegisterRequest(
@@ -61,7 +67,10 @@ object auth {
     lastName: String,
     dob: String,
     email: String,
-    password: String
+    password: String,
+    address: String,
+    latitude: Float,
+    longitude: Float
   )
 
   object RegisterRequest {
@@ -72,7 +81,10 @@ object auth {
         "last_name" -> r.lastName.asJson,
         "dob" -> r.dob.asJson,
         "email" -> r.email.asJson,
-        "password" -> r.password.asJson
+        "password" -> r.password.asJson,
+        "address" -> r.address.asJson,
+        "latitude" -> r.latitude.asJson,
+        "longitude" -> r.longitude.asJson
       )
     }
 
@@ -83,7 +95,11 @@ object auth {
         dob       <- c.downField("dob").as[String]
         email     <- c.downField("email").as[String]
         password  <- c.downField("password").as[String]
-      } yield RegisterRequest(firstName, lastName, dob, email, password)
+        address   <- c.downField("address").as[String]
+        latitude  <- c.downField("latitude").as[Float]
+        longitude <- c.downField("longitude").as[Float]
+      } yield RegisterRequest(firstName, lastName, dob, email, password, 
+        address, latitude, longitude)
     }
 
     def create(
@@ -91,8 +107,12 @@ object auth {
       lastName: String,
       dob: String,
       email: String,
-      password: String
-    ): RegisterRequest = RegisterRequest(firstName, lastName, dob, email, password)
+      password: String,
+      address: String,
+      latitude: Float,
+      longitude: Float
+    ): RegisterRequest = RegisterRequest(firstName, lastName, dob, email, password, 
+      address, latitude, longitude)
   }
 
 }
