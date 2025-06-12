@@ -238,22 +238,21 @@ object Inbox {
     deleteBtn.innerHTML = "🗑️"
     deleteBtn.title = "Delete notification"
     deleteBtn.style.border = "none"
-    deleteBtn.style.background = "red"
     deleteBtn.style.cursor = "pointer"
     deleteBtn.style.fontSize = "1.2em"
     deleteBtn.style.color = "#888"
     deleteBtn.style.marginLeft = "15px"
-    deleteBtn.style.transition = "color 0.3s ease, background-color 0.3s ease"
+    deleteBtn.style.transition = "color 0.3s ease, transform 0.3s ease"
     deleteBtn.style.outline = "none"
     deleteBtn.style.padding = "2px"
-
+    
     deleteBtn.onmouseover = (_: dom.MouseEvent) => {
-      deleteBtn.style.color = "#e53935" // Red-ish text on hover
-      deleteBtn.style.backgroundColor = "#d32f2f" // Slightly darker red on hover
+      deleteBtn.style.color = "#e53935" // Red-ish text on hover (no background change)
+      deleteBtn.style.transform = "scale(1.1)"
     }
     deleteBtn.onmouseout = (_: dom.MouseEvent) => {
       deleteBtn.style.color = "#888"
-      deleteBtn.style.backgroundColor = "red"
+      deleteBtn.style.transform = "scale(1)"
     }
 
     var confirming = false
