@@ -36,31 +36,55 @@ object ChatPage {
   private var convPane: Div = _
 
 
-  def render(peer: String = ""): Unit = {
+    
+  def render(peerIdOpt: Option[String] = None,
+            peerNameOpt: Option[String] = None): Unit = {
 
-    currentPeer = if peer.nonEmpty then Some(UUID.fromString(peer)) else None
+    if (peerIdOpt.isEmpty) currentPeer = None
+    println("render called with peerIdOpt: " + peerIdOpt + ", peerNameOpt: " + peerNameOpt)
+    val uuidOpt: Option[UUID] =
+      peerIdOpt.filter(_.nonEmpty).flatMap { s =>
+        scala.util.Try(UUID.fromString(s)).toOption
+      }
+
+    uuidOpt.foreach { id =>
+      currentPeer = Some(id)
+      peerNameOpt.foreach { n =>                        
+        peerName = peerName.updated(id, n)
+      }
+    }
+
+    println("ChatPage.render: currentPeer: " + currentPeer + ", peerName: " + peerName)
+
+    
     Spinner.show()
-    println("ChatPage.render() called")
-
 
     val uidStr = dom.window.localStorage.getItem("userId")
     if uidStr == null then { dom.window.alert("You are not logged in."); return }
     selfId = UUID.fromString(uidStr)
 
     fetchMessages { () =>
+      println("ChatPage.fetchMessages: messages fetched messages: " + all)
       buildThreads()
+
+      println("ChatPage.render: grouped threads: " + grouped)
+      
+
       Layout.renderPage(
         leftButton = Some(createHomeButton()),
         contentRender = () => {
           val box = renderMessagesBox()
           document.body.appendChild(box)
+          println("ChatPage.render: box appended to body")
           renderList()
+          println("ChatPage.render: list rendered listPane: " + listPane)
           currentPeer.orElse(grouped.keys.headOption).foreach(showConversation)
           Spinner.hide()
         }
       )
     }
   }
+
 
   private def parseIsoToInstant(s: String): Instant =
     Instant.parse(s.takeWhile(_ != '['))
@@ -154,45 +178,83 @@ object ChatPage {
     grouped = all.groupBy(m => if m.senderId == selfId then m.receiverId else m.senderId)
                 .view.mapValues(_.sortBy(_.sentAt)).toMap
     
-    peerName = grouped.map { case (peerId, msgs) =>
+    val derivedNames: Map[UUID, String] =
+    grouped.map { case (peerId, msgs) =>
       val first = msgs.head
-      val name  =
-        if first.senderId == peerId then first.senderName
-        else                         first.receiverName
+      val name =
+        if (first.senderId == peerId) first.senderName
+        else                          first.receiverName
       peerId -> name
     }
+
+  
+    peerName = peerName ++ derivedNames       
   }
+  
 
   /* =================== list pane =================== */
 
   private def renderList(): Unit = {
     listPane.innerHTML = ""
-    if grouped.isEmpty then
+
+    val allPeers: Seq[UUID] = grouped.collect { case (id, msgs) if msgs.nonEmpty => id }.toSeq
+    if allPeers.isEmpty then
       listPane.appendChild(span("You have no messages yet.", center = true, grey = true))
       convPane.innerHTML = ""
       return
 
     val ul = document.createElement("ul").asInstanceOf[UList]
-    ul.style.listStyle = "none"; ul.style.padding = "0"; ul.style.margin = "0"
+    ul.style.listStyle = "none"
+    ul.style.padding   = "0"
+    ul.style.margin    = "0"
+
     val fmt = DateTimeFormatter.ofPattern("MMM d, HH:mm").withZone(safeZone)
 
-    grouped.toSeq.sortBy(_._2.last.sentAt).reverse.foreach { (peer, msgs) =>
-      val li = document.createElement("li").asInstanceOf[LI]
-      li.style.cursor  = "pointer"; li.style.padding = "10px"
-      if currentPeer.contains(peer) then li.style.backgroundColor = "#eef4ff"
-      li.onclick = (_: dom.MouseEvent) => { currentPeer = Some(peer); renderList(); showConversation(peer) }
+    val sortedPeers =
+      allPeers.sortBy { peer =>
+        grouped.get(peer).flatMap(_.lastOption).map(_.sentAt).getOrElse(Instant.MIN)
+      }(Ordering[Instant].reverse)
 
-      li.appendChild(span(peerName(peer), bold = true))
-      li.appendChild(span(" " + msgs.last.message.take(5) + (if msgs.last.message.length > 5 then "…" else "")))
-      li.appendChild(span(fmt.format(msgs.last.sentAt), right = true))
+    sortedPeers.foreach { peer =>
+      val msgs = grouped.getOrElse(peer, Nil)
+      val li   = document.createElement("li").asInstanceOf[LI]
+
+      li.style.cursor  = "pointer"
+      li.style.padding = "10px"
+      if currentPeer.contains(peer) then li.style.backgroundColor = "#eef4ff"
+
+      li.onclick = (_: dom.MouseEvent) => {
+        currentPeer = Some(peer)
+        renderList()
+        showConversation(peer)
+      }
+
+      val name = peerName.getOrElse(peer, peer.toString.take(8))
+      li.appendChild(span(name, bold = true))
+
+      val preview =
+        msgs.lastOption.map { m =>
+          val txt = m.message
+          " " + txt.take(5) + (if txt.length > 5 then "…" else "")
+        }.getOrElse(" (no messages yet)")
+      li.appendChild(span(preview))
+
+      msgs.lastOption.foreach { m =>
+        li.appendChild(span(fmt.format(m.sentAt), right = true))
+      }
+
       ul.appendChild(li)
     }
+
     listPane.appendChild(ul)
   }
 
+
   private def showConversation(peer: UUID): Unit = {
     convPane.innerHTML = ""
-    convPane.appendChild(span(peerName(peer), bold = true, center = true))
+    val title = peerName.getOrElse(peer, peer.toString.take(8))  
+    convPane.appendChild(span(title, bold = true, center = true))
+
 
     val msgs = grouped.getOrElse(peer, Nil)
     val scrollBox = div(); scrollBox.style.setProperty("flex-grow", "1")

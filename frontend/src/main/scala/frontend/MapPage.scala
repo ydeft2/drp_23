@@ -158,7 +158,7 @@ object MapPage {
           if (chatBtn != null)
             chatBtn.addEventListener("click", (_: dom.MouseEvent) => {
               println("Opening chat for clinic: " + clinicId)
-              ChatPage.render(clinicId)
+              ChatPage.render(Some(clinicId), Some(name))
             })
         })
       }
@@ -211,7 +211,7 @@ object MapPage {
 
           if (chatBtn != null) chatBtn.addEventListener("click", (_: dom.MouseEvent) => {
             println("Opening chat for clinic: " + clinicId)
-            ChatPage.render(clinicId)
+            ChatPage.render(Some(clinicId), Some(name))
           })
         })
       }
