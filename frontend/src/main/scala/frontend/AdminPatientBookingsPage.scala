@@ -318,6 +318,36 @@ object AdminPatientBookingsPage {
   def renderBookings(bookings: js.Array[js.Dynamic]): Element = {
     val container = document.createElement("div")
 
+    if(bookings.isEmpty) {
+
+      val bookingsContainer = document.createElement("div").asInstanceOf[dom.html.Div]
+      bookingsContainer.style.backgroundColor = "#fff"
+      bookingsContainer.style.borderRadius = "10px"
+      bookingsContainer.style.boxShadow = "0 2px 8px rgba(0,0,0,0.10)"
+      bookingsContainer.style.margin = "60px auto"
+      bookingsContainer.style.padding = "40px 20px"
+      bookingsContainer.style.textAlign = "center"
+      bookingsContainer.style.border = "1px solid #eee"
+      bookingsContainer.style.maxWidth = "600px"
+      bookingsContainer.style.width = "90%"
+
+      val msg = document.createElement("div")
+      msg.textContent = "You have no bookings"
+      msg.setAttribute("style", "text-align: center; font-size: 1.5rem; margin-top: 40px; margin-bottom: 20px;")
+
+      val img = document.createElement("img").asInstanceOf[org.scalajs.dom.html.Image]
+      img.src = "/images/Waiting.png"
+      img.style.display = "block"
+      img.style.margin = "0 auto"
+      img.style.maxWidth = "220px"
+      img.style.opacity = "0.85"
+
+      bookingsContainer.appendChild(msg)
+      bookingsContainer.appendChild(img)
+      container.appendChild(bookingsContainer)
+      return container
+    }
+
     // Sort bookings by slot_time ascending
     val sorted = bookings.sortBy(b => new js.Date(b.slot_time.asInstanceOf[String]).getTime())
 
