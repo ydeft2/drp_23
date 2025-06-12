@@ -343,40 +343,58 @@ def verifyToken(accessToken: String): scala.concurrent.Future[Boolean] = {
       }
   }
 
-  def fetchClinicDetails(): Future[String] = {
-    val accessToken = dom.window.localStorage.getItem("accessToken")
-    val uid = dom.window.localStorage.getItem("userId")
+case class Clinic(
+  clinicId: String,
+  name: String,
+  latitude: Double,
+  longitude: Double,
+  address: String
+)
 
-    if (accessToken == null || uid == null) {
-      dom.window.alert("You are not logged in.")
-      return Future.successful("Unknown Clinic")
-    }
+def fetchClinicDetails(clinicId: String): Future[Clinic] = {
+  val accessToken = dom.window.localStorage.getItem("accessToken")
+  val uid = clinicId
 
-    val requestHeaders = new dom.Headers()
-    requestHeaders.append("Content-Type", "application/json")
-    requestHeaders.append("Authorization", s"Bearer $accessToken")
-    requestHeaders.append("apikey", SUPABASE_ANON_KEY)
+  if (accessToken == null || uid == null) {
+    dom.window.alert("You are not logged in.")
+    return Future.successful(Clinic("unknown", "Unknown Clinic", 0.0, 0.0, ""))
+  }
 
-    val requestInit = new dom.RequestInit {
-      method = dom.HttpMethod.GET
-      headers = requestHeaders
-    }
-    val requestUrl = s"https://djkrryzafuofyevgcyic.supabase.co/rest/v1/clinics?select=name&clinic_id=eq.${uid}"
-    dom.fetch(requestUrl, requestInit)
-      .toFuture
-      .flatMap(_.json().toFuture)
-      .map { json =>
-        val clinics = json.asInstanceOf[js.Array[js.Dynamic]]
-        if (clinics.nonEmpty) clinics(0).name.asInstanceOf[String]
-        else "Unknown Clinic"
+  val requestHeaders = new dom.Headers()
+  requestHeaders.append("Content-Type", "application/json")
+  requestHeaders.append("Authorization", s"Bearer $accessToken")
+  requestHeaders.append("apikey", SUPABASE_ANON_KEY)
+
+  val requestInit = new dom.RequestInit {
+    method = dom.HttpMethod.GET
+    headers = requestHeaders
+  }
+  val requestUrl = s"https://djkrryzafuofyevgcyic.supabase.co/rest/v1/clinics?select=clinic_id,name,latitude,longitude,address&clinic_id=eq.${uid}"
+  dom.fetch(requestUrl, requestInit)
+    .toFuture
+    .flatMap(_.json().toFuture)
+    .map { json =>
+      val clinics = json.asInstanceOf[js.Array[js.Dynamic]]
+      if (clinics.nonEmpty) {
+        val c = clinics(0)
+        Clinic(
+          clinicId = c.clinic_id.asInstanceOf[String],
+          name = c.name.asInstanceOf[String],
+          latitude = c.latitude.asInstanceOf[Double],
+          longitude = c.longitude.asInstanceOf[Double],
+          address = c.address.asInstanceOf[String]
+        )
+      } else {
+        Clinic("unknown", "Unknown Clinic", 0.0, 0.0, "")
       }
-      .recover {
+    }
+    .recover {
       case e =>
         dom.window.alert(s"Error: ${e.getMessage}")
-        "Unknown Clinic"
-      }
-  }
-  
+        Clinic("unknown", "Unknown Clinic", 0.0, 0.0, "")
+    }
+}
+
 
 object Spinner {
 
@@ -693,4 +711,45 @@ def formatSlotTime(slotTime: String): String = {
     val hour = dt.getUTCHours().toInt
     val minute = dt.getUTCMinutes().toInt
     f"$year-$month%02d-$day%02d $hour%02d:$minute%02d UTC"
+}
+
+def buildClinicProfileCard(clinic: Clinic): Div = {
+  val card = document.createElement("div").asInstanceOf[Div]
+  card.style.marginTop = "70px"
+  card.style.marginLeft = "auto"
+  card.style.marginRight = "auto"
+  card.style.width = "60%"
+  card.style.maxHeight = "400px"
+  card.style.border = "1px solid #ccc"
+  card.style.borderRadius = "8px"
+  card.style.padding = "20px"
+  card.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)"
+  card.style.backgroundColor = "#f9f9f9"
+
+  val heading = document.createElement("h2").asInstanceOf[Heading]
+  heading.textContent = "Clinic Details"
+  heading.style.marginBottom = "24px"
+  card.appendChild(heading)
+
+  def infoRow(label: String, value: String): Div = {
+    val row = styledDiv("marginBottom" -> "20px")
+    row.innerHTML = s"<strong>$label</strong> $value"
+    row
+  }
+
+  card.appendChild(infoRow("Clinic Name:", clinic.name))
+  card.appendChild(infoRow("Address:", clinic.address))
+
+
+  val logOutButton = document.createElement("button").asInstanceOf[Button]
+  logOutButton.textContent = "Log Out"
+  styleButton(logOutButton, background = "red", color = "white", border = "none")
+  logOutButton.onclick = (_: dom.MouseEvent) => {
+    dom.window.localStorage.removeItem("accessToken")
+    dom.window.localStorage.removeItem("userId")
+    dom.window.location.href = "/"
+  }
+  card.appendChild(logOutButton)
+
+  card
 }
