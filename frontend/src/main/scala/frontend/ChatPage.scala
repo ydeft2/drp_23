@@ -8,6 +8,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import java.util.UUID
 import java.time.*
 import java.time.format.DateTimeFormatter
+import scala.concurrent.Future
 
 case class MessageResponse(
   messageId    : UUID,
@@ -15,8 +16,8 @@ case class MessageResponse(
   receiverId   : UUID,
   message      : String,
   sentAt       : Instant,
-  senderName   : Option[String],   
-  receiverName : Option[String]    
+  senderName   : String,   
+  receiverName : String    
 )
 
 object ChatPage {
@@ -29,7 +30,7 @@ object ChatPage {
   private var peerName  : Map[UUID, String]                = Map.empty  
   private var currentPeer: Option[UUID]                    = None
   private var selfId    : UUID                             = _
-  private var selfName : String                            = _
+  
 
   private var listPane: Div = _
   private var convPane: Div = _
@@ -37,6 +38,7 @@ object ChatPage {
 
   def render(): Unit = {
     Spinner.show()
+    println("ChatPage.render() called")
 
     // todo get user name and peername lists from supabase 
     /*val token = dom.window.localStorage.getItem("accessToken")
@@ -48,7 +50,7 @@ object ChatPage {
 
     dom.fetch(s"/api/messages/fetch/$uid", init) */
 
-        val uidStr = dom.window.localStorage.getItem("userId")
+    val uidStr = dom.window.localStorage.getItem("userId")
     if uidStr == null then { dom.window.alert("You are not logged in."); return }
     selfId = UUID.fromString(uidStr)
 
@@ -79,8 +81,8 @@ object ChatPage {
           UUID.fromString(o.receiver_id.asInstanceOf[String]),
           o.message.asInstanceOf[String],
           parseIsoToInstant(o.sent_at.asInstanceOf[String]),
-          Option(o.sender_name  .asInstanceOf[String | Null]).map(_.toString),   // ★ CHANGED
-          Option(o.receiver_name.asInstanceOf[String | Null]).map(_.toString)    // ★ CHANGED
+          o.sender_name  .asInstanceOf[String],   
+          o.receiver_name.asInstanceOf[String]    
         )
       ) catch { case _ => None }
     }
@@ -101,18 +103,56 @@ object ChatPage {
   }
 
   private def sendMessage(peer: UUID, text: String, onOK: () => Unit): Unit = {
-    val token = dom.window.localStorage.getItem("accessToken")
-    if token == null then { dom.window.alert("No token"); return }
+    println("ChatPage.sendMessage called")
+    Option(dom.window.localStorage.getItem("accessToken")) match
+    case None =>
+      dom.window.alert("No token")
 
-    val hdr = new dom.Headers()
-    hdr.append("Content-Type","application/json")
-    hdr.append("Authorization", s"Bearer $token")
-    val payload = js.Dynamic.literal(
-      "sender_id" -> selfId.toString, "receiver_id" -> peer.toString, "message" -> text,
-       "sender_name" -> selfName, "receiver_name" -> peerName.getOrElse(peer, "Unknown")
-    )
-    val init = new dom.RequestInit { method = dom.HttpMethod.POST; headers = hdr; this.body = js.JSON.stringify(payload) }
-    dom.fetch("/api/messages/send", init).toFuture.foreach(_ => onOK())
+    case Some(token) =>
+      
+      val work =
+        for {
+          patient <- isPatient()                                 
+
+          
+          (selfNameF, receiverNameF) =
+            if patient then
+              (fetchUserDetails(selfId.toString).map(_.name),
+               fetchClinicDetails(peer.toString).map(_.name))
+            else
+              (fetchClinicDetails(selfId.toString).map(_.name),
+               fetchUserDetails(peer.toString).map(_.name))
+
+          selfName     <- selfNameF                               
+          receiverName <- receiverNameF                           
+
+          _ <- {
+            val hdr = new dom.Headers()
+            hdr.append("Content-Type", "application/json")
+            hdr.append("Authorization", s"Bearer $token")
+
+            val payload = js.Dynamic.literal(
+              "sender_id"     -> selfId.toString,
+              "receiver_id"   -> peer.toString,
+              "message"       -> text,
+              "sender_name"   -> selfName,
+              "receiver_name" -> receiverName
+            )
+
+            val init = new dom.RequestInit {
+              method = dom.HttpMethod.POST
+              headers = hdr
+              this.body = js.JSON.stringify(payload)
+            }
+            println("ChatPage.sendMessage: sending message with payload: " + payload)
+
+            dom.fetch("/api/messages/send", init).toFuture        
+          }
+        } yield ()
+
+      
+      work.foreach(_ => onOK())
+      work.failed.foreach(e => dom.window.alert(s"An error occurred: ${e.getMessage}"))
   }
 
   /* =================== threads =================== */
@@ -121,13 +161,15 @@ object ChatPage {
     grouped = all.groupBy(m => if m.senderId == selfId then m.receiverId else m.senderId)
                 .view.mapValues(_.sortBy(_.sentAt)).toMap
 
-    /* ★ NEW: build a map of peerId → display name */
+                println("ChatPage.buildThreads: grouped messages: " + grouped)
+
+    
     peerName = grouped.map { case (peerId, msgs) =>
       val first = msgs.head
       val name  =
         if first.senderId == peerId then first.senderName
         else                         first.receiverName
-      peerId -> name.getOrElse(peerId.toString.take(8))
+      peerId -> name
     }
   }
 
@@ -150,7 +192,7 @@ object ChatPage {
       if currentPeer.contains(peer) then li.style.backgroundColor = "#eef4ff"
       li.onclick = (_: dom.MouseEvent) => { currentPeer = Some(peer); renderList(); showConversation(peer) }
 
-      li.appendChild(span(peerName(peer), bold = true))                    // ★ CHANGED
+      li.appendChild(span(peerName(peer), bold = true))
       li.appendChild(span(" " + msgs.last.message.take(5) + (if msgs.last.message.length > 5 then "…" else "")))
       li.appendChild(span(fmt.format(msgs.last.sentAt), right = true))
       ul.appendChild(li)
@@ -160,7 +202,7 @@ object ChatPage {
 
   private def showConversation(peer: UUID): Unit = {
     convPane.innerHTML = ""
-    convPane.appendChild(span(peerName(peer), bold = true, center = true)) // ★ ADDED
+    convPane.appendChild(span(peerName(peer), bold = true, center = true))
 
     val msgs = grouped.getOrElse(peer, Nil)
     val scrollBox = div(); scrollBox.style.setProperty("flex-grow", "1")
@@ -186,7 +228,6 @@ object ChatPage {
       scrollBox.appendChild(bubble)
     }
 
-    // compose bar unchanged …
     val bar = div(); bar.style.display = "flex"; bar.style.marginTop = "8px"
     val ta  = document.createElement("textarea").asInstanceOf[TextArea]; ta.rows = 2; ta.style.setProperty("flex-grow", "1")
     val send = button("Send")
