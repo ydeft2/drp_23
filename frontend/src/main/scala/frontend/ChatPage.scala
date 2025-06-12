@@ -218,7 +218,10 @@ object ChatPage {
       if d != lastDay then { scrollBox.appendChild(span(d, center = true, grey = true)); lastDay = d }
 
       val bubble = div()
-      bubble.textContent = m.message + "  " + timeFmt.format(m.sentAt)
+      bubble.appendChild(dom.document.createTextNode(m.message + "  "))
+      val timeLabel = span(timeFmt.format(m.sentAt), grey = true)
+      timeLabel.style.fontSize = "0.78em"
+      bubble.appendChild(timeLabel)
       bubble.style.maxWidth = "70%"; bubble.style.margin = "4px"; bubble.style.padding = "6px 8px"
       bubble.style.borderRadius = "6px"
       if m.senderId == selfId then
