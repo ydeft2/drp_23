@@ -27,10 +27,6 @@ object Leaflet extends js.Object {
 
 object MapPage {
   def render(): Unit = {
-    val back = document.createElement("button").asInstanceOf[dom.html.Button]
-    back.textContent = "← Back"
-    back.onclick = (_: dom.MouseEvent) => HomePage.render()
-    back.style.margin = "16px"
 
     val toggleBtn = document.createElement("button").asInstanceOf[dom.html.Button]
     toggleBtn.id = "toggleMapBtn"
@@ -38,7 +34,7 @@ object MapPage {
     toggleBtn.style.margin = "16px"
 
     Layout.renderPage(
-      leftButton = Some(back),
+      leftButton = Some(createHomeButton()),
       rightButton = Some(toggleBtn),
       contentRender = () => {
 

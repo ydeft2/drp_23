@@ -2,300 +2,226 @@ package frontend
 
 import org.scalajs.dom
 import org.scalajs.dom.document
-import org.scalajs.dom.html.{Div, Button, Span, Table, TableCell, TableRow}
-
+import org.scalajs.dom.html.Div
 import scala.scalajs.js
-import scala.scalajs.js.JSON
-
-import java.time.*
-import java.time.format.DateTimeFormatter
-import java.util.UUID
-import scala.util.Random
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
-// replace with backend
-final case class Slot(
-  slotId: UUID,
-  bookingId: UUID,
-  clinicId: UUID,
-  isTaken: Boolean,
-  slotTime: Instant,
-  slotLength: Long,
-  clinicInfo: String,
-  createdAt: Instant
-)
 
 object BookingPage {
-
-
-  private val timeStrings = Seq("09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00")
-  private val fmt         = DateTimeFormatter.ofPattern("HH:mm")
-  private val zoneId      = ZoneOffset.UTC
-
-
-  private def randUuid(): UUID = {
-    val hex = List.fill(32)(Random.nextInt(16).toHexString).mkString
-    val dashed =
-      s"${hex.substring(0, 8)}-" +
-      s"${hex.substring(8,12)}-" +
-      s"${hex.substring(12,16)}-" +
-      s"${hex.substring(16,20)}-" +
-      hex.substring(20)
-    UUID.fromString(dashed)
-  }
-
-  private def dummySlots(weekStart: LocalDate): Future[Seq[Slot]] = {
-
-    val accessToken = dom.window.localStorage.getItem("accessToken")
-    val uid = dom.window.localStorage.getItem("userId")
-
-    if (accessToken == null || uid == null) {
-      dom.window.alert("You are not logged in.")
-      User("Unknown", "Unknown", "Unknown")
-    }
-
-    val requestHeaders = new dom.Headers()
-    requestHeaders.append("Content-Type", "application/json")
-    requestHeaders.append("Authorization", s"Bearer $accessToken")
-
-
-    val requestInit = new dom.RequestInit {
-      method = dom.HttpMethod.GET
-      headers = requestHeaders
-    }
-
-    dom.fetch("/api/slots/list?is_taken=false").toFuture.flatMap { response =>
-      if (response.ok) {
-        response.json().toFuture.map { data =>
-          val arr = data.asInstanceOf[js.Array[js.Dynamic]]
-          arr.map { obj =>
-            Slot(
-              slotId     = UUID.fromString(obj.slotId.asInstanceOf[String]),
-              bookingId  = randUuid(), // Placeholder until real booking ID is provided
-              clinicId   = UUID.fromString(obj.clinicId.asInstanceOf[String]),
-              isTaken    = obj.isTaken.asInstanceOf[Boolean],
-              slotTime   = Instant.parse(obj.slotTime.asInstanceOf[String]),
-              slotLength = obj.slotLength.asInstanceOf[Double].toLong,
-              clinicInfo = obj.clinicInfo.asInstanceOf[js.UndefOr[String]].getOrElse("Unknown Clinic"),
-              createdAt  = Instant.now() // Placeholder
-            )
-          }.toSeq
-        }
-      } else {
-        Future.failed(new RuntimeException(s"Failed to fetch slots: ${response.status}"))
-      }
-    }
-  }
-
   def render(): Unit = {
     Layout.renderPage(
       leftButton = Some(createHomeButton()),
-      contentRender = () => 
-        {
-          val main = document.createElement("div").asInstanceOf[Div]
-          main.style.marginTop   = "80px"
-          main.style.width       = "90%"
-          main.style.marginLeft  = "auto"
-          main.style.marginRight = "auto"
-          main.style.maxWidth    = "1200px"
-          main.style.padding     = "20px"
-          main.style.backgroundColor = "#f9f9f9"
-          main.style.borderRadius = "8px"
-          main.style.boxShadow    = "0 2px 8px rgba(0, 0, 0, 0.1)"
-
-        
-          val today = LocalDate.now(java.time.Clock.systemUTC())
-          val daysFromSunday  = today.getDayOfWeek.getValue % 7 // Sunday -> 0, Monday -> 1 …
-          val startToday      = today.minusDays(daysFromSunday.toLong)
-          var currentWeekStart = startToday
-          val lastWeekStart    = startToday.plusWeeks(52)   // 12‑month horizon
-
-          
-          val navBar = document.createElement("div").asInstanceOf[Div]
-          navBar.style.display = "flex"
-          navBar.style.setProperty("justify-content", "center")
-          navBar.style.setProperty("align-items", "center")
-          navBar.style.marginBottom = "15px"
-          navBar.style.padding = "10px"
-          navBar.style.backgroundColor = "#e0e0e0"
-          navBar.style.borderRadius = "5px"
-          navBar.style.boxShadow = "0 1px 3px rgba(23, 21, 21, 0.1)"
-
-          val prevBtn = navButton("< Prev Week")
-          val nextBtn = navButton("Next Week >")
-          val weekLab = document.createElement("span").asInstanceOf[Span]
-          weekLab.style.margin = "0 12px"
-
-          navBar.appendChild(prevBtn)
-          navBar.appendChild(weekLab)
-          navBar.appendChild(nextBtn)
-          main.appendChild(navBar)
-          
-
-          val tableHolder = document.createElement("div").asInstanceOf[Div]
-          main.appendChild(tableHolder)
-
-          def updateLabel(): Unit = {
-            weekLab.textContent = s"${currentWeekStart} – ${currentWeekStart.plusDays(6)}"
-          }
-
-          def updateButtons(): Unit = {
-            prevBtn.disabled = currentWeekStart == startToday
-            nextBtn.disabled = currentWeekStart == lastWeekStart
-          }
-
-          def drawWeek(): Unit = {
-            tableHolder.innerHTML = "Loading..."// todo cute
-
-            dummySlots(currentWeekStart).foreach { slots =>
-              val slotsByDay: Map[LocalDate, Seq[Slot]] =
-                slots.groupBy(s => s.slotTime.atZone(zoneId).toLocalDate)
-
-              tableHolder.innerHTML = ""
-              tableHolder.appendChild(buildTable(currentWeekStart, slotsByDay))
-              updateLabel()
-              updateButtons()
-            }
-          }
-
-
-          prevBtn.onclick = (_: dom.MouseEvent) => {
-            if (currentWeekStart.isAfter(startToday)) {
-              currentWeekStart = currentWeekStart.minusWeeks(1)
-              drawWeek()
-            }
-          }
-
-          nextBtn.onclick = (_: dom.MouseEvent) => {
-            if (currentWeekStart.isBefore(lastWeekStart)) {
-              currentWeekStart = currentWeekStart.plusWeeks(1)
-              drawWeek()
-            }
-          }
-
-          document.body.appendChild(main)
-          drawWeek()
-        }
+      contentRender = () => {
+        document.body.appendChild(buildBookingPage())
+      }
     )
   }
 
+  def buildBookingPage(): Div = {
+    val container = document.createElement("div").asInstanceOf[Div]
+    container.style.width = "100%"
+    container.style.margin = "0 auto"
+    container.style.padding = "20px"
+    container.style.position = "relative"
 
-  private def buildTable(weekStart: LocalDate, slotsByDay: Map[LocalDate, Seq[Slot]]): Table = {
+    // Toggle wrapper for top-right positioning (fixed)
+    val toggleWrapper = document.createElement("div").asInstanceOf[Div]
+    toggleWrapper.style.position = "fixed"
+    toggleWrapper.style.top = "80px"
+    toggleWrapper.style.right = "40px"
+    toggleWrapper.style.zIndex = "1000" // higher than content
+    toggleWrapper.style.background = "transparent" // optional
 
-    val tbl = document.createElement("table").asInstanceOf[Table]
-    tbl.style.borderCollapse = "collapse"
-    tbl.style.width          = "100%"
-    tbl.style.border         = "1px solid #ddd"
+    // Toggle container (same as before)
+    val toggleContainer = document.createElement("div").asInstanceOf[Div]
+    toggleContainer.style.display = "flex"
+    toggleContainer.style.setProperty("align-items", "center")
+    toggleContainer.style.setProperty("justify-content", "center")
+    toggleContainer.style.setProperty("gap", "0px")
+    toggleContainer.style.background = "#eee"
+    toggleContainer.style.borderRadius = "20px"
+    toggleContainer.style.overflow = "hidden"
+    toggleContainer.style.width = "fit-content"
+    toggleContainer.style.boxShadow = "0 2px 8px rgba(0,0,0,0.07)"
 
-    def th(txt: String): TableCell = {
-      val c = document.createElement("th").asInstanceOf[TableCell]
-      c.textContent = txt
-      c.style.border = "1px solid #999"
-      c.style.padding = "6px"
-      c
-    }
+    // Labels
+    val listLabel = document.createElement("span").asInstanceOf[org.scalajs.dom.html.Span]
+    listLabel.textContent = "List View"
+    listLabel.style.cursor = "pointer"
+    listLabel.style.fontWeight = "bold"
+    listLabel.style.padding = "8px 28px"
+    listLabel.style.borderRadius = "20px 0 0 20px"
+    listLabel.style.transition = "background 0.2s, color 0.2s"
+    listLabel.style.setProperty("user-select", "none")
 
-    def td(txt: String, clickable: Boolean): TableCell = {
-      val c = document.createElement("td").asInstanceOf[TableCell]
-      c.textContent = txt
-      c.style.border = "1px solid #ccc"
-      c.style.padding = "6px"
-      if (clickable) {
-        c.style.cursor = "pointer"
-        c.style.backgroundColor = "#e0ffe0"
+    val mapLabel = document.createElement("span").asInstanceOf[org.scalajs.dom.html.Span]
+    mapLabel.textContent = "Map View"
+    mapLabel.style.cursor = "pointer"
+    mapLabel.style.fontWeight = "bold"
+    mapLabel.style.padding = "8px 28px"
+    mapLabel.style.borderRadius = "0 20px 20px 0"
+    mapLabel.style.transition = "background 0.2s, color 0.2s"
+    mapLabel.style.setProperty("user-select", "none")
+
+    // Content area
+    val contentArea = document.createElement("div").asInstanceOf[Div]
+
+    def setView(isMap: Boolean): Unit = {
+      if (isMap) {
+        mapLabel.style.background = "#1976d2"
+        mapLabel.style.color = "white"
+        listLabel.style.background = "transparent"
+        listLabel.style.color = "#333"
+        contentArea.innerHTML = ""
+        contentArea.appendChild(buildMapViewContent())
+      } else {
+        listLabel.style.background = "#1976d2"
+        listLabel.style.color = "white"
+        mapLabel.style.background = "transparent"
+        mapLabel.style.color = "#333"
+        contentArea.innerHTML = ""
+        contentArea.appendChild(buildListViewContent())
       }
-      c
     }
 
-    val headerRow = document.createElement("tr").asInstanceOf[TableRow]
-    headerRow.appendChild(th(""))
-    for (i <- 0 until 7)
-      headerRow.appendChild(th(weekStart.plusDays(i).getDayOfWeek.toString.take(3)))
-    tbl.appendChild(headerRow)
+    // Initial state
+    setView(isMap = false)
 
+    // Clicking labels toggles view
+    listLabel.onclick = (_: org.scalajs.dom.MouseEvent) => setView(false)
+    mapLabel.onclick = (_: org.scalajs.dom.MouseEvent) => setView(true)
 
-    for (tStr <- timeStrings) {
-      val row = document.createElement("tr").asInstanceOf[TableRow]
-      row.appendChild(th(tStr))
+    toggleContainer.appendChild(listLabel)
+    toggleContainer.appendChild(mapLabel)
+    toggleWrapper.appendChild(toggleContainer)
 
-      val targetTime = LocalTime.parse(tStr)
+    // Append toggleWrapper directly to body so it's always fixed
+    document.body.appendChild(toggleWrapper)
+    container.appendChild(contentArea)
 
-      for (i <- 0 until 7) {
-        val day     = weekStart.plusDays(i)
-        val slotOpt = slotsByDay.getOrElse(day, Nil).find(s =>
-          s.slotTime.atZone(zoneId).toLocalTime == targetTime
+    container
+  }
+
+  // Dummy content builders for now
+  def buildListViewContent(): Div = {
+    val div = document.createElement("div").asInstanceOf[Div]
+    div.textContent = "This is the List View content."
+    div
+  }
+  def buildMapViewContent(): Div = {
+    val wrapper = document.createElement("div").asInstanceOf[Div]
+    wrapper.style.display = "flex"
+    wrapper.style.setProperty("flex-direction", "column")
+    wrapper.style.setProperty("align-items", "center")
+    wrapper.style.setProperty("justify-content", "center")
+    wrapper.style.width = "100%"
+
+    // Toggle button for map style
+    val toggleBtn = document.createElement("button").asInstanceOf[org.scalajs.dom.html.Button]
+    toggleBtn.textContent = "Toggle Map Style"
+    toggleBtn.style.margin = "16px"
+    toggleBtn.id = "bookingMapToggleBtn"
+
+    // Map div
+    val mapDiv = document.createElement("div").asInstanceOf[Div]
+    mapDiv.id = "booking-map"
+    mapDiv.style.width = "80%"
+    mapDiv.style.maxWidth = "900px"
+    mapDiv.style.height = "80%"
+    mapDiv.style.minHeight = "400px"
+    mapDiv.style.border = "2px solid #e0e0e0"
+    mapDiv.style.borderRadius = "18px"
+    mapDiv.style.boxShadow = "0 2px 12px rgba(0,0,0,0.08)"
+    mapDiv.style.margin = "0 auto"
+
+    wrapper.appendChild(toggleBtn)
+    wrapper.appendChild(mapDiv)
+
+    // Initialize the map after the div is in the DOM
+    dom.window.setTimeout(() => {
+      val map = frontend.Leaflet
+        .map("booking-map")
+        .setView(js.Array(51.5, -0.09), 13) // TODO - CENTRE ON PATIENTS ADDRESS
+
+      val osmLayer = frontend.Leaflet.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        js.Dynamic.literal(attribution = "&copy; OpenStreetMap contributors")
+      )
+
+      val simpleLayer = frontend.Leaflet.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+        js.Dynamic.literal(
+          attribution = "&copy; <a href='https://carto.com/'>CARTO</a>",
+          subdomains = js.Array("a", "b", "c", "d")
         )
+      )
 
-        slotOpt match {
-          case Some(slt) =>
-            val cell = td("Book", clickable = true)
-            cell.addEventListener("click", (_: dom.MouseEvent) => {
-              // Get patientId from localStorage (or elsewhere)
-              val patientIdStr = dom.window.localStorage.getItem("userId")
-              
-              if (patientIdStr == null) {
-                dom.window.alert("You must be logged in to request a booking.")
-                ()
-              } else {
-                val payload = js.Dynamic.literal(
-                  slot_id   = slt.slotId.toString,
-                  patient_id = patientIdStr,
-                  clinic_id = slt.clinicId.toString
-                )
+      // Start with OSM
+      var currentLayer = osmLayer
+      currentLayer.addTo(map)
 
-                val requestHeaders = new dom.Headers()
-                requestHeaders.append("Content-Type", "application/json")
-
-                // Also include authorization header if needed
-                val accessToken = dom.window.localStorage.getItem("accessToken")
-                if (accessToken != null) {
-                  requestHeaders.append("Authorization", s"Bearer $accessToken")
-                }
-
-                val requestInit = new dom.RequestInit {
-                  method = dom.HttpMethod.POST
-                  headers = requestHeaders
-                  body = JSON.stringify(payload)
-                }
-
-                dom.fetch("/api/bookings/request", requestInit).toFuture.flatMap { response =>
-                  if (response.ok) {
-                    response.json().toFuture.map { json =>
-                      dom.window.alert("Booking requested successfully!")
-                    }
-                  } else {
-                    response.text().toFuture.map { text =>
-                      dom.window.alert(s"Failed to request booking: ${response.status} - $text")
-                    }
-                  }
-                }.recover {
-                  case ex =>
-                    dom.window.alert(s"Error requesting booking: ${ex.getMessage}")
-                }
-              }
-            })
-            row.appendChild(cell)
-          case None =>
-            row.appendChild(td("-", clickable = false))
+      // Toggle functionality
+      val btn = document.getElementById("bookingMapToggleBtn").asInstanceOf[org.scalajs.dom.html.Button]
+      if (btn != null) {
+        btn.onclick = (_: dom.MouseEvent) => {
+          currentLayer.removeFrom(map)
+          currentLayer = if (currentLayer == osmLayer) simpleLayer else osmLayer
+          currentLayer.addTo(map)
         }
       }
 
-      tbl.appendChild(row)
-    }
+      // Fetch available slots first
+      val slotReq = dom.fetch("/api/slots/list?is_taken=false").toFuture
+        .flatMap(_.json().toFuture)
+        .map(_.asInstanceOf[js.Array[js.Dynamic]])
 
-    tbl
+      slotReq.foreach { slots =>
+        val clinicIdsWithAvailableSlots: Set[String] =
+          slots
+            .map(slot => slot.clinicId.asInstanceOf[String])
+            .toSet
+
+        // Now fetch clinics and add markers with correct icon and popup
+        val clinicsReq =
+          dom.fetch("/api/clinics?select=clinic_id,name,address,latitude,longitude")
+            .toFuture
+            .flatMap(_.json().toFuture)
+            .map(_.asInstanceOf[js.Array[js.Dynamic]])
+
+        clinicsReq.foreach { clinics =>
+          clinics.foreach { clinic =>
+            val clinicId = clinic.clinic_id.asInstanceOf[String]
+            val isAvailable = clinicIdsWithAvailableSlots.contains(clinicId)
+
+            val iconUrl =
+              if (isAvailable) "/images/ClinicMapIconGreen.png"
+              else "/images/ClinicMapIconRed.png"
+
+            val icon = frontend.Leaflet.icon(js.Dynamic.literal(
+              iconUrl = iconUrl,
+              iconSize = js.Array(32, 32), // adjust as needed
+              iconAnchor = js.Array(16, 32), // bottom center
+              popupAnchor = js.Array(0, -32)
+            ))
+
+            val marker = frontend.Leaflet.marker(
+              js.Array(clinic.latitude.asInstanceOf[Double], clinic.longitude.asInstanceOf[Double]),
+              js.Dynamic.literal(icon = icon)
+            )
+
+            val popupText =
+              if (isAvailable)
+                s"<b>${clinic.name}</b><br>${clinic.address}<br><span style='color:green;font-weight:bold;'>Available Slots</span>"
+              else
+                s"<b>${clinic.name}</b><br>${clinic.address}<br><span style='color:red;font-weight:bold;'>No available slots</span>"
+
+            marker.bindPopup(popupText)
+            marker.addTo(map)
+          }
+        }
+      }
+    }, 0)
+
+    wrapper
   }
-
-
-    private def navButton(text: String): Button = {
-      val b = document.createElement("button").asInstanceOf[Button]
-      b.textContent = text
-      b.style.padding = "6px 12px"
-      b
-    }
-
-
-    extension (d: DayOfWeek) private def isWeekend: Boolean =
-      d == DayOfWeek.SATURDAY || d == DayOfWeek.SUNDAY
 }
