@@ -12,21 +12,27 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 object Account {
   def render(): Unit = {
+    Spinner.show()
 
-  Spinner.show()
-
-
-  fetchUserDetails(dom.window.localStorage.getItem("userId"))
-    .map { currentUser =>
+    // fetchUserDetails returns a Future[User]
+    fetchUserDetails(dom.window.localStorage.getItem("userId")).map { currentUser =>
       Layout.renderPage(
-        leftButton = Some(createHomeButton()), 
-        contentRender = () => 
-          {
-            val card = buildProfileCard(currentUser, true)
-            document.body.appendChild(card)
-            document.body.appendChild(buildDeleteAccountButton())
-            Spinner.hide()
-          }
+        leftButton    = Some(createHomeButton()),
+        rightButton   = None,
+        contentRender = () => {
+          // grab our single mount point
+          val app = document.getElementById("app")
+
+          // build the profile card and delete button
+          val card   = buildProfileCard(currentUser, isPatient = true)
+          val delete = buildDeleteAccountButton()
+
+          // append into #app
+          app.appendChild(card)
+          app.appendChild(delete)
+
+          Spinner.hide()
+        }
       )
     }
   }

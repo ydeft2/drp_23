@@ -26,23 +26,23 @@ object HomePage {
   def render(): Unit = {
     Spinner.show()
     fetchUnreadCount().foreach { unreadCount =>
-      unreadNotifications = unreadCount
       val accountBtn = createHeaderButton("Account")
-      accountBtn.addEventListener("click", (_: dom.MouseEvent) => Account.render())
+      accountBtn.onclick = _ => Account.render()
 
-      val inboxLabel = if (unreadNotifications > 0) s"Inbox ($unreadNotifications)" else "Inbox"
-      val inboxBtn = createHeaderButton(inboxLabel)
-      inboxBtn.addEventListener("click", (_: dom.MouseEvent) => Inbox.render())
+      val inboxBtn = createHeaderButton(
+        if (unreadCount>0) s"Inbox ($unreadCount)" else "Inbox"
+      )
+      inboxBtn.onclick = _ => Inbox.render()
 
       Layout.renderPage(
-        leftButton = Some(accountBtn),
+        leftButton  = Some(accountBtn),
         rightButton = Some(inboxBtn),
-        contentRender = () =>
-        {
-          document.body.appendChild(createFindClinicsButton())
-          document.body.appendChild(buildBookingsBox())
-          document.body.appendChild(createBookingButton())
-          document.body.appendChild(createChatButton())
+        contentRender = () => {
+          val c = document.getElementById("app")
+          c.appendChild(createFindClinicsButton())
+          c.appendChild(buildBookingsBox())
+          c.appendChild(createBookingButton())
+          c.appendChild(createChatButton())
           Spinner.hide()
         }
       )

@@ -3,10 +3,12 @@ package frontend
 import org.scalajs.dom
 import org.scalajs.dom.Element
 import org.scalajs.dom.document
+import org.scalajs.dom.html.Div
+
 import scala.concurrent.Future
 import scala.scalajs.js
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.scalajs.js.Thenable.Implicits._
+import scala.scalajs.js.Thenable.Implicits.*
 import scala.scalajs.js.JSON // <-- Add this import at the top
 
 
@@ -14,61 +16,118 @@ object AdminPatientBookingsPage {
 
   def render(): Unit = {
     Spinner.show()
-    fetchBookingsForAdmin()
-      .map { bookings =>
-        Layout.renderPage(
-          leftButton = Some(createHomeButton()),
-          contentRender = () => {
-            val container = document.createElement("div")
-            container.appendChild(renderBookings(bookings))
-            document.body.appendChild(container)
-          }
-        )
-        Spinner.hide()
-      }
+
+    // Fetch all bookings for this clinic/admin
+    fetchBookingsForAdmin().foreach { bookings =>
+      // Prepare header buttons
+      val homeBtn  = createHomeButton()
+      val inboxBtn = createHeaderButton("Inbox")
+      inboxBtn.onclick = (_: dom.MouseEvent) => Inbox.render()
+
+      Layout.renderPage(
+        leftButton    = Some(homeBtn),
+        rightButton   = Some(inboxBtn),
+        contentRender = () => {
+          // Container for the booking list
+          val container = document.createElement("div").asInstanceOf[Div]
+          container.appendChild(renderBookings(bookings))
+
+          // Append into the <div id="app">
+          document.getElementById("app").appendChild(container)
+
+          Spinner.hide()
+        }
+      )
+    }
   }
 
-  def fetchBookingsForAdmin(): Future[js.Array[js.Dynamic]] = {
+  private def fetchBookingsForAdmin(): scala.concurrent.Future[js.Array[js.Dynamic]] = {
     val accessToken = dom.window.localStorage.getItem("accessToken")
-    val uid = dom.window.localStorage.getItem("userId")
+    val uid         = dom.window.localStorage.getItem("userId")
 
     if (accessToken == null || uid == null) {
       dom.window.alert("You are not logged in.")
-      return Future.successful(js.Array[js.Dynamic]())
+      return scala.concurrent.Future.successful(js.Array[js.Dynamic]())
     }
 
-    val requestHeaders = new dom.Headers()
-    requestHeaders.append("Content-Type", "application/json")
-    requestHeaders.append("Authorization", s"Bearer $accessToken")
-    requestHeaders.append("apikey", SUPABASE_ANON_KEY)
+    val reqheaders = new dom.Headers()
+    reqheaders.append("Content-Type", "application/json")
+    reqheaders.append("Authorization", s"Bearer $accessToken")
+    reqheaders.append("apikey", SUPABASE_ANON_KEY)
 
-    val requestInit = new dom.RequestInit {
-      method = dom.HttpMethod.GET
-      headers = requestHeaders
+    val init = new dom.RequestInit {
+      method  = dom.HttpMethod.GET
+      headers = reqheaders
     }
 
-    dom.fetch(s"/api/bookings/list?clinic_id=$uid", requestInit)
-      .flatMap { response =>
-        if (response.ok) {
-          response.json().toFuture.map { data =>
-            data.asInstanceOf[js.Array[js.Dynamic]]
-          }
-        } else {
+    dom.fetch(s"/api/bookings/list?clinic_id=$uid", init)
+      .toFuture
+      .flatMap { resp =>
+        if (resp.ok) resp.json().toFuture.map(_.asInstanceOf[js.Array[js.Dynamic]])
+        else {
           dom.window.alert("Failed to fetch bookings.")
-          Future.failed(new Exception("Failed to fetch bookings"))
+          scala.concurrent.Future.failed(new Exception("Fetch error"))
         }
       }
   }
 
-  // Helper to create a row for modal info
-  private def infoRow(label: String, value: String): dom.html.Div = {
-    val row = document.createElement("div").asInstanceOf[dom.html.Div]
+  private def infoRow(label: String, value: String): Div = {
+    val row = document.createElement("div").asInstanceOf[Div]
     row.style.marginBottom = "8px"
     val strong = document.createElement("strong")
-    strong.textContent = label
+    strong.textContent = label + " "
     row.appendChild(strong)
-    row.appendChild(document.createTextNode(" " + value))
+    row.appendChild(document.createTextNode(value))
     row
+  }
+
+  private def renderBookings(bookings: js.Array[js.Dynamic]) = {
+    val container = document.createElement("div")
+
+    // Sort by slot_time ascending
+    val sorted = bookings.sortBy(b => new js.Date(b.slot_time.asInstanceOf[String]).getTime())
+
+    sorted.foreach { b =>
+      val bookingId       = b.booking_id.asInstanceOf[String]
+      val patientId       = b.patient_id.asInstanceOf[String]
+      val slotTime        = b.slot_time.asInstanceOf[String]
+      val slotLength      = b.slot_length.asInstanceOf[Int]
+      val appointmentType = b.appointment_type.asInstanceOf[String]
+      val clinicInfo      = Option(b.clinic_info).map(_.toString).getOrElse("")
+      val confirmed       = b.confirmed.asInstanceOf[Boolean]
+
+      val box = document.createElement("div").asInstanceOf[Div]
+      box.className = "booking-item"
+      // initial placeholder
+      box.textContent = s"Loading…"
+
+      // fetch patient details to replace placeholder
+      fetchUserDetails(patientId).foreach { user =>
+        box.innerHTML =
+          s"""
+             |<div>
+             |  <strong>${user.name}</strong> (DOB: ${user.dob})<br/>
+             |  ${formatSlotTime(slotTime)} • $slotLength min<br/>
+             |  Status: ${if (confirmed) "✓ Confirmed" else "⏳ Pending"}
+             |</div>
+           """.stripMargin
+
+        box.onclick = (_: dom.MouseEvent) => showModal(createBookingModal(
+          bookingId,
+          user.name,
+          user.dob,
+          slotTime,
+          slotLength,
+          clinicInfo,
+          appointmentType,
+          confirmed
+        ))
+      }
+
+      container.appendChild(box)
+    }
+
+    container
   }
 
   // Helper to create the modal for a booking
@@ -313,72 +372,5 @@ object AdminPatientBookingsPage {
           Future.successful(false)
         }
       }
-  }
-
-  def renderBookings(bookings: js.Array[js.Dynamic]): Element = {
-    val container = document.createElement("div")
-
-    // Sort bookings by slot_time ascending
-    val sorted = bookings.sortBy(b => new js.Date(b.slot_time.asInstanceOf[String]).getTime())
-
-    sorted.foreach { booking =>
-      val patientId = booking.patient_id.asInstanceOf[String]
-      val slotTime = booking.slot_time.asInstanceOf[String]
-      val slotLength = booking.slot_length.asInstanceOf[Int]
-      val bookingId = booking.booking_id.asInstanceOf[String]
-      val appointmentType = booking.appointment_type.asInstanceOf[String]
-      val clinicInfo = Option(booking.clinic_info).map(_.toString).getOrElse("")
-      val confirmed = booking.confirmed.asInstanceOf[Boolean]
-
-      val bookingDiv = document.createElement("div").asInstanceOf[dom.html.Div]
-      
-      // Style the booking div based on confirmation status
-      val baseStyle = "margin-bottom: 1em; padding: 0.5em; border: 1px solid #ccc; cursor: pointer; border-radius: 4px;"
-      val statusStyle = if (confirmed) {
-        "border-left: 4px solid #28a745; background-color: #f8fff9;"
-      } else {
-        "border-left: 4px solid #ffc107; background-color: #fffbf0;"
-      }
-      
-      bookingDiv.setAttribute("style", baseStyle + statusStyle)
-
-      // Status indicator in the booking summary
-      val statusText = if (confirmed) "✓ CONFIRMED" else "⏳ PENDING"
-      
-      // Placeholder text while loading user info
-      bookingDiv.innerHTML = 
-        s"""<div style="display: flex; justify-content: space-between; align-items: center;">
-           |  <span>Patient: Loading... | Time: ${formatSlotTime(slotTime)} | Length: $slotLength min</span>
-           |  <span style="font-weight: bold; color: ${if (confirmed) "#28a745" else "#856404"};">$statusText</span>
-           |</div>""".stripMargin
-
-      // Fetch and update with real patient info
-      fetchUserDetails(patientId).foreach { user =>
-        bookingDiv.innerHTML = 
-          s"""<div style="display: flex; justify-content: space-between; align-items: center;">
-             |  <span>Patient: ${user.name} (DOB: ${user.dob}) | Time: ${formatSlotTime(slotTime)} | Length: $slotLength min</span>
-             |  <span style="font-weight: bold; color: ${if (confirmed) "#28a745" else "#856404"};">$statusText</span>
-             |</div>""".stripMargin
-
-        // On click, show modal with booking details
-        bookingDiv.onclick = (_: dom.MouseEvent) => {
-          val modalDiv = createBookingModal(
-            bookingId,
-            user.name,
-            user.dob,
-            slotTime,
-            slotLength,
-            clinicInfo,
-            appointmentType,
-            confirmed
-          )
-          showModal(modalDiv)
-        }
-      }
-
-      container.appendChild(bookingDiv)
-    }
-
-    container
   }
 }

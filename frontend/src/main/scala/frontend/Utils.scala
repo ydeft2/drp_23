@@ -28,6 +28,16 @@ trait Role extends js.Object {
    address: String,
 )
 
+object App {
+
+  def mount(contentFn: dom.Element => Unit): Unit = {
+    val container = dom.document.getElementById("app")
+    container.innerHTML = "" // wipe old view
+    contentFn(container) // render new view inside it
+  }
+
+}
+
 
 def clearPage(): Unit = document.body.innerHTML = ""
 

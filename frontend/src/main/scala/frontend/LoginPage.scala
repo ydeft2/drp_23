@@ -14,133 +14,118 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object LoginPage {
+
   def render(): Unit = {
+    Layout.renderPage(
+      leftButton  = None,
+      rightButton = None,
+      contentRender = () => {
 
-    val mainContainer = document.createElement("div")
-    mainContainer.setAttribute("style", "display: flex; flex-direction: column; align-items: center; gap: 10px;")
+        // 1) Outer wrapper
+        val mainContainer = document.createElement("div").asInstanceOf[Div]
+        mainContainer.style.cssText =
+          """
+            |display: flex;
+            |flex-direction: column;
+            |align-items: center;
+            |gap: 10px;
+            |padding-top: 20px;
+          """.stripMargin
 
+        // 2) Logo
+        val logo = document.createElement("img").asInstanceOf[html.Image]
+        logo.src = "images/DentanaTitleBlack.png"
+        logo.alt = "Dentana Logo"
+        logo.style.height = "40px"
+        mainContainer.appendChild(logo)
 
-    val logo = document.createElement("img").asInstanceOf[html.Image]
-    logo.src = "images/DentanaTitleBlack.png"
-    logo.alt = "Dentana Logo"
-    logo.setAttribute("style", "height: 40px;")
+        // 3) Card container
+        val container = document.createElement("div").asInstanceOf[Div]
+        container.classList.add("login-card")
+        mainContainer.appendChild(container)
 
-    val logoWrapper = document.createElement("div")
-    logoWrapper.setAttribute(
-      "style",
-      """
-        |width: 100%;
-        |text-align: center;
-        |margin-top: 20px;
-        |margin-bottom: 70px;
-      """.stripMargin.replaceAll("\n", "")
-    )
-    logoWrapper.appendChild(logo)
-    mainContainer.appendChild(logoWrapper)
+        // 4) Title + fun logo
+        val title = document.createElement("div").asInstanceOf[Div]
+        title.textContent = "Login"
+        title.style.cssText = "font-weight:500;font-size:32px;text-align:center;margin-bottom:20px;"
+        container.appendChild(title)
+        container.appendChild(happyLogo())
 
-    // Create a grey box container for the login form
-    val container = document.createElement("div")
-    container.setAttribute("class", "login-card")
+        // 5) Inputs
+        val emailInput = createFormField(container, "Email")
+        val passwordInput = createPasswordInput(container, "Password")
 
-    document.body.appendChild(container)
-    val welcomeText = dom.document.createElement("div").asInstanceOf[Div]
-    welcomeText.innerHTML = "Login"
-    welcomeText.setAttribute(
-      "style",
-      "font-weight: 500; font-size: 32px"
-    )
-    container.appendChild(welcomeText)
-    val logoContainer = document.createElement("div")
-    
-    logoContainer.appendChild(happyLogo())
-    container.appendChild(logoContainer)
-    // Create an email input field
-    val emailInput = createFormField(container, "Email")
-    
-    // Create a password input field
-    val passwordInput = createPasswordInput(container, "Password")
-    
-    val errorMessage = document.createElement("div")
-    errorMessage.setAttribute("style", "color: red; text-align: center; margin-bottom: 10px; display: none;")
-    container.appendChild(errorMessage)
+        // 6) Error message placeholder
+        val errorMessage = document.createElement("div").asInstanceOf[Div]
+        errorMessage.style.cssText = "color:red;text-align:center;display:none;margin-bottom:10px;"
+        container.appendChild(errorMessage)
 
-    // Create the Login button
-    val loginButton = createFormButton(container, "Login")
+        // 7) Login button
+        val loginButton = createFormButton(container, "Login")
 
-    
-    // Add click event listener to the Login button
-    def handleEnterKey(e: dom.KeyboardEvent): Unit = {
-      if (e.key == "Enter") {
-      loginButton.click()
-      }
-    }
-    emailInput.addEventListener("keydown", handleEnterKey _)
-    passwordInput.addEventListener("keydown", handleEnterKey _)
-    loginButton.addEventListener("click", { (_: dom.Event) =>
-      
-      val data = literal(
-        "email" -> emailInput.value,
-        "password" -> passwordInput.value
-      )
-      
-      // Prepare request options by casting a literal to RequestInit
-      val requestOptions = literal(
-        method = "POST",
-        headers = js.Dictionary(
-          "Content-Type" -> "application/json",
-          "apikey" -> SUPABASE_ANON_KEY),
-        body = JSON.stringify(data)
-      ).asInstanceOf[RequestInit]
-      
-      // Send a HTTPS fetch request to verify the credentials
-      dom.fetch(supabaseAuthUrl, requestOptions).toFuture.flatMap { response =>
-        if(response.ok) {
-          response.json().toFuture.map {json =>
-            val dyn = json.asInstanceOf[js.Dynamic]
-            val accessToken = dyn.access_token.asInstanceOf[String]
-            val userId = dyn.user.id.asInstanceOf[String]
-            
-            dom.window.localStorage.setItem("accessToken", accessToken)
-            dom.window.localStorage.setItem("userId", userId)
-            
-            isPatient().map { isPatient =>
-              if (isPatient) {
-                HomePage.render()
-              } else {
-                AdminPage.render()
+        // allow Enter to submit
+        def handleEnterKey(e: dom.KeyboardEvent): Unit =
+          if (e.key == "Enter") loginButton.click()
+        emailInput.addEventListener("keydown", handleEnterKey _)
+        passwordInput.addEventListener("keydown", handleEnterKey _)
+
+        // 8) Your exact fetch/auth logic
+        loginButton.addEventListener("click", (_: dom.Event) => {
+          // build payload
+          val data = literal(
+            "email"    -> emailInput.value,
+            "password" -> passwordInput.value
+          )
+          val requestOptions = literal(
+            method  = "POST",
+            headers = js.Dictionary(
+              "Content-Type" -> "application/json",
+              "apikey"       -> SUPABASE_ANON_KEY
+            ),
+            body = JSON.stringify(data)
+          ).asInstanceOf[RequestInit]
+
+          dom.fetch(supabaseAuthUrl, requestOptions).toFuture.flatMap { response =>
+            if (response.ok) {
+              response.json().toFuture.map { json =>
+                val dyn         = json.asInstanceOf[js.Dynamic]
+                val accessToken = dyn.access_token.asInstanceOf[String]
+                val userId      = dyn.user.id.asInstanceOf[String]
+
+                dom.window.localStorage.setItem("accessToken", accessToken)
+                dom.window.localStorage.setItem("userId", userId)
+
+                // now route to Home or Admin
+                isPatient().foreach { isPatient =>
+                  if (isPatient) HomePage.render()
+                  else           AdminPage.render()
+                }
               }
-            }.recover {
-              case e: Throwable => dom.window.alert(s"An error occurred: ${e.getMessage}")
+            } else {
+              // wrong creds
+              response.text().toFuture.map { _ =>
+                errorMessage.textContent = "Incorrect email or password"
+                errorMessage.style.display = "block"
+              }
             }
-        }
-      } else {
-          response.text().toFuture.map { errorText =>
-            errorMessage.textContent = "Incorrect email or password"
-            errorMessage.setAttribute("style", "color: red; text-align: center; margin-bottom: 10px; display: block;")
+          }.recover { case e =>
+            dom.window.alert(s"An error occurred: ${e.getMessage}")
           }
-        }
-      }.recover {
-        case e: Throwable => dom.window.alert(s"An error occurred: ${e.getMessage}")
+        })
+
+        // 9) “Sign up” link
+        val registerText = document.createElement("div").asInstanceOf[Div]
+        registerText.innerHTML =
+          """Don't have an account? <span id="signup-link"
+            |style="color:purple;cursor:pointer;text-decoration:underline;">Sign up</span>"""
+            .stripMargin
+        container.appendChild(registerText)
+        document.getElementById("signup-link")
+          .addEventListener("click", (_: dom.Event) => RegisterPage.render())
+
+        // 10) Finally mount into #app
+        document.body.appendChild(mainContainer)
       }
-    })
-
-    val registerText = document.createElement("div")
-    registerText.setAttribute("style", "text-align: center; margin-top: 20px; font-size: 14px; font-family: 'Poppins', sans-serif;")
-
-    registerText.innerHTML =
-      """Don't have an account? <span id="signup-link" style="color: purple; cursor: pointer; text-decoration: underline;">Sign up</span>"""
-
-    container.appendChild(registerText)
-
-    val signUpLink = document.getElementById("signup-link")
-    signUpLink.addEventListener("click", (_: dom.Event) => {
-      RegisterPage.render()
-    })
-
-    mainContainer.appendChild(container)
-
-    document.body.appendChild(mainContainer)
-
-    Layout.renderFooter()
+    )
   }
 }

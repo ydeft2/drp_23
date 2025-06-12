@@ -72,59 +72,69 @@ import org.scalajs.dom.html._
 import concurrent.ExecutionContext.Implicits.global
 
 object AdminPage {
-
   private var unreadNotifications: Int = 0
+
   case class DashboardItem(title: String, iconUrl: String, onClick: () => Unit)
 
   def render(): Unit = {
     Spinner.show()
-    fetchUnreadCount().foreach { unreadCount =>
-      unreadNotifications = unreadCount
+
+    // Fetch unread count for the badge
+    fetchUnreadCount().foreach { count =>
+      unreadNotifications = count
+
+      // Prepare header buttons
+      val homeBtn  = createHomeButton()
+      val inboxBtn = createHeaderButton(if (unreadNotifications > 0) s"Inbox ($unreadNotifications)" else "Inbox")
+      inboxBtn.onclick = (_: dom.MouseEvent) => Inbox.render()
+
       Layout.renderPage(
-        contentRender = () =>
-        {
-          buildAdminPage()
+        leftButton    = Some(homeBtn),
+        rightButton   = Some(inboxBtn),
+        contentRender = () => {
+          // Build dashboard grid
+          val contentDiv = document.createElement("div").asInstanceOf[Div]
+          contentDiv.className = "dashboard-grid"
+
+          val items = Seq(
+            DashboardItem("My Account",       "images/icons/Account.png",      () => AdminAccount.render()),
+            DashboardItem("Inbox",            "images/icons/Inbox.png",        () => Inbox.render()),
+            DashboardItem("Patient Bookings", "images/icons/Bookings.png",     () => AdminPatientBookingsPage.render()),
+            DashboardItem("Set Availability", "images/icons/Availability.png", () => BookingDashboard.render()),
+            DashboardItem("Messages",         "images/icons/Messages.png",     () => MessagesPage.render())
+          )
+
+          items.foreach { item =>
+            val box = document.createElement("div").asInstanceOf[Div]
+            box.className = "dashboard-item"
+
+            // Embed the badge in the icon for “Inbox”
+            val badgeHtml =
+              if (item.title == "Inbox" && unreadNotifications > 0)
+                s"""<span class="notification-badge">$unreadNotifications</span>"""
+              else
+                ""
+
+            box.innerHTML =
+              s"""
+                 |<div class="dashboard-title">${item.title}</div>
+                 |<div class="dashboard-icon icon-with-badge">
+                 |  <img src="${item.iconUrl}" alt="${item.title} icon"/>
+                 |  $badgeHtml
+                 |</div>
+              """.stripMargin
+
+            box.addEventListener("click", (_: dom.MouseEvent) => item.onClick())
+            contentDiv.appendChild(box)
+          }
+
+          // Append into our mounted #app
+          val app = document.getElementById("app")
+          app.appendChild(contentDiv)
+
           Spinner.hide()
         }
       )
     }
-  }
-
-  private def buildAdminPage(): Unit = {
-    val contentDiv = document.createElement("div").asInstanceOf[Div]
-    contentDiv.className = "dashboard-grid"
-
-    val items = Seq(
-      DashboardItem("My Account", "images/icons/Account.png", () => AdminAccount.render()),
-      DashboardItem(s"Inbox", "images/icons/Inbox.png", () => Inbox.render()),
-      DashboardItem("Patient Bookings", "images/icons/Bookings.png", () => AdminPatientBookingsPage.render()),
-      DashboardItem("Set Availability", "images/icons/Availability.png", () => BookingDashboard.render()),
-      DashboardItem("Messages", "images/icons/Messages.png", () => MessagesPage.render())
-    )
-
-    items.foreach { item =>
-      val box = document.createElement("div").asInstanceOf[Div]
-      box.className = "dashboard-item"
-
-      val badgeHtml = 
-        if (item.title == "Inbox" && unreadNotifications > 0) 
-          s"""<span class="notification-badge">$unreadNotifications</span>"""
-        else ""
-
-      box.innerHTML =
-        s"""
-          |<div class="dashboard-title">${item.title}</div>
-          |<div class="dashboard-icon icon-with-badge">
-          |  <img src="${item.iconUrl}" alt="${item.title} icon"/>
-          |  $badgeHtml
-          |</div>
-        """.stripMargin
-
-      box.addEventListener("click", (_: dom.MouseEvent) => item.onClick())
-      contentDiv.appendChild(box)
-    }
-
-
-    document.body.appendChild(contentDiv)
   }
 }
