@@ -239,7 +239,7 @@ def buildProfileCard(user: User): Div = {
       "fontSize" -> "1rem",
       "color" -> "#333"
     )
-    row.innerHTML = s"<span style='font-weight:600;'>$label</span><span>$value</span>"
+    row.innerHTML = s"<span style='font-weight:600;'>$label </span><span>$value</span>"
     row
   }
 
