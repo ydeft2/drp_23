@@ -28,11 +28,17 @@ object HomePage {
     fetchUnreadCount().foreach { unreadCount =>
       unreadNotifications = unreadCount
       val accountBtn = createHeaderButton("Account")
-      accountBtn.addEventListener("click", (_: dom.MouseEvent) => Account.render())
+      accountBtn.addEventListener("click", (_: dom.MouseEvent) => {
+        InboxState.inboxVisible = false
+        Account.render()
+      })
 
       val inboxLabel = if (unreadNotifications > 0) s"Inbox ($unreadNotifications)" else "Inbox"
       val inboxBtn = createHeaderButton(inboxLabel)
-      inboxBtn.addEventListener("click", (_: dom.MouseEvent) => Inbox.render())
+      inboxBtn.addEventListener("click", (_: dom.MouseEvent) => {
+        InboxState.inboxVisible = true // TODO: i cannot wait to get rid of this
+        Inbox.render()
+      })
 
       Layout.renderPage(
         leftButton = Some(accountBtn),
@@ -167,6 +173,7 @@ object HomePage {
     })
 
     button.addEventListener("click", (_: dom.MouseEvent) => {
+      InboxState.inboxVisible = false
       ChatPage.render()
     })
 
@@ -189,7 +196,10 @@ object HomePage {
       cursor: pointer;
       font-weight: bold;
     """
-    btn.onclick = (_: dom.MouseEvent) => MapPage.render()
+    btn.onclick = (_: dom.MouseEvent) => {
+      InboxState.inboxVisible = false
+      MapPage.render()
+    }
     btn
   }
 
@@ -229,6 +239,7 @@ object HomePage {
 
     // Click handler
     button.addEventListener("click", (_: dom.MouseEvent) => {
+      InboxState.inboxVisible = false
       BookingPage.render()
     })
 

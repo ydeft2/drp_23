@@ -21,6 +21,10 @@ case class NotificationResponse(
   isRead: Boolean
 )
 
+object InboxState {
+  var inboxVisible: Boolean = false
+}
+
 object Inbox {
 
   var notifications: List[NotificationResponse] = List()
@@ -309,6 +313,7 @@ object Inbox {
         dom.window.alert(s"Error deleting notification: ${e.getMessage}")
       }
   }
+
   def renderNotificationsBox(): Div = {
     val notificationsBox = document.createElement("div").asInstanceOf[Div]
     notificationsBox.style.marginTop = "70px"
@@ -324,20 +329,50 @@ object Inbox {
     notificationsBox.style.backgroundColor = "#f9f9f9"
     notificationsBox
   }
+
+
+
+  def updateInboxBadge(unreadCount: Int): Unit = {
+    // e.g. find your inbox button and change its label
+    val btn = dom.document.getElementById("inbox-button").asInstanceOf[Div]
+    if (btn != null) {
+      btn.textContent = if (unreadCount > 0) s"Inbox ($unreadCount)" else "Inbox"
+    }
+  }
+
+  private def renderInboxPage(): Unit = {
+    Spinner.hide()
+    Layout.renderPage(
+      leftButton = Some(createHomeButton()),
+      contentRender = () => {
+        val box = renderNotificationsBox()
+        document.body.appendChild(box)
+        renderNotifications(box, notifications)
+      }
+    )
+  }
+
+
   def render(): Unit = {
+    InboxState.inboxVisible = true
     Spinner.show()
-    
-    fetchNotifications { () =>
-      Layout.renderPage(
-        leftButton = Some(createHomeButton()),
-        contentRender = () => 
-        {
-          Spinner.hide()
-          val notificationsBox = renderNotificationsBox()
-          document.body.appendChild(notificationsBox)
-          renderNotifications(notificationsBox, notifications)
-        }
-      )
+
+    // onSuccess callback both renders page AND updates badge
+    def onLoad(): Unit = {
+      // update badge everywhere
+      val unread = notifications.count(!_.isRead)
+      updateInboxBadge(unread)
+
+      // if we’re actually on the inbox page, fully render the list
+      renderInboxPage()
+    }
+
+    // initial load
+    fetchNotifications(onLoad)
+
+    // then every 10 seconds ... bit arbitary ik
+    js.timers.setInterval(10_000) {
+      fetchNotifications(onLoad)
     }
   }
 }
