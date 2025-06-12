@@ -175,5 +175,22 @@ object DbBookings {
     executeNoContent(req, "slot", s"booking_id=$bookingId")
   }
 
+  def getSlotAndClinicForBooking(bookingId: UUID): IO[Either[DbError, (UUID, UUID)]] = {
+    val uri = Uri.unsafeFromString(
+      s"$supabaseUrl/rest/v1/bookings?select=slot_id,clinic_id&booking_id=eq.$bookingId"
+    )
+    val req = Request[IO](Method.GET, uri, headers = commonHeaders)
+
+    fetchAndDecode[List[BookingSlotClinic]](req, "booking").map {
+      case Right(List(BookingSlotClinic(slot, clinic))) =>
+        Right((slot, clinic))
+      case Right(Nil) =>
+        Left(DbError.NotFound("booking", bookingId.toString))
+      case Right(_ :: _ :: _) =>
+        Left(DbError.Unknown("Multiple matching bookings"))
+      case Left(err) =>
+        Left(err)
+    }
+  }
 
 }

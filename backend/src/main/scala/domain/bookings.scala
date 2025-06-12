@@ -146,4 +146,13 @@ object bookings {
 
   }
 
+  /** For joining slot_id & clinic_id from a booking row */
+  final case class BookingSlotClinic(slot_id: UUID, clinic_id: UUID)
+
+  object BookingSlotClinic {
+    /** Decode JSON objects of shape { "slot_id": ..., "clinic_id": ... } */
+    given Decoder[BookingSlotClinic] =
+    Decoder.forProduct2("slot_id", "clinic_id")(BookingSlotClinic.apply)
+  }
+
 }
