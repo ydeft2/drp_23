@@ -150,7 +150,7 @@ object AdminPatientBookingsPage {
       typeSelect.style.padding = "8px"
       typeSelect.style.fontSize = "16px"
       typeSelect.style.marginBottom = "16px"
-      val types = Seq("CHECKUP", "EXTRACTION", "FILLING", "ROOT_CANAL", "HYGIENE", "OTHER", "NOT_SET")
+      val types = Seq("CHECKUP", "EXTRACTION", "FILLING", "ROOT_CANAL", "HYGIENE", "OTHER")
       types.foreach { t =>
         val opt = document.createElement("option").asInstanceOf[dom.html.Option]
         opt.value = t

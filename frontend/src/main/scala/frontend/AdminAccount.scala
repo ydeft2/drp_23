@@ -24,20 +24,16 @@ object AdminAccount {
 
   def render(): Unit = {
     Spinner.show()
-    fetchClinicDetails()
-      .map { currentUser =>
-        Layout.renderPage(
-          leftButton = Some(createHomeButton()),
-          contentRender = () => {
-            val container = document.createElement("div")
-            val textNode = document.createTextNode(currentUser)
-            container.appendChild(textNode)
-            container.appendChild(logOutButton)
-            container.appendChild(buildDeleteAccountButton())
-            document.body.appendChild(container)
-          }
-        )
-        Spinner.hide()
-      }
+    val clinicId = dom.window.localStorage.getItem("userId")
+    fetchClinicDetails(clinicId).map { clinic =>
+      Layout.renderPage(
+        leftButton = Some(createHomeButton()),
+        contentRender = () => {
+          document.body.appendChild(buildClinicProfileCard(clinic))
+          document.body.appendChild(buildDeleteAccountButton())
+          Spinner.hide()
+        }
+      )
+    }
   }
 }
