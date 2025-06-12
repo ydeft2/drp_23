@@ -2,7 +2,6 @@ package frontend
 
 import org.scalajs.dom
 import org.scalajs.dom.document
-import org.scalajs.dom.html._
 import scala.scalajs.js
 import scala.scalajs.js.JSON
 import scala.scalajs.js.annotation._
@@ -22,7 +21,7 @@ object Account {
         leftButton = Some(createHomeButton()), 
         contentRender = () => 
           {
-            val card = buildProfileCard(currentUser, true)
+            val card = buildProfileCard(currentUser)
             document.body.appendChild(card)
             document.body.appendChild(buildDeleteAccountButton())
             Spinner.hide()

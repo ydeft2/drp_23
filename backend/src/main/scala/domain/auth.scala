@@ -29,7 +29,8 @@ object auth {
   case class AccountDetailsResponse(
     first_name: String,
     last_name: String,
-    dob: String
+    dob: String,
+    address: String
   )
 
   object AccountDetailsResponse {
@@ -39,14 +40,16 @@ object auth {
         firstName <- c.downField("first_name").as[String]
         lastName <- c.downField("last_name").as[String]
         dob <- c.downField("dob").as[String]
-      } yield AccountDetailsResponse.create(firstName, lastName, dob)
+        address <- c.downField("address").as[String]
+      } yield AccountDetailsResponse.create(firstName, lastName, dob, address)
     }
 
     def create(
       firstName: String,
       lastName: String,
-      dob: String
-    ): AccountDetailsResponse = AccountDetailsResponse(firstName, lastName, dob)
+      dob: String,
+      address: String
+    ): AccountDetailsResponse = AccountDetailsResponse(firstName, lastName, dob, address)
   }
 
   case class PatientInsert(
