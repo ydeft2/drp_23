@@ -277,4 +277,12 @@ object ChatPage {
 
   private inline def button(lbl: String): Button =
     val b = document.createElement("button").asInstanceOf[Button]; b.textContent = lbl; b
+
+  def createChat(clinic_id: String, clinic_name: String): Unit = {
+    println(s"Creating chat with clinic $clinic_id ($clinic_name)")
+    
+  }
 }
+
+
+

@@ -135,24 +135,31 @@ object MapPage {
         val btnLabel = if (alreadyInterested) "Unregister Interest" else "Register Interest"
         val popupHtml =
           s"""
-              <strong>${name}</strong><br/>
-              <em>${address}</em><br/>
-              <button id="interest-${clinicId}">${btnLabel}</button>
+            <strong>${name}</strong><br/>
+            <em>${address}</em><br/>
+            <button id="interest-${clinicId}">${btnLabel}</button>
+            <button id="chat-${clinicId}" style="margin-left:6px;">Chat</button>
             """
+
         marker.setPopupContent(popupHtml)
-        // Re-attach event listener for the new button
+
         marker.on("popupopen", (_: js.Dynamic) => {
-          val btnId = s"interest-$clinicId"
-          val btn = document.getElementById(btnId)
-          if (btn != null) btn.addEventListener("click", (_: dom.MouseEvent) => {
-            val isInterested = interestsSet.contains(clinicId)
-            if (isInterested) {
-              unregisterInterest(clinicId, clinic)
-            } else {
-              registerInterest(clinicId, clinic)
-            }
-            marker.closePopup()
-          })
+          val interestBtn = document.getElementById(s"interest-$clinicId")
+          val chatBtn     = document.getElementById(s"chat-$clinicId")
+
+          if (interestBtn != null)
+            interestBtn.addEventListener("click", (_: dom.MouseEvent) => {
+              val isInterested = interestsSet.contains(clinicId)
+              if (isInterested) unregisterInterest(clinicId, clinic)
+              else              registerInterest(clinicId, clinic)
+              marker.closePopup()
+            })
+
+          if (chatBtn != null)
+            chatBtn.addEventListener("click", (_: dom.MouseEvent) => {
+              println("Opening chat for clinic: " + clinicId)
+              ChatPage.createChat(clinicId, name)
+            })
         })
       }
 
@@ -183,14 +190,16 @@ object MapPage {
               <strong>${name}</strong><br/>
               <em>${address}</em><br/>
               <button id="interest-${clinicId}">${btnLabel}</button>
+              <button id="chat-${clinicId}" style="margin-left:6px;">Chat</button>
             """
 
         marker.bindPopup(popupHtml)
 
         marker.on("popupopen", (_: js.Dynamic) => {
           val btnId = s"interest-$clinicId"
-          val btn = document.getElementById(btnId)
-          if (btn != null) btn.addEventListener("click", (_: dom.MouseEvent) => {
+          val interestBtn = document.getElementById(btnId)
+          val chatBtn     = document.getElementById(s"chat-$clinicId")
+          if (interestBtn != null) interestBtn.addEventListener("click", (_: dom.MouseEvent) => {
             val isInterested = interestsSet.contains(clinicId)
             if (isInterested) {
               unregisterInterest(clinicId, c)
@@ -198,6 +207,11 @@ object MapPage {
               registerInterest(clinicId, c)
             }
             marker.closePopup()
+          })
+
+          if (chatBtn != null) chatBtn.addEventListener("click", (_: dom.MouseEvent) => {
+            println("Opening chat for clinic: " + clinicId)
+            ChatPage.createChat(clinicId, name)
           })
         })
       }
