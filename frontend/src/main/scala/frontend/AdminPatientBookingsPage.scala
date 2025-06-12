@@ -73,6 +73,7 @@ object AdminPatientBookingsPage {
 
   // Helper to create the modal for a booking
   private def createBookingModal(
+    patient_id: String,
     bookingId: String,
     patientName: String,
     patientDob: String,
@@ -198,6 +199,7 @@ object AdminPatientBookingsPage {
               <img src="images/Confirmation.png" alt="Confirmation Icon" style="width: 80px;;">
               """
             )
+            render() // Re-render the bookings to reflect changes
           } else {
             dom.window.alert("Failed to confirm booking.")
           }
@@ -230,6 +232,7 @@ object AdminPatientBookingsPage {
             <img src="images/Cancelled.png" alt="Cancelled Icon" style="width: 80px;">
             """
           )
+          render() // Re-render the bookings to reflect changes
         } else {
           dom.window.alert("Failed to cancel booking.")
         }
@@ -237,6 +240,25 @@ object AdminPatientBookingsPage {
     }
     
     modalDiv.appendChild(cancelBtn)
+
+    // chat button (always present)
+    val chatBtn = document.createElement("button").asInstanceOf[dom.html.Button]
+    chatBtn.textContent = "Chat with Patient"
+    chatBtn.style.background = "blue"
+    chatBtn.style.color = "white"
+    chatBtn.style.padding = "10px 20px"
+    chatBtn.style.border = "none"
+    chatBtn.style.borderRadius = "4px"
+    chatBtn.style.fontSize = "16px"
+    chatBtn.style.marginBottom = "16px"
+    chatBtn.style.cursor = "pointer"
+    
+    
+    chatBtn.onclick = (_: dom.MouseEvent) => {
+      ChatPage.render(Some(patient_id), Some(patientName))
+    }
+    
+    modalDiv.appendChild(chatBtn)
 
     modalDiv
   }
@@ -393,6 +415,7 @@ object AdminPatientBookingsPage {
         // On click, show modal with booking details
         bookingDiv.onclick = (_: dom.MouseEvent) => {
           val modalDiv = createBookingModal(
+            patientId,
             bookingId,
             user.name,
             user.dob,
