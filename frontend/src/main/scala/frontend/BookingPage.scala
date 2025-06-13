@@ -232,8 +232,6 @@ object BookingPage {
     navBar.appendChild(nextBtn)
     container.appendChild(navBar)
 
-    currentStart
-
     container.appendChild(tableHolder)
 
     prevBtn.onclick = (_: dom.MouseEvent) => if (currentStart.isAfter(weekStart0)) { currentStart = currentStart.minusWeeks(1); drawWeek(false) }
