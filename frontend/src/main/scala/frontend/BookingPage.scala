@@ -21,6 +21,36 @@ object BookingPage {
   private var fromFilter   = Option.empty[String]
   private var toFilter     = Option.empty[String]
 
+  private var isMap: Boolean = _
+  private var listViewClientIdFilter: Option[String] = _
+
+  // Content area under toggle
+  private val listLabel = document.createElement("span").asInstanceOf[Span]
+  private val mapLabel = document.createElement("span").asInstanceOf[Span]
+  private val contentArea = document.createElement("div").asInstanceOf[Div]
+
+  // view switch logic
+  private def setView(): Unit = {
+    // style labels
+    if (isMap) {
+      mapLabel.style.background = "#1976d2";
+      mapLabel.style.color = "white"
+      listLabel.style.background = "transparent";
+      listLabel.style.color = "#333"
+    } else {
+      listLabel.style.background = "#1976d2";
+      listLabel.style.color = "white"
+      mapLabel.style.background = "transparent";
+      mapLabel.style.color = "#333"
+    }
+    contentArea.innerHTML = ""
+    contentArea.appendChild(
+      if (isMap) buildMapViewContent()
+      else buildListViewContent(listViewClientIdFilter)
+    )
+  }
+
+
   // The one and only `render()`
   def render(): Unit = {
     Layout.renderPage(
@@ -41,8 +71,6 @@ object BookingPage {
             box-shadow:0 2px 8px rgba(0,0,0,0.07);
           """
 
-        val listLabel = document.createElement("span").asInstanceOf[Span]
-        val mapLabel  = document.createElement("span").asInstanceOf[Span]
         Seq(listLabel -> "List View", mapLabel -> "Map View").foreach { case (el, txt) =>
           el.textContent = txt
           el.style.cssText = """
@@ -57,38 +85,27 @@ object BookingPage {
         document.body.appendChild(toggleWrapper)
 
         // Content area under toggle
-        val contentArea = document.createElement("div").asInstanceOf[Div]
+//        val contentArea = document.createElement("div").asInstanceOf[Div]
         contentArea.style.marginTop = "120px"  // leave room for toggle
-        /// flika added
         contentArea.style.width = "90%"
         contentArea.style.maxWidth = "1200px"
         contentArea.style.marginLeft = "auto"
         contentArea.style.marginRight = "auto"
-        /// end flika
         document.body.appendChild(contentArea)
 
-        // view switch logic
-        def setView(isMap: Boolean): Unit = {
-          // style labels
-          if (isMap) {
-            mapLabel.style.background = "#1976d2"; mapLabel.style.color = "white"
-            listLabel.style.background = "transparent"; listLabel.style.color = "#333"
-          } else {
-            listLabel.style.background = "#1976d2"; listLabel.style.color = "white"
-            mapLabel.style.background = "transparent"; mapLabel.style.color = "#333"
-          }
-          contentArea.innerHTML = ""
-          contentArea.appendChild(
-            if (isMap) buildMapViewContent()
-            else        buildListViewContent(None)
-          )
+        def toggleViewClicked(newIsMap: Boolean): Unit = {
+          listViewClientIdFilter = None
+          isMap = newIsMap
+          setView()
         }
 
-        listLabel.onclick = (_: dom.MouseEvent) => setView(false)
-        mapLabel .onclick = (_: dom.MouseEvent) => setView(true)
+        listLabel.onclick = (_: dom.MouseEvent) => { toggleViewClicked(false) }
+        mapLabel .onclick = (_: dom.MouseEvent) => { toggleViewClicked(true) }
 
         // initial
-        setView(isMap = false)
+        isMap = false
+        listViewClientIdFilter = None
+        setView()
       }
     )
   }
@@ -149,7 +166,9 @@ object BookingPage {
           Instant.parse(s.slotTime.asInstanceOf[String]).atZone(zoneId).toLocalDate
         }
         if (jumpToFirst) {
-          currentStart = byDay.keySet.min
+          val startDate = byDay.keySet.min
+          val daysFromSun = startDate.getDayOfWeek.getValue % 7
+          currentStart = startDate.minusDays(daysFromSun.toLong)
         }
 
         tableHolder.innerHTML = ""
@@ -212,6 +231,8 @@ object BookingPage {
     navBar.appendChild(weekLabel)
     navBar.appendChild(nextBtn)
     container.appendChild(navBar)
+
+    currentStart
 
     container.appendChild(tableHolder)
 
@@ -437,18 +458,46 @@ object BookingPage {
               popupAnchor = js.Array(0, -32)
             ))
 
+            // 1) Create the popup container
+            val popupDiv = document.createElement("div").asInstanceOf[Div]
+            popupDiv.style.cssText = "display:flex;flex-direction:column;gap:4px;"
+
+            // 2) Add clinic name & address
+            val title = document.createElement("strong")
+            title.textContent = clinic.name.asInstanceOf[String]
+            popupDiv.appendChild(title)
+
+            val addr = document.createElement("div").asInstanceOf[Div]
+            addr.textContent = clinic.address.asInstanceOf[String]
+            popupDiv.appendChild(addr)
+
+            // 4) Your new button
+            val bookBtn = document.createElement("button").asInstanceOf[org.scalajs.dom.html.Button]
+            bookBtn.textContent = if (isAvailable) "Available Slots" else "No available slots"
+            bookBtn.style.cssText = """
+              margin-top:2px;
+              padding:2px 2;
+              color:white;
+              border:none;
+              border-radius:4px;
+              cursor:pointer;
+            """
+            bookBtn.style.background = if (isAvailable) "#4caf50" else "red"
+            bookBtn.disabled = !isAvailable  // disable if no slots
+            bookBtn.onclick = (_: dom.MouseEvent) => {
+//              buildListViewContent(Some(clinicId)) /// THIS LINE DOESN'T CHANGE THE VIEW
+              listViewClientIdFilter = Some(clinicId)
+              isMap = false
+              setView()
+            }
+            popupDiv.appendChild(bookBtn)
+
+            // 5) Bind the popup DOM node
             val marker = frontend.Leaflet.marker(
               js.Array(clinic.latitude.asInstanceOf[Double], clinic.longitude.asInstanceOf[Double]),
               js.Dynamic.literal(icon = icon)
             )
-
-            val popupText =
-              if (isAvailable)
-                s"<b>${clinic.name}</b><br>${clinic.address}<br><span style='color:green;font-weight:bold;'>Available Slots</span>"
-              else
-                s"<b>${clinic.name}</b><br>${clinic.address}<br><span style='color:red;font-weight:bold;'>No available slots</span>"
-
-            marker.bindPopup(popupText)
+            marker.bindPopup(popupDiv)
             marker.addTo(map)
           }
         }
