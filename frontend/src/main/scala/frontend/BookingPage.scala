@@ -285,7 +285,7 @@ object BookingPage {
     val parts = scala.collection.mutable.ArrayBuffer("is_taken=false")
 
     if (clinicFilter.nonEmpty)
-      parts += s"clinic_info=ilike.%25${encode(clinicFilter)}%25"
+      parts += s"clinic_info=${encode(clinicFilter)}"
 
     fromFilter.foreach(f => parts += s"slot_time_gte=${encode(f + ":00Z")}")
     toFilter.foreach(t   => parts += s"slot_time_lte=${encode(t + ":00Z")}")

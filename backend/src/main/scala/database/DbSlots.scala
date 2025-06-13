@@ -50,7 +50,7 @@ object DbSlots {
     val filterClauses = List(
       maybeClinicClause,
       filter.isTaken.map(t => s"is_taken=eq.$t"),
-      filter.clinicInfo.map(ci => s"clinic_info=ilike.%$ci%"),
+      filter.clinicInfo.map(ci => s"clinic_info=ilike.%25$ci%25"),
       filter.slotTimeGte.map(i => s"slot_time=gte.${i}"),
       filter.slotTimeLte.map(i => s"slot_time=lte.${i}")
     ).flatten
