@@ -235,10 +235,13 @@ object BookingPage {
     dom.fetch(url).toFuture.flatMap(_.json().toFuture).map(_.asInstanceOf[js.Array[js.Dynamic]].toSeq)
   }
 
+  // Builds the 7×N table; in each cell we count available slots and
+  // show that number. Clicking opens a modal with the detailed list.
   private def buildTable(weekStart: LocalDate, slots: Seq[js.Dynamic]): Table = {
     val byDay = slots.groupBy { s =>
       Instant.parse(s.slotTime.asInstanceOf[String]).atZone(zoneId).toLocalDate
     }
+
     val tbl = document.createElement("table").asInstanceOf[Table]
     tbl.style.cssText =
       """
@@ -250,39 +253,57 @@ object BookingPage {
     // header
     val hdr = document.createElement("tr").asInstanceOf[TableRow]
     hdr.appendChild(th(""))
-    (0 to 6).foreach(d => hdr.appendChild(th(weekStart.plusDays(d).getDayOfWeek.toString.take(3))))
+    (0 to 6).foreach { d =>
+      hdr.appendChild(th(weekStart.plusDays(d).getDayOfWeek.toString.take(3)))
+    }
     tbl.appendChild(hdr)
+
     // rows
     timeStrings.foreach { t =>
       val row = document.createElement("tr").asInstanceOf[TableRow]
       row.appendChild(th(t))
+
       (0 to 6).foreach { d =>
         val date = weekStart.plusDays(d)
-        val list = byDay.getOrElse(date, Nil).filter { s =>
-          Instant.parse(s.slotTime.asInstanceOf[String])
-            .atZone(zoneId)
-            .toLocalTime
-            .format(DateTimeFormatter.ofPattern("HH:mm")) == t
-        }
+        // all slots at that day + time
+        val list = byDay
+          .getOrElse(date, Nil)
+          .filter { s =>
+            Instant.parse(s.slotTime.asInstanceOf[String])
+              .atZone(zoneId)
+              .toLocalTime
+              .format(DateTimeFormatter.ofPattern("HH:mm")) == t
+          }
+
         if (list.nonEmpty) {
           val btn = document.createElement("button").asInstanceOf[Button]
           btn.textContent = s"${list.size} available"
           btn.style.cssText =
-            "width:100%;background:#4caf50;color:white;border:none;cursor:pointer;padding:4px 0;"
+            """
+              width: 100%; height: 100%;
+              background: #4caf50;
+              color: white;
+              border: none;
+              cursor: pointer;
+              padding: 4px 0;      /* only a little vertical padding */
+            """
           btn.onclick = (_: dom.MouseEvent) => showSlotListModal(list)
+
           val cell = document.createElement("td").asInstanceOf[TableCell]
-          cell.style.cssText = "border:1px solid #ccc;padding:4px;background:#e0ffe0;text-align:center;"
+          cell.style.cssText = "border:1px solid #ccc;padding:4px;background:#e0ffe0;text-align: center;" /* dropped padding */
           cell.appendChild(btn)
           row.appendChild(cell)
         } else {
           val cell = document.createElement("td").asInstanceOf[TableCell]
           cell.textContent = "-"
-          cell.style.cssText = "border:1px solid #ccc;padding:4px;color:#999;text-align:center;"
+          cell.style.cssText = "border:1px solid #ccc;padding:4px;color:#999;text-align: center;"
           row.appendChild(cell)
         }
       }
+
       tbl.appendChild(row)
     }
+
     tbl
   }
 
@@ -407,34 +428,54 @@ object BookingPage {
   // --------------
   // DETAILS MODAL
   // --------------
+  // Pop up a scrollable modal listing each slot with its details + a Book button
   private def showSlotListModal(slots: Seq[js.Dynamic]): Unit = {
     val container = document.createElement("div").asInstanceOf[Div]
-    container.style.cssText = "max-height:60vh;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:8px;"
+    container.style.cssText =
+      "max-height:60vh;overflow-y:auto;padding:50px;display:flex;flex-direction:column;gap:8px;"
     slots.foreach { s =>
-      val time = Instant.parse(s.slotTime.asInstanceOf[String])
-        .atZone(zoneId).format(DateTimeFormatter.ofPattern("HH:mm  dd MMM yyyy"))
+      // parse & re‐format
+      val timeInstant = Instant.parse(s.slotTime.asInstanceOf[String])
+      val time = timeInstant
+        .atZone(zoneId)
+        .format(DateTimeFormatter.ofPattern("HH:mm  dd MMM yyyy"))
+
       val length = s.slotLength.asInstanceOf[Double].toLong
-      val clinicId= s.clinicId.asInstanceOf[String]
-      val clinicName = document.createElement("span").asInstanceOf[Span]
-      clinicName.textContent = "Loading..."
-      fetchClinicDetails(clinicId).foreach(c => clinicName.textContent = c.name)
+      val clinic = s.clinicId.asInstanceOf[String]
+      // Placeholder for clinic name
+      val clinicNameSpan = document.createElement("span").asInstanceOf[dom.html.Span]
+      clinicNameSpan.textContent = "Loading clinic..."
+
+      fetchClinicDetails(clinic).foreach { clinic =>
+        clinicNameSpan.textContent = clinic.name
+      }
 
       val entry = document.createElement("div").asInstanceOf[Div]
-      entry.style.cssText = "border:1px solid #ddd;border-radius:4px;padding:8px;display:flex;justify-content:space-between;"
+      entry.style.cssText = "padding:8px;border:1px solid #ddd;border-radius:4px;display:flex;justify-content:space-between;"
+
       val info = document.createElement("div").asInstanceOf[Div]
-      info.innerHTML = s"<strong>Time:</strong> $time<br/><strong>Length:</strong> $length min<br/><strong>Clinic:</strong> "
-      info.appendChild(clinicName)
-      val btn = document.createElement("button").asInstanceOf[Button]
-      btn.textContent = "Book"
-      btn.style.cssText = "background:#4caf50;color:white;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;"
-      btn.onclick = (_: dom.MouseEvent) => {
-        requestBooking(s)
-        dom.window.alert("Requested!")
-      }
+      info.innerHTML = s"""<strong>Time:</strong> $time<br/>
+                          |<strong>Length:</strong> $length min<br/>
+                          |<strong>Clinic:</strong>
+                       """.stripMargin
+      //      info.querySelector("strong + br + strong + br + span + strong").appendChild(clinicNameSpan)
+      info.appendChild(clinicNameSpan)
+
       entry.appendChild(info)
-      entry.appendChild(btn)
+
+      val bookBtn = document.createElement("button").asInstanceOf[Button]
+      bookBtn.textContent = "Book"
+      bookBtn.style.cssText =
+        "background:#4caf50;color:white;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;"
+      bookBtn.onclick = (_: dom.MouseEvent) => {
+        requestBooking(s)
+        dom.window.alert("Requested!") // you could also refresh
+      }
+
+      entry.appendChild(bookBtn)
       container.appendChild(entry)
     }
+
     showModal(container)
   }
 
