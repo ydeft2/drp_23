@@ -27,10 +27,11 @@ object BookingPage {
   // Content area under toggle
   private val listLabel = document.createElement("span").asInstanceOf[Span]
   private val mapLabel = document.createElement("span").asInstanceOf[Span]
+//  private val fbar = document.createElement("span").asInstanceOf[Span]
   private val contentArea = document.createElement("div").asInstanceOf[Div]
 
   // view switch logic
-  private def setView(): Unit = {
+  private def renderView(): Unit = {
     // style labels
     if (isMap) {
       mapLabel.style.background = "#1976d2";
@@ -84,6 +85,54 @@ object BookingPage {
         toggleWrapper.appendChild(toggleContainer)
         document.body.appendChild(toggleWrapper)
 
+
+        // FILTER BAR
+        val fbar = document.createElement("div").asInstanceOf[Div]
+        fbar.style.cssText = "display:flex;gap:12px;margin-bottom:16px;"
+
+        val clinicInput = document.createElement("input").asInstanceOf[Input]
+        clinicInput.placeholder = "Clinic info contains…"
+        clinicInput.oninput = (_: dom.Event) => {
+          clinicFilter = clinicInput.value.trim
+          renderView()
+        }
+        fbar.appendChild(clinicInput)
+
+        // “From date” label
+        val fromLabel = document.createElement("span").asInstanceOf[Span]
+        fromLabel.textContent = "From date: "
+        fromLabel.style.cssText = "margin-left: 12px; font-weight: bold;"
+        fbar.appendChild(fromLabel)
+
+        // from
+        val fromInput = document.createElement("input").asInstanceOf[Input]
+        fromInput.`type` = "datetime-local"
+        fromInput.defaultValue = fromFilter.getOrElse("")
+        fromInput.onchange = (_: dom.Event) => {
+          fromFilter = Option(fromInput.value).filter(_.nonEmpty)
+          renderView()
+        }
+        fbar.appendChild(fromInput)
+
+        // “To date” label
+        val toLabel = document.createElement("span").asInstanceOf[Span]
+        toLabel.textContent = "To date: "
+        toLabel.style.cssText = "margin-left: 12px; font-weight: bold;"
+        fbar.appendChild(toLabel)
+
+        // to
+        val toInput = document.createElement("input").asInstanceOf[Input]
+        toInput.`type` = "datetime-local"
+        toInput.defaultValue = toFilter.getOrElse("")
+        toInput.onchange = (_: dom.Event) => {
+          toFilter = Option(toInput.value).filter(_.nonEmpty)
+          renderView()
+        }
+        fbar.appendChild(toInput)
+
+        document.body.appendChild(fbar)
+
+
         // Content area under toggle
 //        val contentArea = document.createElement("div").asInstanceOf[Div]
         contentArea.style.marginTop = "120px"  // leave room for toggle
@@ -96,7 +145,7 @@ object BookingPage {
         def toggleViewClicked(newIsMap: Boolean): Unit = {
           listViewClientIdFilter = None
           isMap = newIsMap
-          setView()
+          renderView()
         }
 
         listLabel.onclick = (_: dom.MouseEvent) => { toggleViewClicked(false) }
@@ -105,7 +154,7 @@ object BookingPage {
         // initial
         isMap = false
         listViewClientIdFilter = None
-        setView()
+        renderView()
       }
     )
   }
@@ -128,10 +177,6 @@ object BookingPage {
       """
         width=100% ; height=100%; padding = 0 0;
       """
-
-    // FILTER BAR
-    val fbar = document.createElement("div").asInstanceOf[Div]
-    fbar.style.cssText = "display:flex;gap:12px;margin-bottom:16px;"
 
     // TABLE HOLDER
     val tableHolder = document.createElement("div").asInstanceOf[Div]
@@ -177,46 +222,6 @@ object BookingPage {
 
       updateNav()
     }
-
-    val clinicInput = document.createElement("input").asInstanceOf[Input]
-    clinicInput.placeholder = "Clinic info contains…"
-    clinicInput.oninput = (_: dom.Event) => {
-      clinicFilter = clinicInput.value.trim
-      drawWeek(false)
-    }
-    fbar.appendChild(clinicInput)
-
-    // “From date” label
-    val fromLabel = document.createElement("span").asInstanceOf[Span]
-    fromLabel.textContent = "From date: "
-    fromLabel.style.cssText = "margin-left: 12px; font-weight: bold;"
-    fbar.appendChild(fromLabel)
-
-    // from
-    val fromInput = document.createElement("input").asInstanceOf[Input]
-    fromInput.`type` = "datetime-local"
-    fromInput.onchange = (_: dom.Event) => {
-      fromFilter = Option(fromInput.value).filter(_.nonEmpty)
-      drawWeek(false)
-    }
-    fbar.appendChild(fromInput)
-
-    // “To date” label
-    val toLabel = document.createElement("span").asInstanceOf[Span]
-    toLabel.textContent = "To date: "
-    toLabel.style.cssText = "margin-left: 12px; font-weight: bold;"
-    fbar.appendChild(toLabel)
-
-    // to
-    val toInput = document.createElement("input").asInstanceOf[Input]
-    toInput.`type` = "datetime-local"
-    toInput.onchange = (_: dom.Event) => {
-      toFilter = Option(toInput.value).filter(_.nonEmpty)
-      drawWeek(false)
-    }
-    fbar.appendChild(toInput)
-
-    container.appendChild(fbar)
 
     // WEEK NAV
     val navBar   = document.createElement("div").asInstanceOf[Div]
@@ -486,7 +491,7 @@ object BookingPage {
 //              buildListViewContent(Some(clinicId)) /// THIS LINE DOESN'T CHANGE THE VIEW
               listViewClientIdFilter = Some(clinicId)
               isMap = false
-              setView()
+              renderView()
             }
             popupDiv.appendChild(bookBtn)
 
