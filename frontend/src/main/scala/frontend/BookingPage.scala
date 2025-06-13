@@ -2,7 +2,7 @@ package frontend
 
 import org.scalajs.dom
 import org.scalajs.dom.document
-import org.scalajs.dom.html.{Button, Div, Input, Table, TableCell, TableRow}
+import org.scalajs.dom.html.{Button, Div, Input, Table, TableCell, TableRow, Span}
 import scala.scalajs.js
 import scala.scalajs.js.JSON
 import java.time._
@@ -85,6 +85,12 @@ object BookingPage {
         }
         fbar.appendChild(filterClinicInput)
 
+        // “From date” label
+        val fromLabel = document.createElement("span").asInstanceOf[Span]
+        fromLabel.textContent = "From date: "
+        fromLabel.style.cssText = "margin-left: 12px; font-weight: bold;"
+        fbar.appendChild(fromLabel)
+
         // from
         filterFromInput = document.createElement("input").asInstanceOf[Input]
         filterFromInput.`type` = "datetime-local"
@@ -93,6 +99,12 @@ object BookingPage {
           drawWeek()
         }
         fbar.appendChild(filterFromInput)
+
+        // “To date” label
+        val toLabel = document.createElement("span").asInstanceOf[Span]
+        toLabel.textContent = "To date: "
+        toLabel.style.cssText = "margin-left: 12px; font-weight: bold;"
+        fbar.appendChild(toLabel)
 
         // to
         filterToInput = document.createElement("input").asInstanceOf[Input]
@@ -143,35 +155,8 @@ object BookingPage {
     )
   }
 
-  private def fetchSlots(weekStart: LocalDate): Future[Seq[js.Dynamic]] = {
-    val base  = "/api/slots/list"
-    val parts = scala.collection.mutable.ArrayBuffer.empty[String]
-
-    // always only free
-    parts += "is_taken=false"
-
-    // clinic filter
-    if (clinicFilter.nonEmpty)
-      parts += s"clinic_info=ilike.%25${encode(clinicFilter)}%25"
-
-    // date filters (append ":00Z" to make full ISO)
-    fromFilter.foreach(f =>
-      parts += s"slot_time_gte=${encode(f + ":00Z")}"
-    )
-    toFilter.foreach(t =>
-      parts += s"slot_time_lte=${encode(t + ":00Z")}"
-    )
-
-    // bring entire week
-    parts += "limit=100"
-    parts += "offset=0"
-
-    val url = if (parts.isEmpty) base else base + "?" + parts.mkString("&")
-    dom.fetch(url).toFuture
-      .flatMap(_.json().toFuture)
-      .map(_.asInstanceOf[js.Array[js.Dynamic]].toSeq)
-  }
-
+  // Builds the 7×N table; in each cell we count available slots and
+  // show that number. Clicking opens a modal with the detailed list.
   private def buildTable(weekStart: LocalDate, slots: Seq[js.Dynamic]): Table = {
     val byDay = slots.groupBy { s =>
       Instant.parse(s.slotTime.asInstanceOf[String]).atZone(zoneId).toLocalDate
@@ -200,43 +185,102 @@ object BookingPage {
 
       (0 to 6).foreach { d =>
         val date = weekStart.plusDays(d)
-        val slotAt = byDay
-          .get(date)
-          .flatMap(_.find { s =>
+        // all slots at that day + time
+        val list = byDay
+          .getOrElse(date, Nil)
+          .filter { s =>
             Instant.parse(s.slotTime.asInstanceOf[String])
               .atZone(zoneId)
               .toLocalTime
               .format(DateTimeFormatter.ofPattern("HH:mm")) == t
-          })
+          }
 
-        slotAt match {
-          case Some(s) =>
-            val btn = document.createElement("button").asInstanceOf[Button]
-            btn.textContent = "Book"
-            btn.style.cssText =
-              """
+        if (list.nonEmpty) {
+          val btn = document.createElement("button").asInstanceOf[Button]
+          btn.textContent = s"${list.size} available"
+          btn.style.cssText =
+            """
               width:100%;height:100%;
               background:#4caf50;color:white;
               border:none;cursor:pointer;
-              """
-            btn.onclick = (_: dom.MouseEvent) => requestBooking(s)
+            """
+          btn.onclick = (_: dom.MouseEvent) => showSlotListModal(list)
 
-            val cell = document.createElement("td").asInstanceOf[TableCell]
-            cell.style.cssText = "border:1px solid #ccc;padding:4px;background:#e0ffe0;"
-            cell.appendChild(btn)
-            row.appendChild(cell)
-
-          case None =>
-            val cell = document.createElement("td").asInstanceOf[TableCell]
-            cell.textContent = "-"
-            cell.style.cssText = "border:1px solid #ccc;padding:4px;color:#999;"
-            row.appendChild(cell)
+          val cell = document.createElement("td").asInstanceOf[TableCell]
+          cell.style.cssText = "border:1px solid #ccc;padding:4px;background:#e0ffe0;"
+          cell.appendChild(btn)
+          row.appendChild(cell)
+        } else {
+          val cell = document.createElement("td").asInstanceOf[TableCell]
+          cell.textContent = "-"
+          cell.style.cssText = "border:1px solid #ccc;padding:4px;color:#999;"
+          row.appendChild(cell)
         }
       }
+
       tbl.appendChild(row)
     }
 
     tbl
+  }
+
+  // Pop up a scrollable modal listing each slot with its details + a Book button
+  private def showSlotListModal(slots: Seq[js.Dynamic]): Unit = {
+    val container = document.createElement("div").asInstanceOf[Div]
+    container.style.cssText =
+      "max-height:60vh;overflow-y:auto;padding:50px;display:flex;flex-direction:column;gap:8px;"
+    slots.foreach { s =>
+      // parse & re‐format
+      val timeInstant = Instant.parse(s.slotTime.asInstanceOf[String])
+      val time = timeInstant
+        .atZone(zoneId)
+        .format(DateTimeFormatter.ofPattern("HH:mm  dd MMM yyyy"))
+
+      val length = s.slotLength.asInstanceOf[Double].toLong
+      val clinic = s.clinicId.asInstanceOf[String] ///////////////////////////////TODO: get clinic name
+
+      val entry = document.createElement("div").asInstanceOf[Div]
+      entry.style.cssText = "padding:8px;border:1px solid #ddd;border-radius:4px;display:flex;justify-content:space-between;"
+
+      val info = document.createElement("div").asInstanceOf[Div]
+      info.innerHTML = s"""<strong>Time:</strong> $time<br/>
+                          |<strong>Length:</strong> $length min<br/>
+                          |<strong>Clinic:</strong> $clinic
+                       """.stripMargin
+      entry.appendChild(info)
+
+      val bookBtn = document.createElement("button").asInstanceOf[Button]
+      bookBtn.textContent = "Book"
+      bookBtn.style.cssText =
+        "background:#007bff;color:white;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;"
+      bookBtn.onclick = (_: dom.MouseEvent) => {
+        requestBooking(s)
+        dom.window.alert("Requested!") // you could also refresh
+      }
+
+      entry.appendChild(bookBtn)
+      container.appendChild(entry)
+    }
+
+    showModal(container)
+  }
+
+  private def fetchSlots(weekStart: LocalDate): Future[Seq[js.Dynamic]] = {
+    val base  = "/api/slots/list"
+    val parts = scala.collection.mutable.ArrayBuffer("is_taken=false")
+
+    if (clinicFilter.nonEmpty)
+      parts += s"clinic_info=ilike.%25${encode(clinicFilter)}%25"
+
+    fromFilter.foreach(f => parts += s"slot_time_gte=${encode(f + ":00Z")}")
+    toFilter.foreach(t   => parts += s"slot_time_lte=${encode(t + ":00Z")}")
+
+    parts += "limit=100"; parts += "offset=0"
+    val url = base + "?" + parts.mkString("&")
+
+    dom.fetch(url).toFuture
+      .flatMap(_.json().toFuture)
+      .map(_.asInstanceOf[js.Array[js.Dynamic]].toSeq)
   }
 
   private def requestBooking(slot: js.Dynamic): Unit = {
@@ -255,10 +299,10 @@ object BookingPage {
       body = JSON.stringify(payload)
     }
     dom.fetch("/api/bookings/request", reqInit).toFuture
-      .flatMap { r =>
-        if (r.ok) r.json().toFuture.map(_ => dom.window.alert("Requested!"))
-        else      r.text().toFuture.map(e => dom.window.alert(s"Failed: $e"))
-      }
+      .flatMap(r =>
+        if (r.ok) r.json().toFuture.map(_ => ())
+        else      r.text().toFuture.map(_ => ())
+      )
   }
 
   private def th(txt: String): TableCell = {
