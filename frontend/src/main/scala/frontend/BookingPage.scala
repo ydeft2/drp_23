@@ -57,6 +57,8 @@ object BookingPage {
     Layout.renderPage(
       leftButton    = Some(createHomeButton()),
       contentRender = () => {
+        val root = document.createElement("div").asInstanceOf[Div]
+
         // Toggle UI
         val toggleWrapper = document.createElement("div").asInstanceOf[Div]
         toggleWrapper.style.cssText =
@@ -83,12 +85,12 @@ object BookingPage {
         toggleContainer.appendChild(listLabel)
         toggleContainer.appendChild(mapLabel)
         toggleWrapper.appendChild(toggleContainer)
-        document.body.appendChild(toggleWrapper)
+        root.appendChild(toggleWrapper)
 
 
         // FILTER BAR
         val fbar = document.createElement("div").asInstanceOf[Div]
-        fbar.style.cssText = "display:flex;gap:12px;margin-bottom:16px;"
+        fbar.style.cssText = "display:flex;gap:12px;margin-bottom:16px;width=90%;margin-left: auto;margin-right: auto;"
 
         val clinicInput = document.createElement("input").asInstanceOf[Input]
         clinicInput.placeholder = "Clinic info contains…"
@@ -130,17 +132,19 @@ object BookingPage {
         }
         fbar.appendChild(toInput)
 
-        document.body.appendChild(fbar)
+        root.appendChild(fbar)
 
 
         // Content area under toggle
 //        val contentArea = document.createElement("div").asInstanceOf[Div]
-        contentArea.style.marginTop = "120px"  // leave room for toggle
+        contentArea.style.marginTop = "30px"  // leave room for toggle
         contentArea.style.width = "90%"
+        contentArea.style.height = "90%"
         contentArea.style.maxWidth = "1200px"
         contentArea.style.marginLeft = "auto"
         contentArea.style.marginRight = "auto"
-        document.body.appendChild(contentArea)
+        contentArea.style.padding = "0 0"
+        root.appendChild(contentArea)
 
         def toggleViewClicked(newIsMap: Boolean): Unit = {
           listViewClientIdFilter = None
@@ -154,6 +158,8 @@ object BookingPage {
         // initial
         isMap = false
         listViewClientIdFilter = None
+
+        document.body.appendChild(root)
         renderView()
       }
     )
@@ -177,6 +183,9 @@ object BookingPage {
       """
         width=100% ; height=100%; padding = 0 0;
       """
+
+//    val tableHolder = document.createElement("div").asInstanceOf[Div]
+//    tableHolder
 
     // TABLE HOLDER
     val tableHolder = document.createElement("div").asInstanceOf[Div]
@@ -204,7 +213,6 @@ object BookingPage {
         case Some(cid) => fetchSlotsByClinicId(cid)
         case None => fetchSlots()
       }
-//      val nextslot =
 
       slotsFuture.foreach { slots =>
         val byDay = slots.groupBy { s =>
