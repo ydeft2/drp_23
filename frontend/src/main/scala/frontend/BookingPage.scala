@@ -428,9 +428,7 @@ object BookingPage {
       }
 
       // Fetch available slots first
-      val slotReq = dom.fetch("/api/slots/list?is_taken=false").toFuture
-        .flatMap(_.json().toFuture)
-        .map(_.asInstanceOf[js.Array[js.Dynamic]])
+      val slotReq = fetchSlots()
 
       slotReq.foreach { slots =>
         val clinicIdsWithAvailableSlots: Set[String] =
