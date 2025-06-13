@@ -27,7 +27,6 @@ object BookingPage {
   // Content area under toggle
   private val listLabel = document.createElement("span").asInstanceOf[Span]
   private val mapLabel = document.createElement("span").asInstanceOf[Span]
-//  private val fbar = document.createElement("span").asInstanceOf[Span]
   private val contentArea = document.createElement("div").asInstanceOf[Div]
 
   // view switch logic
@@ -58,6 +57,14 @@ object BookingPage {
       leftButton    = Some(createHomeButton()),
       contentRender = () => {
         val root = document.createElement("div").asInstanceOf[Div]
+          // make everything inside root centered at 90% / max-1200px
+        root.style.cssText =
+        """
+          display: block;
+          width: 90%;
+          max-width: 1200px;
+          margin: 0 auto 0 auto;
+        """
 
         // Toggle UI
         val toggleWrapper = document.createElement("div").asInstanceOf[Div]
@@ -90,7 +97,12 @@ object BookingPage {
 
         // FILTER BAR
         val fbar = document.createElement("div").asInstanceOf[Div]
-        fbar.style.cssText = "display:flex;gap:12px;margin-bottom:16px;width=90%;margin-left: auto;margin-right: auto;"
+        fbar.style.cssText =
+        """
+          gap:12px;
+          margin:0 auto 16px auto;
+          width:100%;
+        """
 
         val clinicInput = document.createElement("input").asInstanceOf[Input]
         clinicInput.placeholder = "Clinic info contains…"
@@ -138,9 +150,7 @@ object BookingPage {
         // Content area under toggle
 //        val contentArea = document.createElement("div").asInstanceOf[Div]
         contentArea.style.marginTop = "30px"  // leave room for toggle
-        contentArea.style.width = "90%"
-        contentArea.style.height = "90%"
-        contentArea.style.maxWidth = "1200px"
+        contentArea.style.width = "100%"
         contentArea.style.marginLeft = "auto"
         contentArea.style.marginRight = "auto"
         contentArea.style.padding = "0 0"
@@ -376,12 +386,13 @@ object BookingPage {
   // ------------
   private def buildMapViewContent(): Div = {
     val wrapper = document.createElement("div").asInstanceOf[Div]
-    wrapper.style.display = "flex"
-    wrapper.style.setProperty("flex-direction", "column")
-    wrapper.style.setProperty("align-items", "center")
-    wrapper.style.setProperty("justify-content", "center")
+//    wrapper.style.display = "flex"
+//    wrapper.style.setProperty("flex-direction", "column")
+//    wrapper.style.setProperty("align-items", "center")
+//    wrapper.style.setProperty("justify-content", "center")
     wrapper.style.width = "100%"
     wrapper.style.height = "100%"
+    wrapper.style.padding = "16px 0"
 
     // Toggle button for map style
     val toggleBtn = document.createElement("button").asInstanceOf[org.scalajs.dom.html.Button]
@@ -390,9 +401,9 @@ object BookingPage {
     toggleBtn.id = "bookingMapToggleBtn"
     val mapDiv = document.createElement("div").asInstanceOf[Div]
     mapDiv.id = "booking-map"
-    mapDiv.style.width = "80%"
-    mapDiv.style.maxWidth = "900px"
-    mapDiv.style.height = "80%"
+    mapDiv.style.width = "100%"
+//    mapDiv.style.maxWidth = "900px"
+    mapDiv.style.height = "100%"
     mapDiv.style.minHeight = "400px"
     mapDiv.style.border = "2px solid #e0e0e0"
     mapDiv.style.borderRadius = "18px"
