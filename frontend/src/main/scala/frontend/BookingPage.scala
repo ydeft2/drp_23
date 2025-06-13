@@ -243,6 +243,13 @@ object BookingPage {
 
       val length = s.slotLength.asInstanceOf[Double].toLong
       val clinic = s.clinicId.asInstanceOf[String] ///////////////////////////////TODO: get clinic name
+      // Placeholder for clinic name
+      val clinicNameSpan = document.createElement("span").asInstanceOf[dom.html.Span]
+      clinicNameSpan.textContent = "Loading clinic..."
+
+      fetchClinicDetails(clinic).foreach { clinic =>
+        clinicNameSpan.textContent = clinic.name
+      }
 
       val entry = document.createElement("div").asInstanceOf[Div]
       entry.style.cssText = "padding:8px;border:1px solid #ddd;border-radius:4px;display:flex;justify-content:space-between;"
@@ -250,8 +257,11 @@ object BookingPage {
       val info = document.createElement("div").asInstanceOf[Div]
       info.innerHTML = s"""<strong>Time:</strong> $time<br/>
                           |<strong>Length:</strong> $length min<br/>
-                          |<strong>Clinic:</strong> $clinic
+                          |<strong>Clinic:</strong>
                        """.stripMargin
+//      info.querySelector("strong + br + strong + br + span + strong").appendChild(clinicNameSpan)
+      info.appendChild(clinicNameSpan)
+
       entry.appendChild(info)
 
       val bookBtn = document.createElement("button").asInstanceOf[Button]
