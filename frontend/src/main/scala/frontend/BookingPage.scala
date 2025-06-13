@@ -205,14 +205,12 @@ object BookingPage {
               color: white;
               border: none;
               cursor: pointer;
-              /*padding: 4px 0;*/      /* only a little vertical padding */
-              /*display: inline-block;*/
+              padding: 4px 0;      /* only a little vertical padding */
             """
           btn.onclick = (_: dom.MouseEvent) => showSlotListModal(list)
 
           val cell = document.createElement("td").asInstanceOf[TableCell]
           cell.style.cssText = "border:1px solid #ccc;padding:4px;background:#e0ffe0;text-align: center;" /* dropped padding */
-          cell.textContent = " "
           cell.appendChild(btn)
           row.appendChild(cell)
         } else {
