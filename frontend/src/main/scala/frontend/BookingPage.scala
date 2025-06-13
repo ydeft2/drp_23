@@ -168,8 +168,8 @@ object BookingPage {
       border-collapse: collapse;
       width: 100%;
       background: white;
+      table-layout: fixed
       """
-
     // header
     val hdr = document.createElement("tr").asInstanceOf[TableRow]
     hdr.appendChild(th(""))
@@ -200,20 +200,25 @@ object BookingPage {
           btn.textContent = s"${list.size} available"
           btn.style.cssText =
             """
-              width:100%;height:100%;
-              background:#4caf50;color:white;
-              border:none;cursor:pointer;
+              width: 100%; height: 100%;
+              background: #4caf50;
+              color: white;
+              border: none;
+              cursor: pointer;
+              /*padding: 4px 0;*/      /* only a little vertical padding */
+              /*display: inline-block;*/
             """
           btn.onclick = (_: dom.MouseEvent) => showSlotListModal(list)
 
           val cell = document.createElement("td").asInstanceOf[TableCell]
-          cell.style.cssText = "border:1px solid #ccc;padding:4px;background:#e0ffe0;"
+          cell.style.cssText = "border:1px solid #ccc;padding:4px;background:#e0ffe0;text-align: center;" /* dropped padding */
+          cell.textContent = " "
           cell.appendChild(btn)
           row.appendChild(cell)
         } else {
           val cell = document.createElement("td").asInstanceOf[TableCell]
           cell.textContent = "-"
-          cell.style.cssText = "border:1px solid #ccc;padding:4px;color:#999;"
+          cell.style.cssText = "border:1px solid #ccc;padding:4px;color:#999;text-align: center;"
           row.appendChild(cell)
         }
       }
@@ -252,7 +257,7 @@ object BookingPage {
       val bookBtn = document.createElement("button").asInstanceOf[Button]
       bookBtn.textContent = "Book"
       bookBtn.style.cssText =
-        "background:#007bff;color:white;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;"
+        "background:#4caf50;color:white;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;"
       bookBtn.onclick = (_: dom.MouseEvent) => {
         requestBooking(s)
         dom.window.alert("Requested!") // you could also refresh
