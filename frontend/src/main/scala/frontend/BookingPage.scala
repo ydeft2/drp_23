@@ -4,6 +4,7 @@ import org.scalajs.dom
 import org.scalajs.dom.document
 import org.scalajs.dom.html.{Button, Div, Input, Table, TableCell, TableRow, Span}
 import scala.scalajs.js
+import scala.scalajs.js.Dynamic
 import java.time._
 import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -79,7 +80,7 @@ object BookingPage {
           contentArea.innerHTML = ""
           contentArea.appendChild(
             if (isMap) buildMapViewContent()
-            else        buildListViewContent()
+            else        buildListViewContent(None)
           )
         }
 
@@ -95,13 +96,14 @@ object BookingPage {
   // ------------------------
   // LIST VIEW IMPLEMENTATION
   // ------------------------
-  private def buildListViewContent(): Div = {
+  private def buildListViewContent(clinic_id: Option[String]): Div = {
     // compute week bounds
     val today        = LocalDate.now(Clock.systemUTC())
     val daysFromSun  = today.getDayOfWeek.getValue % 7
     val weekStart0   = today.minusDays(daysFromSun.toLong)
     var currentStart = weekStart0
     val lastStart    = weekStart0.plusWeeks(52)
+    val given_clinic_id = clinic_id.isDefined
 
     // page elements
     val container    = document.createElement("div").asInstanceOf[Div]
@@ -130,20 +132,38 @@ object BookingPage {
       nextBtn.disabled = currentStart == lastStart
     }
 
-    def drawWeek(): Unit = {
+    def drawWeek(jumpToFirst: Boolean): Unit = {
       tableHolder.innerHTML = "<em>Loading…</em>"
-      updateNav()
-      fetchSlots(currentStart).foreach { slots =>
-        tableHolder.innerHTML = ""
-        tableHolder.appendChild(buildTable(currentStart, slots))
+//      fetchSlots().foreach { slots =>
+//        tableHolder.innerHTML = ""
+//        tableHolder.appendChild(buildTable(currentStart, slots))
+//      }
+      val slotsFuture = clinic_id match {
+        case Some(cid) => fetchSlotsByClinicId(cid)
+        case None => fetchSlots()
       }
+//      val nextslot =
+
+      slotsFuture.foreach { slots =>
+        val byDay = slots.groupBy { s =>
+          Instant.parse(s.slotTime.asInstanceOf[String]).atZone(zoneId).toLocalDate
+        }
+        if (jumpToFirst) {
+          currentStart = byDay.keySet.min
+        }
+
+        tableHolder.innerHTML = ""
+        tableHolder.appendChild(buildTable(currentStart, byDay))
+      }
+
+      updateNav()
     }
 
     val clinicInput = document.createElement("input").asInstanceOf[Input]
     clinicInput.placeholder = "Clinic info contains…"
     clinicInput.oninput = (_: dom.Event) => {
       clinicFilter = clinicInput.value.trim
-      drawWeek()
+      drawWeek(false)
     }
     fbar.appendChild(clinicInput)
 
@@ -158,7 +178,7 @@ object BookingPage {
     fromInput.`type` = "datetime-local"
     fromInput.onchange = (_: dom.Event) => {
       fromFilter = Option(fromInput.value).filter(_.nonEmpty)
-      drawWeek()
+      drawWeek(false)
     }
     fbar.appendChild(fromInput)
 
@@ -173,7 +193,7 @@ object BookingPage {
     toInput.`type` = "datetime-local"
     toInput.onchange = (_: dom.Event) => {
       toFilter = Option(toInput.value).filter(_.nonEmpty)
-      drawWeek()
+      drawWeek(false)
     }
     fbar.appendChild(toInput)
 
@@ -195,10 +215,10 @@ object BookingPage {
 
     container.appendChild(tableHolder)
 
-    prevBtn.onclick = (_: dom.MouseEvent) => if (currentStart.isAfter(weekStart0)) { currentStart = currentStart.minusWeeks(1); drawWeek() }
-    nextBtn.onclick = (_: dom.MouseEvent) => if (currentStart.isBefore(lastStart)) { currentStart = currentStart.plusWeeks(1); drawWeek() }
+    prevBtn.onclick = (_: dom.MouseEvent) => if (currentStart.isAfter(weekStart0)) { currentStart = currentStart.minusWeeks(1); drawWeek(false) }
+    nextBtn.onclick = (_: dom.MouseEvent) => if (currentStart.isBefore(lastStart)) { currentStart = currentStart.plusWeeks(1); drawWeek(false) }
 
-    drawWeek()
+    drawWeek(given_clinic_id) // TODO: cld use 'true' always
     container
   }
 
@@ -222,7 +242,7 @@ object BookingPage {
     s
   }
 
-  private def fetchSlots(weekStart: LocalDate): Future[Seq[js.Dynamic]] = {
+  private def fetchSlots(): Future[Seq[js.Dynamic]] = {
     val base  = "/api/slots/list"
     val parts = scala.collection.mutable.ArrayBuffer.empty[String]
 
@@ -235,12 +255,24 @@ object BookingPage {
     dom.fetch(url).toFuture.flatMap(_.json().toFuture).map(_.asInstanceOf[js.Array[js.Dynamic]].toSeq)
   }
 
+  private def fetchSlotsByClinicId(clinicId: String): Future[Seq[js.Dynamic]] = {
+    val base = s"/api/slots/list"
+    val parts = scala.collection.mutable.ArrayBuffer.empty[String]
+
+    parts += s"clinic_id=$clinicId"
+    parts += "is_taken=false"
+    if (clinicFilter.nonEmpty) parts += s"clinic_info=${encode(clinicFilter)}"
+    fromFilter.foreach(f => parts += s"slot_time_gte=${encode(f + ":00Z")}")
+    toFilter.foreach(t => parts += s"slot_time_lte=${encode(t + ":00Z")}")
+    parts += "limit=100";
+    parts += "offset=0"
+    val url = base + "?" + parts.mkString("&")
+    dom.fetch(url).toFuture.flatMap(_.json().toFuture).map(_.asInstanceOf[js.Array[js.Dynamic]].toSeq)
+  }
+
   // Builds the 7×N table; in each cell we count available slots and
   // show that number. Clicking opens a modal with the detailed list.
-  private def buildTable(weekStart: LocalDate, slots: Seq[js.Dynamic]): Table = {
-    val byDay = slots.groupBy { s =>
-      Instant.parse(s.slotTime.asInstanceOf[String]).atZone(zoneId).toLocalDate
-    }
+  private def buildTable(weekStart: LocalDate, byDay:  Map[LocalDate, Seq[js.Dynamic]]): Table = {
 
     val tbl = document.createElement("table").asInstanceOf[Table]
     tbl.style.cssText =
@@ -317,6 +349,7 @@ object BookingPage {
     wrapper.style.setProperty("align-items", "center")
     wrapper.style.setProperty("justify-content", "center")
     wrapper.style.width = "100%"
+    wrapper.style.height = "100%"
 
     // Toggle button for map style
     val toggleBtn = document.createElement("button").asInstanceOf[org.scalajs.dom.html.Button]
