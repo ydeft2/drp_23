@@ -25,6 +25,8 @@ object BookingPage {
   private var filterFromInput:   Input = _
   private var filterToInput:     Input = _
 
+  private val displayFmt = DateTimeFormatter.ofPattern("dd MMM yyyy")
+
   def render(): Unit = {
     Layout.renderPage(
       leftButton    = Some(createHomeButton()),
@@ -45,7 +47,7 @@ object BookingPage {
         // 1) nav update
         def updateNav(): Unit = {
           val end = currentStart.plusDays(6)
-          weekLabel.textContent = s"$currentStart → $end"
+          weekLabel.textContent = s"${currentStart.format(displayFmt)} → ${end.format(displayFmt)}"
           prevBtn.disabled = currentStart == weekStart0
           nextBtn.disabled = currentStart == lastStart
         }
