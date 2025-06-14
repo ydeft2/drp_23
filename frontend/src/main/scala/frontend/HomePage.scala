@@ -199,44 +199,54 @@ object HomePage {
 
 
   private def createChatButton(): Div = {
-    val button = document.createElement("div").asInstanceOf[Div]
-    button.textContent = "Chats"
+    val chatButton = document.createElement("button").asInstanceOf[dom.html.Button]
+    chatButton.id = "chat-float-btn"
+    chatButton.style.position = "fixed"
+    chatButton.style.bottom = "80px"
+    chatButton.style.right = "50px"
+    chatButton.style.zIndex = "1000"
+    chatButton.style.backgroundImage = "linear-gradient(135deg, #7b2ff7, #f107a3)"   
+    chatButton.style.color = "#fff"
+    chatButton.style.border = "none"
+    chatButton.style.borderRadius = "50%"
+    chatButton.style.width = "72px"
+    chatButton.style.height = "72px"
+    chatButton.style.boxShadow = "0 4px 16px rgba(0,0,0,0.18)"
+    chatButton.style.cursor = "pointer"
+    chatButton.style.display = "flex"
+    chatButton.style.setProperty("align-items", "center")
+    chatButton.style.setProperty("justify-content", "center")
+    chatButton.style.padding = "0"
 
-    button.style.position  = "fixed"
-    button.style.left      = "50%"
-    button.style.top       = "100px"
-    button.style.transform = "translate(-50%, 0)"          // keep it centred
+    val icon = document.createElement("img").asInstanceOf[dom.html.Image]
+    icon.src = "images/icons/MessagesWhite.png"
+    icon.alt = "Chats"
+    icon.style.width = "40px"
+    icon.style.height = "40px"
+    icon.style.display = "block"
+    icon.style.margin = "0"
+    icon.style.padding = "0"
+    icon.style.pointerEvents = "none" 
 
+    chatButton.appendChild(icon)
 
-    button.style.backgroundImage = "linear-gradient(135deg,#7b2ff7,#f107a3)"
-    button.style.color           = "white"
-    button.style.padding         = "24px 48px"
-    button.style.fontSize        = "1.2em"
-    button.style.fontWeight      = "bold"
-    button.style.borderRadius    = "60px"
-    button.style.cursor          = "pointer"
-    button.style.boxShadow       = "0 6px 14px rgba(0,0,0,.20)"
-    button.style.transition      =
-      "transform .2s ease, box-shadow .2s ease, background-position .5s ease"
-    button.style.backgroundSize  = "200% 200%"
-    button.style.backgroundRepeat = "no-repeat"
-    button.style.setProperty("will-change", "transform")
-
-    button.addEventListener("mouseover", (_: dom.MouseEvent) => {
-      button.style.transform = "translate(-50%, -4px)"     // lift up
-      button.style.boxShadow = "0 8px 18px rgba(0,0,0,.25)"
+    chatButton.addEventListener("mouseover", (_: dom.MouseEvent) => {
+      chatButton.style.transform = "translateY(-4px)"
+      chatButton.style.boxShadow = "0 8px 18px rgba(0,0,0,.25)"
     })
 
-    button.addEventListener("mouseout", (_: dom.MouseEvent) => {
-      button.style.transform = "translate(-50%, 0)"        // reset
-      button.style.boxShadow = "0 6px 14px rgba(0,0,0,.20)"
+    chatButton.addEventListener("mouseout", (_: dom.MouseEvent) => {
+      chatButton.style.transform = "translateY(0)"
+      chatButton.style.boxShadow = "0 6px 14px rgba(0,0,0,.20)"
     })
 
-    button.addEventListener("click", (_: dom.MouseEvent) => {
+    chatButton.addEventListener("click", (_: dom.MouseEvent) => {
       ChatPage.render()
     })
 
-    button
+    val wrapper = document.createElement("div").asInstanceOf[dom.html.Div]
+    wrapper.appendChild(chatButton)
+    wrapper
   }
 
   // The new "Find Clinics" button
@@ -268,10 +278,10 @@ object HomePage {
     button.style.position = "fixed"
     button.style.left = "50%"
     button.style.bottom = "80px"
-    button.style.transform = "translate(-50%, 0)" // Ensure horizontal center remains fixed
+    button.style.transform = "translate(-50%, 0)" 
     button.style.backgroundImage = "linear-gradient(135deg, #7b2ff7, #f107a3)"
     button.style.color = "white"
-    button.style.padding = "24px 48px" // slightly larger
+    button.style.padding = "24px 48px"
     button.style.fontSize = "1.2em"
     button.style.fontWeight = "bold"
     button.style.borderRadius = "60px"
