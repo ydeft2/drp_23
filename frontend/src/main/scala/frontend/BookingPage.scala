@@ -2,10 +2,11 @@ package frontend
 
 import org.scalajs.dom
 import org.scalajs.dom.document
-import org.scalajs.dom.html.{Button, Div, Input, Table, TableCell, TableRow, Span}
+import org.scalajs.dom.html.{Button, Div, Element, Input, Span, Table, TableCell, TableRow}
+
 import scala.scalajs.js
 import scala.scalajs.js.Dynamic
-import java.time._
+import java.time.*
 import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -193,6 +194,19 @@ object BookingPage {
       """
         width=100% ; height=100%; padding = 0 0;
       """
+
+    // Clinic specific header (for when coming back from map view)
+    clinic_id.foreach { cid =>
+      val title = document.createElement("h2").asInstanceOf[Element]
+      title.textContent = "Loading clinic timetable..." // if necessary
+      title.style.cssText = "margin-bottom:12px"
+      container.appendChild(title)
+
+      fetchClinicDetails(cid).foreach { clinic =>
+        title.textContent = s"Timetable for ${clinic.name}"
+      }
+
+    }
 
 //    val tableHolder = document.createElement("div").asInstanceOf[Div]
 //    tableHolder
