@@ -242,17 +242,16 @@ object BookingPage {
         val byDay = slots.groupBy { s =>
           Instant.parse(s.slotTime.asInstanceOf[String]).atZone(zoneId).toLocalDate
         }
-        if (jumpToFirst) {
+        if (jumpToFirst) { // jump to first bug fix
           val startDate = byDay.keySet.min
           val daysFromSun = startDate.getDayOfWeek.getValue % 7
-          currentStart = startDate.minusDays(daysFromSun.toLong)
+          val candidateDate = startDate.minusDays(daysFromSun.toLong)
+          currentStart = if (candidateDate.isBefore(weekStart0)) weekStart0 else candidateDate
         }
-
+        updateNav()
         tableHolder.innerHTML = ""
         tableHolder.appendChild(buildTable(currentStart, byDay))
       }
-
-      updateNav()
     }
 
     // WEEK NAV
@@ -274,7 +273,7 @@ object BookingPage {
     prevBtn.onclick = (_: dom.MouseEvent) => if (currentStart.isAfter(weekStart0)) { currentStart = currentStart.minusWeeks(1); drawWeek(false) }
     nextBtn.onclick = (_: dom.MouseEvent) => if (currentStart.isBefore(lastStart)) { currentStart = currentStart.plusWeeks(1); drawWeek(false) }
 
-    drawWeek(given_clinic_id) // TODO: cld use 'true' always
+    drawWeek(true) // TODO: used to say given_clinic_id
     container
   }
 
@@ -304,8 +303,13 @@ object BookingPage {
 
     parts += "is_taken=false"
     if (clinicFilter.nonEmpty) parts += s"clinic_info=${encode(clinicFilter)}"
-    fromFilter.foreach(f => parts += s"slot_time_gte=${encode(f + ":00Z")}")
-    toFilter.foreach(t   => parts += s"slot_time_lte=${encode(t + ":00Z")}")
+    fromFilter.foreach(f =>
+      val inst  = Instant.parse(f + ":00Z")
+      val lower = if (inst.isBefore(Instant.now())) Instant.now() else inst
+      parts += s"slot_time_gte=${encode(lower.toString)}"
+    )
+    toFilter.foreach(t =>
+      parts += s"slot_time_lte=${encode(t + ":00Z")}")
     parts += "limit=100"; parts += "offset=0"
     val url = base + "?" + parts.mkString("&")
     dom.fetch(url).toFuture.flatMap(_.json().toFuture).map(_.asInstanceOf[js.Array[js.Dynamic]].toSeq)
