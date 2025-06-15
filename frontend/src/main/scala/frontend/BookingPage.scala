@@ -229,6 +229,17 @@ object BookingPage {
 
     def drawWeek(jumpToFirst: Boolean): Unit = {
       tableHolder.innerHTML = "<em>Loading…</em>"
+
+      /*
+      IMPORTANT - if currentStart is seemingly before the actual week we as humans are living in...
+      We can add the the following defensive code:
+
+      if (!jumpToFirst && currentStart.isBefore(weekStart0)) currentStart = weekStart0
+
+      tableHolder.innerHTML = "<em>Loading...</em>"
+
+       */
+
 //      fetchSlots().foreach { slots =>
 //        tableHolder.innerHTML = ""
 //        tableHolder.appendChild(buildTable(currentStart, slots))
