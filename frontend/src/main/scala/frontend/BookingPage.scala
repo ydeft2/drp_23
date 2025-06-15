@@ -82,7 +82,7 @@ object BookingPage {
             box-shadow:0 2px 8px rgba(0,0,0,0.07);
           """
 
-        Seq(listLabel -> "List View", mapLabel -> "Map View").foreach { case (el, txt) =>
+        Seq(listLabel -> "Timetable", mapLabel -> "Map View").foreach { case (el, txt) =>
           el.textContent = txt
           el.style.cssText = """
             cursor:pointer; padding:8px 24px; user-select:none;
