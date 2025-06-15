@@ -487,9 +487,9 @@ object BookingPage {
 
             val icon = frontend.Leaflet.icon(js.Dynamic.literal(
               iconUrl = iconUrl,
-              iconSize = js.Array(32, 32), // adjust as needed
-              iconAnchor = js.Array(16, 32), // bottom center
-              popupAnchor = js.Array(0, -32)
+              iconSize = js.Array(48, 48), // adjust as needed
+              iconAnchor = js.Array(24, 48), // bottom center
+              popupAnchor = js.Array(0, -48)
             ))
 
             // 1) Create the popup container
