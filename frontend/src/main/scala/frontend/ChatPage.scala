@@ -17,8 +17,10 @@ case class MessageResponse(
   message      : String,
   sentAt       : Instant,
   senderName   : String,   
-  receiverName : String    
+  receiverName : String,
+  isRead       : Boolean    
 )
+
 
 object ChatPage {
 
@@ -52,6 +54,7 @@ object ChatPage {
       println(s"New message received: ${newMsg.message} from ${newMsg.senderId}")
       if (currentPeer.contains(peerOf(newMsg))) {
         appendSingleMessage(newMsg)
+        markMessagesRead(List(newMsg))
       } else {
         renderList()
       }
@@ -166,7 +169,8 @@ object ChatPage {
           o.message.asInstanceOf[String],
           parseIsoToInstant(o.sent_at.asInstanceOf[String]),
           o.sender_name  .asInstanceOf[String],   
-          o.receiver_name.asInstanceOf[String]    
+          o.receiver_name.asInstanceOf[String],
+          o.is_read.asInstanceOf[Boolean]    
         )
       ) catch { case _ => None }
     }
@@ -244,6 +248,8 @@ object ChatPage {
   /* =================== threads =================== */
 
   private def buildThreads(): Unit = {
+
+    println("ChatPage.buildThreads called")
     grouped = all.groupBy(m => if m.senderId == selfId then m.receiverId else m.senderId)
                 .view.mapValues(_.sortBy(_.sentAt)).toMap
     
@@ -255,6 +261,8 @@ object ChatPage {
         else                          first.receiverName
       peerId -> name
     }
+
+    println("ChatPage.buildThreads: derivedNames: " + derivedNames)
 
   
     peerName = peerName ++ derivedNames       
@@ -292,10 +300,30 @@ object ChatPage {
       li.style.padding = "10px"
       if currentPeer.contains(peer) then li.style.backgroundColor = "#eef4ff"
 
+
+      if (msgs.exists(m => !m.isRead && m.receiverId == selfId)) {
+        val dot = document.createElement("span").asInstanceOf[Span]
+        dot.textContent = "●"
+        dot.style.color      = "#007bff"
+        dot.style.marginLeft = "8px"
+        dot.style.fontSize   = "0.8em"
+        li.appendChild(dot)
+      }
+
       li.onclick = (_: dom.MouseEvent) => {
+        val toClear = msgs.filter(m => m.receiverId == selfId && !m.isRead)
+        if (toClear.nonEmpty) {
+          all = all.map { m =>
+            if (toClear.exists(_.messageId == m.messageId)) m.copy(isRead = true)
+            else m
+          }
+          buildThreads()    
+          markMessagesRead(toClear)
+    }
         currentPeer = Some(peer)
         renderList()
         showConversation(peer)
+      
       }
 
       val name = peerName.getOrElse(peer, peer.toString.take(8))
@@ -317,6 +345,21 @@ object ChatPage {
 
     listPane.appendChild(ul)
   }
+  
+  private def markMessagesRead(msgs: List[MessageResponse]): Unit = {
+  val hdr = new dom.Headers()
+  hdr.append("Content-Type", "application/json")
+  val init = new dom.RequestInit {
+    method  = dom.HttpMethod.POST
+    headers = hdr
+  }
+  msgs.foreach { m =>
+    init.body = js.JSON.stringify(m.messageId.toString)
+    dom.fetch(s"/api/messages/markMessageRead/${m.messageId}", init)
+      .toFuture
+      .foreach(_ => ())
+  }
+}
 
 
   private def showConversation(peer: UUID): Unit = {
@@ -326,6 +369,14 @@ object ChatPage {
 
 
     val msgs = grouped.getOrElse(peer, Nil)
+
+    if (!msgs.isEmpty) {
+      val unread = grouped(peer).filter(m => m.receiverId == selfId && !m.isRead)
+      if (unread.nonEmpty) {
+        markMessagesRead(unread)
+      }
+    }
+
     val scrollBox = div(); scrollBox.style.setProperty("flex-grow", "1")
     scrollBox.style.overflowY = "auto"; scrollBox.style.paddingRight = "6px"
     convPane.appendChild(scrollBox)

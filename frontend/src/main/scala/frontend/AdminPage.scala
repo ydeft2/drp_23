@@ -70,16 +70,19 @@ import org.scalajs.dom
 import org.scalajs.dom.document
 import org.scalajs.dom.html._
 import concurrent.ExecutionContext.Implicits.global
+import scala.scalajs.js
 
 object AdminPage {
 
   private var unreadNotifications: Int = 0
+  private var unreadChatCount: Int = 0
   case class DashboardItem(title: String, iconUrl: String, onClick: () => Unit)
 
   def render(): Unit = {
     Spinner.show()
     fetchUnreadCount().foreach { unreadCount =>
       unreadNotifications = unreadCount
+      countUnreadMessages(dom.window.localStorage.getItem("userId"))
       Layout.renderPage(
         contentRender = () =>
         {
@@ -107,6 +110,10 @@ object AdminPage {
       val box = document.createElement("div").asInstanceOf[Div]
       box.className = "dashboard-item"
 
+      val messageBadgeHtml = 
+        if (item.title == "Messages" && unreadChatCount > 0) 
+          s"""<span class="notification-badge">$unreadChatCount</span>"""
+        else ""
       val badgeHtml = 
         if (item.title == "Inbox" && unreadNotifications > 0) 
           s"""<span class="notification-badge">$unreadNotifications</span>"""
@@ -118,6 +125,7 @@ object AdminPage {
           |<div class="dashboard-icon icon-with-badge">
           |  <img src="${item.iconUrl}" alt="${item.title} icon"/>
           |  $badgeHtml
+          |  $messageBadgeHtml
           |</div>
         """.stripMargin
 
@@ -128,4 +136,21 @@ object AdminPage {
 
     document.body.appendChild(contentDiv)
   }
+
+private def countUnreadMessages(userId: String): Unit = {
+dom.fetch(s"/api/messages/unreadCount/$userId")
+  .toFuture
+  .flatMap(_.json().toFuture)
+  .foreach { jsObj =>
+
+    val cnt = jsObj
+      .asInstanceOf[js.Dynamic]
+      .count
+      .asInstanceOf[Double]
+      .toInt
+
+    unreadChatCount = cnt
+    
+  }
+}
 }

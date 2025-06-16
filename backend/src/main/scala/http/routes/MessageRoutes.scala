@@ -57,6 +57,29 @@ class MessageRoutes(topic: Topic[IO, Message]) extends Http4sDsl[IO] {
       } yield resp
   }
 
+ private val markMessageReadRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
+  case POST -> Root / "markMessageRead" / UUIDVar(messageId) =>
+    for {
+      res      <- DbMessages.markMessageRead(messageId)
+      response <- res match {
+                    case Right(_) =>
+                      Ok()
+                    case Left(error) =>
+                      IO.println(s"Error marking message as read: $error") *>
+                      BadRequest(Json.obj("error" -> Json.fromString(error)))
+                  }
+    } yield response
+}
+
+
+  private val unreadCountRoute = HttpRoutes.of[IO] {
+  case GET -> Root / "unreadCount" / UUIDVar(userId) =>
+    DbMessages.countUnread(userId).flatMap {
+      case Left(err) => BadRequest("Error")
+      case Right(cnt)=> Ok(Json.obj("count" -> cnt.asJson))
+    }
+}
+
   private val sseRoute = HttpRoutes.of[IO] {
     case GET -> Root / "stream" / UUIDVar(userId) =>
       val eventStream: Stream[IO, ServerSentEvent] =
@@ -69,7 +92,7 @@ class MessageRoutes(topic: Topic[IO, Message]) extends Http4sDsl[IO] {
   }
 
   val routes: HttpRoutes[IO] = Router(
-    "/messages"       -> (sendMessageRoute <+> getMessagesRoute <+> sseRoute),
+    "/messages"       -> (sendMessageRoute <+> getMessagesRoute <+> sseRoute <+> markMessageReadRoute <+> unreadCountRoute),
   )
 }
 

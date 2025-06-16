@@ -11,6 +11,7 @@ import scalajs.js.JSConverters.JSRichFutureNonThenable
 import scala.Option
 import scala.Some
 import scala.None
+import scala.concurrent.Future
 
 object HomePage {
   case class Booking(
@@ -26,12 +27,15 @@ object HomePage {
 
   private var unreadNotifications: Int = 0
 
+  private var unreadChatCount: Int = 0
+
   def render(): Unit = {
     Spinner.show()
     val userId = dom.window.localStorage.getItem("userId")
 
     fetchUnreadCount().foreach { unreadCount =>
       unreadNotifications = unreadCount
+      countUnreadMessages(userId)
 
       val accountBtn = createHeaderButton("Account")
       accountBtn.addEventListener("click", (_: dom.MouseEvent) => Account.render())
@@ -48,7 +52,7 @@ object HomePage {
             document.body.appendChild(createFindClinicsButton())
             document.body.appendChild(buildBookingsBox())
             document.body.appendChild(createBookingButton())
-            document.body.appendChild(createChatButton())
+            document.body.appendChild(createChatButton(unreadChatCount))
             Spinner.hide()
           }
         }
@@ -198,14 +202,14 @@ object HomePage {
   }
 
 
-  private def createChatButton(): Div = {
+  private def createChatButton(unread: Int): Div = {
     val button = document.createElement("div").asInstanceOf[Div]
-    button.textContent = "Chats"
+    button.textContent = "Chats (" + (if (unread > 0) s"$unread unread" else "No unread") + ")"
 
     button.style.position  = "fixed"
     button.style.left      = "50%"
     button.style.top       = "100px"
-    button.style.transform = "translate(-50%, 0)"          // keep it centred
+    button.style.transform = "translate(-50%, 0)"          
 
 
     button.style.backgroundImage = "linear-gradient(135deg,#7b2ff7,#f107a3)"
@@ -383,6 +387,23 @@ object HomePage {
           box.parentNode.replaceChild(newBox, box)
         case _ => 
       }
+    }
+  }
+
+  private def countUnreadMessages(userId: String): Unit = {
+  dom.fetch(s"/api/messages/unreadCount/$userId")
+    .toFuture
+    .flatMap(_.json().toFuture)
+    .foreach { jsObj =>
+
+      val cnt = jsObj
+        .asInstanceOf[js.Dynamic]
+        .count
+        .asInstanceOf[Double]
+        .toInt
+
+      unreadChatCount = cnt
+      
     }
   }
 }
