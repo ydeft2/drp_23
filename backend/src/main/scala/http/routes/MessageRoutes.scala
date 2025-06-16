@@ -17,6 +17,7 @@ import cats.*
 import cats.data.*
 import cats.syntax.*
 import backend.domain.messages.*
+import org.http4s.Header
 
 import java.time.Instant
 import java.util.UUID

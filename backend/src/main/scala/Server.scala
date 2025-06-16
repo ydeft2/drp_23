@@ -22,22 +22,14 @@ import backend.domain.messages.Message
 object Server extends IOApp.Simple {
 
 override def run: IO[Unit] =
-  // Create a broadcast topic for chat messages
+
   Topic[IO, Message].flatMap { messageTopic =>
 
-    // Build all HTTP routes, including chat
-    val apiRoutes = HttpApi(messageTopic).endpoints
-    val msgRoutes = backend.http.routes.MessageRoutes(messageTopic).routes
+    val httpApp     = HttpApi(messageTopic).endpoints.orNotFound
 
-    // Combine and wrap in CORS
-    val combinedApp = Router[IO](
-      "/"         -> apiRoutes,
-      "/messages" -> msgRoutes
-    ).orNotFound
+    val corsHttpApp = CORS(httpApp)
 
-    val corsHttpApp = CORS(combinedApp)
-
-    // Determine port and start server
+    
     val port = sys.env.get("PORT").flatMap(p => scala.util.Try(p.toInt).toOption).getOrElse(8080)
     EmberServerBuilder
       .default[IO]

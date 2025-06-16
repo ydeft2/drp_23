@@ -38,17 +38,27 @@ object ChatPage {
   private var es: dom.EventSource = _
 
   private def subscribeSSE(): Unit = {
+    println("Subscribing to SSE for messages...")
+    if (es != null) es.close()
+
     es = new dom.EventSource(s"/api/messages/stream/${selfId.toString}")
+
     es.onmessage = (e: dom.MessageEvent) => {
-      val dyn   = js.JSON.parse(e.data.asInstanceOf[String])
-      val newMsg= parseMessages(js.Array(dyn)).head
+      val payload = js.JSON.parse(e.data.asInstanceOf[String])
+      val newMsg  = parseMessages(js.Array(payload)).head
+
       all = all :+ newMsg
       buildThreads()
-      if currentPeer.contains(peerOf(newMsg)) then appendSingleMessage(newMsg)
-      else renderList()
+      println(s"New message received: ${newMsg.message} from ${newMsg.senderId}")
+      if (currentPeer.contains(peerOf(newMsg))) {
+        appendSingleMessage(newMsg)
+      } else {
+        renderList()
+      }
     }
+
     es.onerror = (_: dom.Event) => {
-      dom.console.error("SSE error, reconnecting…")
+      println("SSE error occurred, retrying subscription...")
       es.close()
       dom.window.setTimeout(() => subscribeSSE(), 2000)
     }
