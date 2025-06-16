@@ -250,12 +250,12 @@ object Inbox {
           } {
 
             val goBtn = document.createElement("button").asInstanceOf[Button]
-            goBtn.textContent = "<insert emoji idk> Take me there"
+            goBtn.textContent = "Take me there"
             goBtn.style.cssText =
               """
                 |margin-top: 12px;
                 |padding: 8px 16px;
-                |background: #d32f2f;
+                |background: #4caf50;
                 |color: white;
                 |border: none;
                 |border-radius: 4px;
