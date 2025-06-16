@@ -14,7 +14,7 @@ import scala.concurrent.Future
 object BookingPage {
   // --- Common state for both views ---
   private val timeStrings = Seq("08:00","09:00","10:00","11:00","12:00", "13:00","14:00","15:00","16:00", "17:00")
-  private val zoneId      = ZoneOffset.UTC
+  private val zoneId      = java.time.ZoneOffset.ofHours(1)
   private val displayFmt  = DateTimeFormatter.ofPattern("dd MMM yyyy")
 
   // Filters used only by list view:
@@ -559,7 +559,6 @@ object BookingPage {
             bookBtn.style.background = if (isAvailable) "#4caf50" else "red"
             bookBtn.disabled = !isAvailable  // disable if no slots
             bookBtn.onclick = (_: dom.MouseEvent) => {
-//              buildListViewContent(Some(clinicId)) /// THIS LINE DOESN'T CHANGE THE VIEW
               listViewClientIdFilter = Some(clinicId)
               isMap = false
               renderView()
