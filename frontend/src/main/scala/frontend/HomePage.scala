@@ -116,6 +116,12 @@ object HomePage {
 
   private def buildBookingEntry(booking: Booking): Div = {
     val entry = document.createElement("div").asInstanceOf[Div]
+
+    // a little separator helps visually
+    entry.style.borderBottom = "1px solid #eee"
+    entry.style.paddingBottom = "12px"
+    entry.style.marginBottom = "12px"
+
     val isPending = booking.appointmentType == "NOT_SET"
     val titleText = if (isPending) "Pending Confirmation"
                     else booking.appointmentType.replace("_", " ").toLowerCase.capitalize
