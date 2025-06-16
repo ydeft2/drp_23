@@ -318,12 +318,23 @@ class BookingRoutes private extends Http4sDsl[IO] {
 
                   DbClinics.getClinicById(clinicId).flatMap {
                     case Right(clinic) =>
+
+                      val metadataJson: Json = Json.obj(
+                        "clinicId" -> Json.fromString(clinicId.toString),
+                        "slotId"   -> Json.fromString(slotId.toString)
+                      )
+
+                      val payloadAsString = metadataJson.noSpaces
+
                       val msg = s"A slot has just opened at ${clinic.name}"
+
                       DbInterests.getInterestsForClinic(clinicId).flatMap {
                         case Left(_) => NoContent()
                         case Right(watchers) =>
-                          watchers.traverse_(pr => notifyUser(pr.patient_id, msg)) *>
-                          NoContent()
+                          watchers.traverse_ { pr =>
+                            notifyUser(pr.patient_id, msg, Some(metadataJson))
+                          } *>
+                            NoContent()
                       }
 
                     case Left(_) =>

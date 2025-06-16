@@ -24,11 +24,32 @@ object BookingPage {
 
   private var isMap: Boolean = _
   private var listViewClientIdFilter: Option[String] = _
+  private var forcedWeekStart: Option[LocalDate] = None
 
   // Content area under toggle
   private val listLabel = document.createElement("span").asInstanceOf[Span]
   private val mapLabel = document.createElement("span").asInstanceOf[Span]
   private val contentArea = document.createElement("div").asInstanceOf[Div]
+
+  def showClinicAndSlot(clinicId: String, slotId: String): Unit = {
+    isMap = false
+    listViewClientIdFilter = Some(clinicId)
+    // we'll compute week start after loading slots
+    forcedWeekStart = None
+    renderView()
+    // highlight button once rendered
+    dom.window.setTimeout(() => {
+      val btn = contentArea.querySelector(s"button[data-slot-id='$slotId']")
+        .asInstanceOf[Button]
+      if (btn != null) {
+        btn.style.outline = "3px solid red"
+        btn.scrollIntoView()
+      }
+    }, 200)
+
+
+  }
+
 
   // view switch logic
   private def renderView(): Unit = {
@@ -47,8 +68,9 @@ object BookingPage {
     contentArea.innerHTML = ""
     contentArea.appendChild(
       if (isMap) buildMapViewContent()
-      else buildListViewContent(listViewClientIdFilter)
+      else buildListViewContent(listViewClientIdFilter, forcedWeekStart)
     )
+    forcedWeekStart = None
   }
 
 
@@ -179,13 +201,15 @@ object BookingPage {
   // ------------------------
   // LIST VIEW IMPLEMENTATION
   // ------------------------
-  private def buildListViewContent(clinic_id: Option[String]): Div = {
+  private def buildListViewContent(clinic_id: Option[String], weekStartOpt: Option[LocalDate]): Div = {
     // compute week bounds
     val today        = LocalDate.now(Clock.systemUTC())
-    val daysFromSun  = today.getDayOfWeek.getValue % 7
-    val weekStart0   = today.minusDays(daysFromSun.toLong)
-    var currentStart = weekStart0
-    val lastStart    = weekStart0.plusWeeks(52)
+    val defaultStart = {
+      val daysFromSun = today.getDayOfWeek.getValue % 7
+      today.minusDays(daysFromSun.toLong)
+    }
+    var currentStart = weekStartOpt.getOrElse(defaultStart)
+    val lastStart    = defaultStart.plusWeeks(52)
     val given_clinic_id = clinic_id.isDefined
 
     // page elements
@@ -223,7 +247,7 @@ object BookingPage {
     def updateNav(): Unit = {
       val end = currentStart.plusDays(6)
       weekLabel.textContent = s"${currentStart.format(displayFmt)} → ${end.format(displayFmt)}"
-      prevBtn.disabled = currentStart == weekStart0
+      prevBtn.disabled = currentStart == defaultStart
       nextBtn.disabled = currentStart == lastStart
     }
 
@@ -257,7 +281,7 @@ object BookingPage {
           val startDate = byDay.keySet.min
           val daysFromSun = startDate.getDayOfWeek.getValue % 7
           val candidateDate = startDate.minusDays(daysFromSun.toLong)
-          currentStart = if (candidateDate.isBefore(weekStart0)) weekStart0 else candidateDate
+          currentStart = if (candidateDate.isBefore(defaultStart)) defaultStart else candidateDate
         }
         updateNav()
         tableHolder.innerHTML = ""
@@ -281,7 +305,7 @@ object BookingPage {
 
     container.appendChild(tableHolder)
 
-    prevBtn.onclick = (_: dom.MouseEvent) => if (currentStart.isAfter(weekStart0)) { currentStart = currentStart.minusWeeks(1); drawWeek(false) }
+    prevBtn.onclick = (_: dom.MouseEvent) => if (currentStart.isAfter(defaultStart)) { currentStart = currentStart.minusWeeks(1); drawWeek(false) }
     nextBtn.onclick = (_: dom.MouseEvent) => if (currentStart.isBefore(lastStart)) { currentStart = currentStart.plusWeeks(1); drawWeek(false) }
 
     drawWeek(true) // TODO: used to say given_clinic_id
@@ -381,6 +405,7 @@ object BookingPage {
         if (list.nonEmpty) {
           val btn = document.createElement("button").asInstanceOf[Button]
           btn.textContent = s"${list.size} available"
+          btn.setAttribute("data-slot-id", list.head.slotId.asInstanceOf[String])
           btn.style.cssText =
             """
               width: 100%; height: 100%;

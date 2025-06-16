@@ -40,12 +40,15 @@ def newSlotCreatedMessage(slotRequest: SlotRequest): String = {
 
 
 // This is intended to be a function only used by the backend to notify users when necessary.
-def notifyUser(userId: UUID, message: String): IO[Either[String, Unit]] = {
-  
+def notifyUser(userId: UUID, message: String, metadata: Option[Json] = None): IO[Either[String, Unit]] = {
+
   val payload = NotificationRequest.create(
     userId = userId,
-    message = message
+    message = message,
+    metadata = metadata
   ).asJson
+
+  println(s"[DEBUG1] notifyUser payload = ${payload.noSpaces}")
 
   val notifyUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/notifications")
 
@@ -58,9 +61,10 @@ def notifyUser(userId: UUID, message: String): IO[Either[String, Unit]] = {
       Header.Raw(ci"Content-Type", "application/json"),
       Header.Raw(ci"Prefer", "return=minimal")
     )
-  ).withEntity(payload)
+  ).withEntity(payload.noSpaces)
 
   EmberClientBuilder.default[IO].build.use { httpClient =>
+    println(s"[DEBUG2] notifyUser payload = ${payload.noSpaces}")
     httpClient.fetch(req) { response =>
       response.status match {
         case Status.Created | Status.Ok =>

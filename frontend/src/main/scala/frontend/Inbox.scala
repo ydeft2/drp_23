@@ -18,7 +18,9 @@ case class NotificationResponse(
   userId: UUID,
   message: String,
   createdAt: String,
-  isRead: Boolean
+  isRead: Boolean,
+  clinicId: scala.Option[String],
+  slotId: scala.Option[String]
 )
 
 object Inbox {
@@ -29,12 +31,23 @@ object Inbox {
     jsArray.toList.flatMap { jsObj =>
       try {
 
+        val rawMsg = jsObj.message.asInstanceOf[String]
+        val rawMetadata = jsObj.selectDynamic("metadata")
+        val (clinicId, slotId) =
+          if (rawMetadata != null) {
+            val md = JSON.parse(rawMetadata.asInstanceOf[String]).asInstanceOf[js.Dynamic]
+            (Option(md.clinicId.asInstanceOf[String]), Option(md.slotId.asInstanceOf[String]))
+          } else (None, None)
+
+
         Some(NotificationResponse(
           notificationId = UUID.fromString(jsObj.notification_id.asInstanceOf[String]),
           userId = UUID.fromString(jsObj.user_id.asInstanceOf[String]),
           message = jsObj.message.asInstanceOf[String],
           createdAt = jsObj.created_at.asInstanceOf[String],
-          isRead = jsObj.is_read.asInstanceOf[Boolean]
+          isRead = jsObj.is_read.asInstanceOf[Boolean],
+          clinicId = clinicId,
+          slotId = slotId
         ))
 
       } catch {
@@ -214,13 +227,43 @@ object Inbox {
           if (!notification.isRead) {
             markNotificationRead(notification.notificationId, notificationsBox, notifications, () => ())
           }
-          val contentHtml =
+
+          val modalContent = document.createElement("div").asInstanceOf[Div]
+
+          modalContent.innerHTML =
             s"""
-              |<p><strong>Received:</strong> ${timeDiv.textContent}</p>
-              |<hr/>
-              |<p>${notification.message}</p>
+               |<p><strong>Received:</strong> ${timeDiv.textContent}</p>
+               |<hr/>
+               |<p>${notification.message}</p>
+          """.stripMargin
+
+          for {
+            cid <- notification.clinicId
+            sid <- notification.slotId
+          } {
+
+            val goBtn = document.createElement("button").asInstanceOf[Button]
+            goBtn.textContent = "<insert emoji idk> Take me there"
+            goBtn.style.cssText =
+              """
+                |margin-top: 12px;
+                |padding: 8px 16px;
+                |background: #d32f2f;
+                |color: white;
+                |border: none;
+                |border-radius: 4px;
+                |cursor: pointer;
             """.stripMargin
-          showModal(contentHtml)
+
+            goBtn.onclick = (_: dom.MouseEvent) => {
+              hideModal()
+              BookingPage.showClinicAndSlot(cid, sid)
+            }
+
+            modalContent.appendChild(goBtn)
+          }
+
+          showModal(modalContent)
         })
 
 
