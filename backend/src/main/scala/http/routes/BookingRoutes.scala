@@ -13,7 +13,7 @@ import org.http4s.*
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.*
-import backend.database.{DbBookings, DbError, DbInterests, notifyUser}
+import backend.database.{DbBookings, DbClinics, DbError, DbInterests, notifyUser}
 import backend.domain.bookings.*
 import backend.domain.interests.PatientInterestRecord
 import cats.implicits.*
@@ -315,18 +315,26 @@ class BookingRoutes private extends Http4sDsl[IO] {
 
                 case Right(_) =>
                   // 4) Fetch all watchers of that clinic and notify them
-                  DbInterests.getInterestsForClinic(clinicId).flatMap {
-                    case Left(_) =>
-                      // If we can't load watchers, still return success
-                      NoContent()
 
-                    case Right(watchers: List[PatientInterestRecord]) =>
-                      watchers.traverse_ { pr =>
-                        notifyUser(
-                          pr.patient_id,
-                          s"A slot has just opened at clinic $clinicId!"
-                        )
-                      } *> NoContent()
+                  DbClinics.getClinicById(clinicId).flatMap {
+                    case Right(clinic) =>
+                      val msg = s"A slot has just opened at ${clinic.name}"
+                      DbInterests.getInterestsForClinic(clinicId).flatMap {
+                        case Left(_) => NoContent()
+                        case Right(watchers) =>
+                          watchers.traverse_(pr => notifyUser(pr.patient_id, msg)) *>
+                          NoContent()
+                      }
+
+                    case Left(_) =>
+                      // this should never occur, for debug purposes ig
+                      val msg = s"A slot has just opened at clinic $clinicId!"
+                      DbInterests.getInterestsForClinic(clinicId).flatMap {
+                        case Left(_) => NoContent()
+                        case Right(watchers) =>
+                          watchers.traverse_(pr => notifyUser(pr.patient_id, msg)) *>
+                          NoContent()
+                      }
                   }
               }
           }
