@@ -16,12 +16,14 @@ object notifications {
     userId: UUID,
     isRead: Boolean,
     createdAt: Instant,
-    message: String
+    message: String,
+    metadata: Option[Json] = None
   )
 
   case class NotificationRequest(
     userId: UUID,
-    message: String
+    message: String,
+    metadata: Option[Json] = None
   )
 
   object Notification {
@@ -42,12 +44,14 @@ object notifications {
         isRead <- c.downField("is_read").as[Boolean]
         createdAt <- c.downField("created_at").as[Instant]
         message <- c.downField("message").as[String]
+        metadata <- c.downField("metadata").as[Option[Json]]
       } yield Notification.create(
         notificationId = notificationId,
         userId = userId,
         isRead = isRead,
         createdAt = createdAt,
-        message = message
+        message = message,
+        metadata = metadata
       )
     }
 
@@ -58,8 +62,10 @@ object notifications {
         "user_id" -> s.userId.asJson,
         "is_read" -> s.isRead.asJson,
         "created_at" -> s.createdAt.asJson,
-        "message" -> s.message.asJson
+        "message" -> s.message.asJson,
+        "metadata"   -> s.metadata.asJson
       )
+      //s.metadata.fold(base)(meta => base.deepMerge(Json.obj("metadata" -> meta)))
     }
 
 
@@ -69,13 +75,15 @@ object notifications {
       userId: UUID,
       isRead: Boolean,
       createdAt: Instant,
-      message: String
+      message: String,
+      metadata: Option[Json]
     ) = Notification(
       notificationId = notificationId,
       userId = userId,
       isRead = isRead,
       createdAt = createdAt,
-      message = message
+      message = message,
+      metadata = metadata
     )
   }
 
@@ -84,18 +92,20 @@ object notifications {
     given encoder: Encoder[NotificationRequest] = Encoder.instance { n =>
       Json.obj(
         "user_id" -> n.userId.asJson,
-        "message" -> n.message.asJson
+        "message" -> n.message.asJson,
+        "metadata" -> n.metadata.asJson
       )
     }
 
-    given decoder: Decoder[NotificationRequest] = Decoder.forProduct2(
-      "user_id", "message"
+    given decoder: Decoder[NotificationRequest] = Decoder.forProduct3(
+      "user_id", "message", "metadata"
     )(NotificationRequest.apply)
 
-    def create(userId: UUID, message: String) = 
+    def create(userId: UUID, message: String, metadata: Option[Json]) = 
       NotificationRequest(
         userId = userId,
-        message = message
+        message = message,
+        metadata = metadata
       )
   }
 }
