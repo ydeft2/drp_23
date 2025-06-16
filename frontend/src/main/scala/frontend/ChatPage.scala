@@ -35,6 +35,61 @@ object ChatPage {
   private var listPane: Div = _
   private var convPane: Div = _
 
+  private var es: dom.EventSource = _
+
+  private def subscribeSSE(): Unit = {
+    es = new dom.EventSource(s"/api/messages/stream/${selfId.toString}")
+    es.onmessage = (e: dom.MessageEvent) => {
+      val dyn   = js.JSON.parse(e.data.asInstanceOf[String])
+      val newMsg= parseMessages(js.Array(dyn)).head
+      all = all :+ newMsg
+      buildThreads()
+      if currentPeer.contains(peerOf(newMsg)) then appendSingleMessage(newMsg)
+      else renderList()
+    }
+    es.onerror = (_: dom.Event) => {
+      dom.console.error("SSE error, reconnecting…")
+      es.close()
+      dom.window.setTimeout(() => subscribeSSE(), 2000)
+    }
+  }
+
+  private def peerOf(m: MessageResponse): UUID =
+    if m.senderId == selfId then m.receiverId else m.senderId
+
+  private def appendSingleMessage(m: MessageResponse): Unit = {
+    val bubble = document.createElement("div").asInstanceOf[Div]
+    bubble.style.maxWidth      = "70%"
+    bubble.style.margin        = "4px"
+    bubble.style.padding       = "6px 8px"
+    bubble.style.borderRadius  = "6px"
+
+    
+    bubble.appendChild(document.createTextNode(m.message + "  "))
+
+    
+    val timeFmt = DateTimeFormatter.ofPattern("HH:mm").withZone(safeZone)
+    val timeLabel = span(timeFmt.format(m.sentAt), grey = true)
+    timeLabel.style.fontSize = "0.78em"
+    bubble.appendChild(timeLabel)
+
+
+    if (m.senderId == selfId) {
+      bubble.style.marginLeft       = "auto"
+      bubble.style.backgroundColor  = "#d0e6ff"
+    } else {
+      bubble.style.marginRight      = "auto"
+      bubble.style.backgroundColor  = "#e6e6e6"
+    }
+
+    
+    val scrollBox = convPane
+      .querySelector("div[style*='overflow-y: auto']")
+      .asInstanceOf[Div]
+    scrollBox.appendChild(bubble)
+    scrollBox.scrollTop = scrollBox.scrollHeight
+  }
+
 
     
   def render(peerIdOpt: Option[String] = None,
@@ -79,6 +134,8 @@ object ChatPage {
           renderList()
           println("ChatPage.render: list rendered listPane: " + listPane)
           currentPeer.orElse(grouped.keys.headOption).foreach(showConversation)
+
+          subscribeSSE()
           Spinner.hide()
         }
       )
@@ -117,6 +174,8 @@ object ChatPage {
         case arr: js.Array[js.Dynamic] => all = parseMessages(arr); onSuccess()
         case other                     => Spinner.hide(); dom.window.alert("Invalid response: " + other)
       }
+
+      println("ChatPage.fetchMessages: fetch initiated with token: " + token + ", uid: " + uid)
   }
 
   private def sendMessage(peer: UUID, text: String, onOK: () => Unit): Unit = {

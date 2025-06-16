@@ -21,46 +21,58 @@ import backend.domain.messages.*
 import java.time.Instant
 import java.util.UUID
 import backend.database.{DbError, DbMessages}
+import backend.domain.messages.{Message, MessageRequest}
+import fs2.Stream
+import fs2.concurrent.Topic
+import org.typelevel.ci.CIString
 
+import java.util.UUID
 
-
-
-class MessageRoutes private extends Http4sDsl[IO] {
-
-  
-  private val sendMessageRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
+class MessageRoutes(topic: Topic[IO, Message]) extends Http4sDsl[IO] {
+  private val sendMessageRoute = HttpRoutes.of[IO] {
     case req @ POST -> Root / "send" =>
       for {
-        messageReq <- req.as[MessageRequest]
-        res <- DbMessages.sendMessage(messageReq)
-        response <- res match {
-          case Right(_) =>
-            Created()
-          case Left(error) =>
-            IO.println(s"Error sending message: $error") *>
-            BadRequest("Error sending message")
-        }
-      } yield response
+        msgReq <- req.as[MessageRequest]
+        res    <- DbMessages.sendMessage(msgReq)
+        resp   <- res match {
+                    case Left(err)    =>
+                      IO.println(s"Error sending message: $err") *>
+                      BadRequest("Error sending message")
+                    case Right(dbMsg) =>
+                      topic.publish1(dbMsg) *>
+                      Created(dbMsg.asJson)
+                  }
+      } yield resp
   }
 
-  private val getMessagesRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
-    case GET -> Root / "fetch"/ UUIDVar(userId) =>
+  private val getMessagesRoute = HttpRoutes.of[IO] {
+    case GET -> Root / "fetch" / UUIDVar(userId) =>
       for {
-        messagesRes <- DbMessages.fetchMessages(userId)
-        response <- messagesRes match {
-          case Right(messages) =>
-            Ok(messages.asJson)
-          case Left(error) =>
-            BadRequest("Error fetching messages")
-        }
-      } yield response
+        msgs <- DbMessages.fetchMessages(userId)
+        resp <- msgs match {
+                  case Left(err)       => BadRequest("Error fetching messages")
+                  case Right(messages) => Ok(messages.asJson)
+                }
+      } yield resp
   }
 
-  val routes = Router(
-    "/messages" -> (sendMessageRoute <+> getMessagesRoute)
+  private val sseRoute = HttpRoutes.of[IO] {
+    case GET -> Root / "stream" / UUIDVar(userId) =>
+      val eventStream: Stream[IO, ServerSentEvent] =
+        topic
+          .subscribe(128)
+          .filter(m => m.senderId == userId || m.receiverId == userId)
+          .map(m => ServerSentEvent(data = Some(m.asJson.noSpaces)))
+      Ok(eventStream)
+        .map(_.putHeaders(Header.Raw(CIString("Content-Type"), "text/event-stream")))
+  }
+
+  val routes: HttpRoutes[IO] = Router(
+    "/messages"       -> (sendMessageRoute <+> getMessagesRoute <+> sseRoute),
   )
 }
 
 object MessageRoutes {
-  def apply(): MessageRoutes = new MessageRoutes()
+  def apply(topic: Topic[IO, Message]): MessageRoutes =
+    new MessageRoutes(topic)
 }
