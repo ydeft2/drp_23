@@ -17,13 +17,13 @@ object notifications {
     isRead: Boolean,
     createdAt: Instant,
     message: String,
-    metadata: Option[Json]
+    metadata: Option[Json] = None
   )
 
   case class NotificationRequest(
     userId: UUID,
     message: String,
-    metadata: Option[Json]
+    metadata: Option[Json] = None
   )
 
   object Notification {
@@ -57,14 +57,15 @@ object notifications {
 
 
     given encoder: Encoder[Notification] = Encoder.instance { s =>
-      val base = Json.obj(
+      Json.obj(
         "notification_id" -> s.notificationId.asJson,
         "user_id" -> s.userId.asJson,
         "is_read" -> s.isRead.asJson,
         "created_at" -> s.createdAt.asJson,
-        "message" -> s.message.asJson
+        "message" -> s.message.asJson,
+        "metadata"   -> s.metadata.asJson
       )
-      s.metadata.fold(base)(meta => base.deepMerge(Json.obj("metadata" -> meta)))
+      //s.metadata.fold(base)(meta => base.deepMerge(Json.obj("metadata" -> meta)))
     }
 
 
@@ -89,11 +90,11 @@ object notifications {
   object NotificationRequest {
 
     given encoder: Encoder[NotificationRequest] = Encoder.instance { n =>
-      val base = Json.obj(
+      Json.obj(
         "user_id" -> n.userId.asJson,
-        "message" -> n.message.asJson
+        "message" -> n.message.asJson,
+        "metadata" -> n.metadata.asJson
       )
-      n.metadata.fold(base)(meta => base.deepMerge(Json.obj("metadata" -> meta)))
     }
 
     given decoder: Decoder[NotificationRequest] = Decoder.forProduct3(

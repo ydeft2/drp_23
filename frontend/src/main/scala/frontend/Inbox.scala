@@ -27,36 +27,43 @@ object Inbox {
 
   var notifications: List[NotificationResponse] = List()
 
-  def parseNotifications(jsArray: js.Array[js.Dynamic]): List[NotificationResponse] = {
+  def parseNotifications(jsArray: js.Array[js.Dynamic]): List[NotificationResponse] =
     jsArray.toList.flatMap { jsObj =>
       try {
+        // Pull out the bare fields
+        val notificationId = UUID.fromString(jsObj.notification_id.asInstanceOf[String])
+        val userId = UUID.fromString(jsObj.user_id.asInstanceOf[String])
+        val message = jsObj.message.asInstanceOf[String]
+        val createdAt = jsObj.created_at.asInstanceOf[String]
+        val isRead = jsObj.is_read.asInstanceOf[Boolean]
 
-        val rawMsg = jsObj.message.asInstanceOf[String]
-        val rawMetadata = jsObj.selectDynamic("metadata")
+        // Now metadata
+        val mdDyn = jsObj.selectDynamic("metadata").asInstanceOf[js.Dynamic]
+        // Some driver libraries return `undefined` if it doesn't exist
         val (clinicId, slotId) =
-          if (rawMetadata != null) {
-            val md = JSON.parse(rawMetadata.asInstanceOf[String]).asInstanceOf[js.Dynamic]
-            (Option(md.clinicId.asInstanceOf[String]), Option(md.slotId.asInstanceOf[String]))
-          } else (None, None)
-
+          if (mdDyn != null && !js.isUndefined(mdDyn)) {
+            val cid = Option(mdDyn.clinicId.asInstanceOf[String])
+            val sid = Option(mdDyn.slotId.asInstanceOf[String])
+            (cid, sid)
+          } else {
+            (None, None)
+          }
 
         Some(NotificationResponse(
-          notificationId = UUID.fromString(jsObj.notification_id.asInstanceOf[String]),
-          userId = UUID.fromString(jsObj.user_id.asInstanceOf[String]),
-          message = jsObj.message.asInstanceOf[String],
-          createdAt = jsObj.created_at.asInstanceOf[String],
-          isRead = jsObj.is_read.asInstanceOf[Boolean],
+          notificationId = notificationId,
+          userId = userId,
+          message = message,
+          createdAt = createdAt,
+          isRead = isRead,
           clinicId = clinicId,
           slotId = slotId
         ))
-
       } catch {
         case e: Throwable =>
-          println(s"Failed to parse notification: ${e.getMessage}")
+          println(s"[Inbox] parseNotifications error: ${e.getMessage}")
           None
       }
     }
-  }
 
   def fetchNotifications(onSuccess: () => Unit): Unit = {
     val accessToken = dom.window.localStorage.getItem("accessToken")
@@ -257,6 +264,7 @@ object Inbox {
 
             goBtn.onclick = (_: dom.MouseEvent) => {
               hideModal()
+              BookingPage.render()
               BookingPage.showClinicAndSlot(cid, sid)
             }
 

@@ -14,7 +14,7 @@ import java.util.UUID
 import backend.domain.notifications._
 import backend.domain.notifications.*
 import backend.domain.notifications.Notification.given
-import org.http4s.circe.CirceEntityDecoder.circeEntityDecoder
+import org.http4s.circe.CirceEntityDecoder.*
 import io.circe.Decoder
 import backend.domain.slots.SlotRequest
 import java.time.format.DateTimeFormatter
@@ -61,7 +61,7 @@ def notifyUser(userId: UUID, message: String, metadata: Option[Json] = None): IO
       Header.Raw(ci"Content-Type", "application/json"),
       Header.Raw(ci"Prefer", "return=minimal")
     )
-  ).withEntity(payload.noSpaces)
+  ).withEntity(payload)
 
   EmberClientBuilder.default[IO].build.use { httpClient =>
     println(s"[DEBUG2] notifyUser payload = ${payload.noSpaces}")
