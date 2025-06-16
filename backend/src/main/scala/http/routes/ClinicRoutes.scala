@@ -23,6 +23,18 @@ class ClinicRoutes private extends Http4sDsl[IO] {
       }
   }
 
+  private val getClinicByIdRoute: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case GET -> Root / "api" / "clinics" / UUIDVar(clinicId) =>
+      DbClinics.getClinicById(clinicId).flatMap {
+        case Left(err) =>
+          InternalServerError(Json.obj(
+            "error" -> Json.fromString(err.toString)
+          ))
+        case Right(clinic) =>
+          Ok(clinic.asJson)
+      }
+  }
+
   val routes: HttpRoutes[IO] = Router("/clinics" -> list)
 }
 
