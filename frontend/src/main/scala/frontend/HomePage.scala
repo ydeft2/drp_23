@@ -29,6 +29,8 @@ object HomePage {
 
   private var unreadChatCount: Int = 0
 
+  private var es: dom.EventSource = _
+
   def render(): Unit = {
     Spinner.show()
     val userId = dom.window.localStorage.getItem("userId")
@@ -36,6 +38,7 @@ object HomePage {
     fetchUnreadCount().foreach { unreadCount =>
       unreadNotifications = unreadCount
       countUnreadMessages(userId)
+      subscribeUnreadSSE(userId)
 
       val accountBtn = createHeaderButton("Account")
       accountBtn.addEventListener("click", (_: dom.MouseEvent) => Account.render())
@@ -52,7 +55,9 @@ object HomePage {
             document.body.appendChild(createFindClinicsButton())
             document.body.appendChild(buildBookingsBox())
             document.body.appendChild(createBookingButton())
+            println("unreadChatCount: " + unreadChatCount)
             document.body.appendChild(createChatButton(unreadChatCount))
+            
             Spinner.hide()
           }
         }
@@ -203,45 +208,49 @@ object HomePage {
 
 
   private def createChatButton(unread: Int): Div = {
-    val button = document.createElement("div").asInstanceOf[Div]
-    button.textContent = "Chats (" + (if (unread > 0) s"$unread unread" else "No unread") + ")"
+  val button = document.createElement("div").asInstanceOf[Div]
+  button.textContent = "Chats"
+  button.style.position  = "fixed"     
+  button.style.left      = "50%"
+  button.style.top       = "150px"     
+  button.style.transform = "translateX(-50%)"
+  button.style.backgroundImage = "linear-gradient(135deg,#7b2ff7,#f107a3)"
+  button.style.color           = "white"
+  button.style.padding         = "24px 48px"
+  button.style.fontSize        = "1.2em"
+  button.style.fontWeight      = "bold"
+  button.style.borderRadius    = "30px"
+  button.style.cursor          = "pointer"
+  button.style.boxShadow       = "0 4px 10px rgba(0,0,0,0.2)"
+  
+  if (unread > 0) {
+    val badge = document.createElement("span").asInstanceOf[Span]
+    badge.textContent = unread.toString
+    badge.className   = "notification-badge"
 
-    button.style.position  = "fixed"
-    button.style.left      = "50%"
-    button.style.top       = "100px"
-    button.style.transform = "translate(-50%, 0)"          
+    badge.style.position     = "absolute"
+    badge.style.top          = "6px"
+    badge.style.right        = "12px"
+    badge.style.background   = "#007bff"
+    badge.style.color        = "white"
+    badge.style.fontSize     = "0.7em"
+    badge.style.lineHeight   = "1"
+    badge.style.borderRadius = "50%"
+    badge.style.padding      = "2px 6px"
 
-
-    button.style.backgroundImage = "linear-gradient(135deg,#7b2ff7,#f107a3)"
-    button.style.color           = "white"
-    button.style.padding         = "24px 48px"
-    button.style.fontSize        = "1.2em"
-    button.style.fontWeight      = "bold"
-    button.style.borderRadius    = "60px"
-    button.style.cursor          = "pointer"
-    button.style.boxShadow       = "0 6px 14px rgba(0,0,0,.20)"
-    button.style.transition      =
-      "transform .2s ease, box-shadow .2s ease, background-position .5s ease"
-    button.style.backgroundSize  = "200% 200%"
-    button.style.backgroundRepeat = "no-repeat"
-    button.style.setProperty("will-change", "transform")
-
-    button.addEventListener("mouseover", (_: dom.MouseEvent) => {
-      button.style.transform = "translate(-50%, -4px)"     // lift up
-      button.style.boxShadow = "0 8px 18px rgba(0,0,0,.25)"
-    })
-
-    button.addEventListener("mouseout", (_: dom.MouseEvent) => {
-      button.style.transform = "translate(-50%, 0)"        // reset
-      button.style.boxShadow = "0 6px 14px rgba(0,0,0,.20)"
-    })
-
-    button.addEventListener("click", (_: dom.MouseEvent) => {
-      ChatPage.render()
-    })
-
-    button
+    button.appendChild(badge)
   }
+
+  button.addEventListener("mouseover", (_: dom.MouseEvent) => {
+    button.style.boxShadow = "0 6px 14px rgba(0,0,0,0.3)"
+  })
+  button.addEventListener("mouseout", (_: dom.MouseEvent) => {
+    button.style.boxShadow = "0 4px 10px rgba(0,0,0,0.2)"
+  })
+  button.addEventListener("click", (_: dom.MouseEvent) => ChatPage.render())
+
+  button
+}
 
   // The new "Find Clinics" button
   private def createFindClinicsButton(): Div = {
@@ -406,5 +415,45 @@ object HomePage {
       
     }
   }
+
+   private def subscribeUnreadSSE(userId: String): Unit = {
+    if (es != null) es.close()
+    es = new dom.EventSource(s"/api/messages/stream/$userId")
+    es.onmessage = (e: dom.MessageEvent) => {
+      val raw = JSON.parse(e.data.asInstanceOf[String])
+      val recv = raw.receiver_id.asInstanceOf[String]
+      if (recv == userId) {
+        unreadChatCount += 1
+        updateChatBadge(unreadChatCount)
+      }
+    }
+    es.onerror = (_: dom.Event) => {
+      es.close()
+      dom.window.setTimeout(() => subscribeUnreadSSE(userId), 2000)
+    }
+  }
+
+  private def updateChatBadge(cnt: Int): Unit = {
+    val btn = document.getElementById("chat-button").asInstanceOf[Div]
+    // clear old badge
+    Option(btn.querySelector(".notification-badge")).foreach(_.remove())
+    if (cnt > 0) {
+      btn.style.position = "relative"  // ensure absolute children position correctly
+      val badge = document.createElement("span").asInstanceOf[Span]
+      badge.className   = "notification-badge"
+      badge.textContent = cnt.toString
+      badge.style.position     = "absolute"
+      badge.style.top          = "8px"
+      badge.style.right        = "12px"
+      badge.style.background   = "#007bff"
+      badge.style.color        = "white"
+      badge.style.fontSize     = "0.8em"
+      badge.style.borderRadius = "50%"
+      badge.style.padding      = "2px 6px"
+      btn.appendChild(badge)
+    }
+  }
 }
+
+ 
 

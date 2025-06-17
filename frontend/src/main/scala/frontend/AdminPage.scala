@@ -71,11 +71,15 @@ import org.scalajs.dom.document
 import org.scalajs.dom.html._
 import concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
+import scala.concurrent.Future
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 object AdminPage {
 
   private var unreadNotifications: Int = 0
   private var unreadChatCount: Int = 0
+  private var es: dom.EventSource = _
+
   case class DashboardItem(title: String, iconUrl: String, onClick: () => Unit)
 
   def render(): Unit = {
@@ -87,9 +91,39 @@ object AdminPage {
         contentRender = () =>
         {
           buildAdminPage()
+          subscribeUnreadSSE(dom.window.localStorage.getItem("userId"))
           Spinner.hide()
         }
       )
+    }
+  }
+
+  private def updateChatBadge(cnt: Int): Unit = {
+    val tiles = document.getElementsByClassName("dashboard-item")
+    for i <- 0 until tiles.length do
+      val t = tiles(i).asInstanceOf[Div]
+      if t.innerText.startsWith("Messages") then
+        Option(t.querySelector(".notification-badge")).foreach(_.remove())
+        if cnt > 0 then
+          val badge = document.createElement("span").asInstanceOf[Span]
+          badge.className   = "notification-badge"
+          badge.textContent = cnt.toString
+          t.querySelector(".icon-with-badge").appendChild(badge)
+  }
+
+  private def subscribeUnreadSSE(userId: String): Unit = {
+    if es != null then es.close()
+    es = new dom.EventSource(s"/api/messages/stream/$userId")
+    es.onmessage = (e: dom.MessageEvent) => {
+      val raw = js.JSON.parse(e.data.asInstanceOf[String])
+      val recv = raw.receiver_id.asInstanceOf[String]
+      if recv == userId then
+        unreadChatCount += 1
+        updateChatBadge(unreadChatCount)
+    }
+    es.onerror = (_: dom.Event) => {
+      es.close()
+      dom.window.setTimeout(() => subscribeUnreadSSE(userId), 2000)
     }
   }
 
@@ -137,20 +171,20 @@ object AdminPage {
     document.body.appendChild(contentDiv)
   }
 
-private def countUnreadMessages(userId: String): Unit = {
-dom.fetch(s"/api/messages/unreadCount/$userId")
-  .toFuture
-  .flatMap(_.json().toFuture)
-  .foreach { jsObj =>
+  private def countUnreadMessages(userId: String): Unit = {
+  dom.fetch(s"/api/messages/unreadCount/$userId")
+    .toFuture
+    .flatMap(_.json().toFuture)
+    .foreach { jsObj =>
 
-    val cnt = jsObj
-      .asInstanceOf[js.Dynamic]
-      .count
-      .asInstanceOf[Double]
-      .toInt
+      val cnt = jsObj
+        .asInstanceOf[js.Dynamic]
+        .count
+        .asInstanceOf[Double]
+        .toInt
 
-    unreadChatCount = cnt
-    
+      unreadChatCount = cnt
+      
+    }
   }
-}
 }
