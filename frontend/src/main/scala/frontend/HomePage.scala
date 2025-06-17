@@ -214,50 +214,50 @@ object HomePage {
 
   private def createChatButton(unread: Int): Div = {
     println(s"Creating chat button with unread count: $unread")
-  val button = document.createElement("div").asInstanceOf[Div]
-  button.id = "chat-button"
-  button.textContent = "Chats"
-  button.style.position  = "fixed"     
-  button.style.left      = "50%"
-  button.style.top       = "150px"     
-  button.style.transform = "translateX(-50%)"
-  button.style.backgroundImage = "linear-gradient(135deg,#7b2ff7,#f107a3)"
-  button.style.color           = "white"
-  button.style.padding         = "24px 48px"
-  button.style.fontSize        = "1.2em"
-  button.style.fontWeight      = "bold"
-  button.style.borderRadius    = "30px"
-  button.style.cursor          = "pointer"
-  button.style.boxShadow       = "0 4px 10px rgba(0,0,0,0.2)"
-  
-  if (unread > 0) {
-    val badge = document.createElement("span").asInstanceOf[Span]
-    badge.textContent = unread.toString
-    badge.className   = "notification-badge"
+    val button = document.createElement("div").asInstanceOf[Div]
+    button.id = "chat-button"
+    button.textContent = "Chats"
+    button.style.position  = "fixed"     
+    button.style.left      = "50%"
+    button.style.top       = "150px"     
+    button.style.transform = "translateX(-50%)"
+    button.style.backgroundImage = "linear-gradient(135deg,#7b2ff7,#f107a3)"
+    button.style.color           = "white"
+    button.style.padding         = "24px 48px"
+    button.style.fontSize        = "1.2em"
+    button.style.fontWeight      = "bold"
+    button.style.borderRadius    = "30px"
+    button.style.cursor          = "pointer"
+    button.style.boxShadow       = "0 4px 10px rgba(0,0,0,0.2)"
+    
+    if (unread > 0) {
+      val badge = document.createElement("span").asInstanceOf[Span]
+      badge.textContent = unread.toString
+      badge.className   = "notification-badge"
 
-    badge.style.position     = "absolute"
-    badge.style.top          = "6px"
-    badge.style.right        = "12px"
-    badge.style.background   = "#007bff"
-    badge.style.color        = "white"
-    badge.style.fontSize     = "0.7em"
-    badge.style.lineHeight   = "1"
-    badge.style.borderRadius = "50%"
-    badge.style.padding      = "2px 6px"
+      badge.style.position     = "absolute"
+      badge.style.top          = "6px"
+      badge.style.right        = "12px"
+      badge.style.background   = "#007bff"
+      badge.style.color        = "white"
+      badge.style.fontSize     = "0.7em"
+      badge.style.lineHeight   = "1"
+      badge.style.borderRadius = "50%"
+      badge.style.padding      = "2px 6px"
 
-    button.appendChild(badge)
+      button.appendChild(badge)
+    }
+
+    button.addEventListener("mouseover", (_: dom.MouseEvent) => {
+      button.style.boxShadow = "0 6px 14px rgba(0,0,0,0.3)"
+    })
+    button.addEventListener("mouseout", (_: dom.MouseEvent) => {
+      button.style.boxShadow = "0 4px 10px rgba(0,0,0,0.2)"
+    })
+    button.addEventListener("click", (_: dom.MouseEvent) => ChatPage.render())
+
+    button
   }
-
-  button.addEventListener("mouseover", (_: dom.MouseEvent) => {
-    button.style.boxShadow = "0 6px 14px rgba(0,0,0,0.3)"
-  })
-  button.addEventListener("mouseout", (_: dom.MouseEvent) => {
-    button.style.boxShadow = "0 4px 10px rgba(0,0,0,0.2)"
-  })
-  button.addEventListener("click", (_: dom.MouseEvent) => ChatPage.render())
-
-  button
-}
 
   // The new "Find Clinics" button
   private def createFindClinicsButton(): Div = {
@@ -440,7 +440,6 @@ object HomePage {
     // clear old badge
     Option(btn.querySelector(".notification-badge")).foreach(_.remove())
     if (cnt > 0) {
-      btn.style.position = "relative"  // ensure absolute children position correctly
       val badge = document.createElement("span").asInstanceOf[Span]
       badge.className   = "notification-badge"
       badge.textContent = cnt.toString
