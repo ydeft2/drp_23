@@ -635,22 +635,45 @@ object BookingPage {
         confirmBtn.textContent = "Confirm"
         confirmBtn.style.cssText = "margin:10px;padding:8px 16px;background:#4caf50;color:white;border:none;border-radius:4px;cursor:pointer;"
         confirmBtn.onclick = (_: dom.MouseEvent) => {
-          requestBooking(s)
-          val successMessage = document.createElement("div").asInstanceOf[Div]
-          successMessage.style.cssText = "padding:20px;text-align:center;"
-          successMessage.innerHTML =
-            s"""
-               |<h3>Booking Successful</h3>
-               |<p>You're all booked in! See you soon!.</p>
-             """.stripMargin
-          val img = document.createElement("img").asInstanceOf[dom.html.Image]
-          img.src = "/images/Confirmation.png"
-          successMessage.appendChild(img)
-          hideModal()
-          showModal(successMessage)
-          dom.window.setTimeout(() => {
-            renderView()
-          }, 300)
+          requestBooking(s).foreach { success =>
+            if (!success) {
+              val failImg = document.createElement("img").asInstanceOf[dom.html.Image]
+              failImg.src = "/images/Sad.png"
+              failImg.style.cssText = "width:100px;height:auto;margin:20px auto;display:block;"
+              val errorMessage = document.createElement("div").asInstanceOf[Div]
+              errorMessage.style.cssText = "padding:20px;text-align:center;color:red;"
+              errorMessage.innerHTML =
+                s"""
+                  |<h3>Booking Failed</h3>
+                  |<p>Sorry, we couldn't book this slot. Please try again later.</p>
+                """.stripMargin
+              errorMessage.appendChild(failImg)
+              hideModal()
+              showModal(errorMessage)
+              dom.window.setTimeout(() => {
+                renderView()
+              }, 300)
+              return
+            } else {
+              val successMessage = document.createElement("div").asInstanceOf[Div]
+              successMessage.style.cssText = "padding:20px;text-align:center;"
+              successMessage.innerHTML =
+                s"""
+                  |<h3>Booking Successful</h3>
+                  |<p>You're all booked in! See you soon!.</p>
+                """.stripMargin
+              val img = document.createElement("img").asInstanceOf[dom.html.Image]
+              img.src = "/images/Confirmation.png"
+              successMessage.appendChild(img)
+              hideModal()
+              showModal(successMessage)
+              dom.window.setTimeout(() => {
+                renderView()
+              }, 300)
+              return
+            }
+          }
+          
         }
 
         val cancelBtn = document.createElement("button").asInstanceOf[Button]
@@ -673,7 +696,7 @@ object BookingPage {
   // -------------------
   // BOOKING + HELPERS
   // -------------------
-  private def requestBooking(slot: js.Dynamic): Unit = {
+  private def requestBooking(slot: js.Dynamic): Future[Boolean] = {
     val p = js.Dynamic.literal(
       slot_id    = slot.slotId.asInstanceOf[String],
       patient_id = dom.window.localStorage.getItem("userId"),
@@ -687,7 +710,20 @@ object BookingPage {
       }
       body = js.JSON.stringify(p)
     }
-    dom.fetch("/api/bookings/request",ri).toFuture.foreach(_ => ())
+    dom.fetch("/api/bookings/request",ri).toFuture.flatMap { response =>
+      if (response.ok) {
+        response.json().toFuture.map { res =>
+          val result = res.asInstanceOf[js.Dynamic]
+          if (result.success.asInstanceOf[Boolean]) {
+            true
+          } else {
+            false
+          }
+        }
+      } else {
+        Future.successful(false)
+      }
+    }
   }
 
   private def th(txt: String): TableCell = {
