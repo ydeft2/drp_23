@@ -37,8 +37,7 @@ object HomePage {
 
     fetchUnreadCount().foreach { unreadCount =>
       unreadNotifications = unreadCount
-      countUnreadMessages(userId)
-      subscribeUnreadSSE(userId)
+      
 
       val accountBtn = createHeaderButton("Account")
       accountBtn.addEventListener("click", (_: dom.MouseEvent) => Account.render())
@@ -56,9 +55,13 @@ object HomePage {
             document.body.appendChild(buildBookingsBox())
             document.body.appendChild(createBookingButton())
             println("unreadChatCount: " + unreadChatCount)
-            Option(document.getElementById("chat-button")).foreach(_.remove())
-            document.body.appendChild(createChatButton(unreadChatCount))
-            updateChatBadge(unreadChatCount)
+
+            countUnreadMessages(userId).foreach { cnt =>
+              unreadChatCount = cnt
+              subscribeUnreadSSE(userId)
+              document.body.appendChild(createChatButton(cnt))
+            }
+
             
             Spinner.hide()
           }
@@ -210,6 +213,7 @@ object HomePage {
 
 
   private def createChatButton(unread: Int): Div = {
+    println(s"Creating chat button with unread count: $unread")
   val button = document.createElement("div").asInstanceOf[Div]
   button.id = "chat-button"
   button.textContent = "Chats"
@@ -402,22 +406,17 @@ object HomePage {
     }
   }
 
-  private def countUnreadMessages(userId: String): Unit = {
-  dom.fetch(s"/api/messages/unreadCount/$userId")
-    .toFuture
-    .flatMap(_.json().toFuture)
-    .foreach { jsObj =>
-
-      val cnt = jsObj
-        .asInstanceOf[js.Dynamic]
-        .count
-        .asInstanceOf[Double]
-        .toInt
-
-      unreadChatCount = cnt
-      
-    }
+    private def countUnreadMessages(userId: String): Future[Int] = {
+    dom.fetch(s"/api/messages/unreadCount/$userId")
+      .toFuture
+      .flatMap(_.json().toFuture)
+      .map { jsObj =>
+        // parse out the integer
+        jsObj.asInstanceOf[js.Dynamic].count.asInstanceOf[Double].toInt
+      }
+      .recover { case _ => 0 }
   }
+
 
    private def subscribeUnreadSSE(userId: String): Unit = {
     if (es != null) es.close()
