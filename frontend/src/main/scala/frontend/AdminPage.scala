@@ -84,17 +84,19 @@ object AdminPage {
 
   def render(): Unit = {
     Spinner.show()
-    fetchUnreadCount().foreach { unreadCount =>
+   fetchUnreadCount().foreach { unreadCount =>
       unreadNotifications = unreadCount
-      countUnreadMessages(dom.window.localStorage.getItem("userId"))
-      Layout.renderPage(
-        contentRender = () =>
-        {
-          buildAdminPage()
-          subscribeUnreadSSE(dom.window.localStorage.getItem("userId"))
-          Spinner.hide()
-        }
-      )
+      countUnreadMessages(dom.window.localStorage.getItem("userId")).foreach { cnt =>
+        unreadChatCount = cnt
+        println(s"Unread notifications: $unreadNotifications, Unread messages: $unreadChatCount")
+
+        Layout.renderPage(
+          contentRender = () =>
+            buildAdminPage()
+        )
+        subscribeUnreadSSE(dom.window.localStorage.getItem("userId"))
+        Spinner.hide()
+      }
     }
   }
 
@@ -171,20 +173,14 @@ object AdminPage {
     document.body.appendChild(contentDiv)
   }
 
-  private def countUnreadMessages(userId: String): Unit = {
-  dom.fetch(s"/api/messages/unreadCount/$userId")
-    .toFuture
-    .flatMap(_.json().toFuture)
-    .foreach { jsObj =>
-
-      val cnt = jsObj
-        .asInstanceOf[js.Dynamic]
-        .count
-        .asInstanceOf[Double]
-        .toInt
-
-      unreadChatCount = cnt
-      
-    }
+    private def countUnreadMessages(userId: String): Future[Int] = {
+    dom.fetch(s"/api/messages/unreadCount/$userId")
+      .toFuture
+      .flatMap(_.json().toFuture)
+      .map { jsObj =>
+        // parse out the integer
+        jsObj.asInstanceOf[js.Dynamic].count.asInstanceOf[Double].toInt
+      }
+      .recover { case _ => 0 }
   }
 }

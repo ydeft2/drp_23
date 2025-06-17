@@ -79,6 +79,10 @@ object DbMessages {
         val unreadSenders = msgs.collect {
           case m if m.receiverId == userId && !m.isRead => m.senderId
         }
+
+        println(s"Unread messages from senders: ${unreadSenders.mkString(", ")}")
+
+        println("countUnread: " + unreadSenders.distinct.size)
         // Count distinct chats
         Right(unreadSenders.distinct.size)
     }
