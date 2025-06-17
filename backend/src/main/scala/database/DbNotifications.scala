@@ -14,7 +14,7 @@ import java.util.UUID
 import backend.domain.notifications._
 import backend.domain.notifications.*
 import backend.domain.notifications.Notification.given
-import org.http4s.circe.CirceEntityDecoder.circeEntityDecoder
+import org.http4s.circe.CirceEntityDecoder.*
 import io.circe.Decoder
 import backend.domain.slots.SlotRequest
 import java.time.format.DateTimeFormatter
@@ -40,12 +40,15 @@ def newSlotCreatedMessage(slotRequest: SlotRequest): String = {
 
 
 // This is intended to be a function only used by the backend to notify users when necessary.
-def notifyUser(userId: UUID, message: String): IO[Either[String, Unit]] = {
-  
+def notifyUser(userId: UUID, message: String, metadata: Option[Json] = None): IO[Either[String, Unit]] = {
+
   val payload = NotificationRequest.create(
     userId = userId,
-    message = message
+    message = message,
+    metadata = metadata
   ).asJson
+
+  println(s"[DEBUG1] notifyUser payload = ${payload.noSpaces}")
 
   val notifyUri = Uri.unsafeFromString(s"$supabaseUrl/rest/v1/notifications")
 
@@ -61,6 +64,7 @@ def notifyUser(userId: UUID, message: String): IO[Either[String, Unit]] = {
   ).withEntity(payload)
 
   EmberClientBuilder.default[IO].build.use { httpClient =>
+    println(s"[DEBUG2] notifyUser payload = ${payload.noSpaces}")
     httpClient.fetch(req) { response =>
       response.status match {
         case Status.Created | Status.Ok =>

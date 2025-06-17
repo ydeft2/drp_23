@@ -13,8 +13,8 @@ import scala.concurrent.Future
 
 object BookingPage {
   // --- Common state for both views ---
-  private val timeStrings = Seq("09:00","10:00","11:00","13:00","14:00","15:00","16:00")
-  private val zoneId      = ZoneOffset.UTC
+  private val timeStrings = Seq("08:00","09:00","10:00","11:00","12:00", "13:00","14:00","15:00","16:00", "17:00")
+  private val zoneId      = java.time.ZoneOffset.ofHours(1)
   private val displayFmt  = DateTimeFormatter.ofPattern("dd MMM yyyy")
 
   // Filters used only by list view:
@@ -24,11 +24,32 @@ object BookingPage {
 
   private var isMap: Boolean = _
   private var listViewClientIdFilter: Option[String] = _
+  private var forcedWeekStart: Option[LocalDate] = None
 
   // Content area under toggle
   private val listLabel = document.createElement("span").asInstanceOf[Span]
   private val mapLabel = document.createElement("span").asInstanceOf[Span]
   private val contentArea = document.createElement("div").asInstanceOf[Div]
+
+  def showClinicAndSlot(clinicId: String, slotId: String): Unit = {
+    isMap = false
+    listViewClientIdFilter = Some(clinicId)
+    // we'll compute week start after loading slots
+    forcedWeekStart = None
+    renderView()
+    // highlight button once rendered
+    dom.window.setTimeout(() => {
+      val btn = contentArea.querySelector(s"button[data-slot-id='$slotId']")
+        .asInstanceOf[Button]
+      if (btn != null) {
+        btn.style.outline = "3px solid red"
+        btn.scrollIntoView()
+      }
+    }, 200)
+
+
+  }
+
 
   // view switch logic
   private def renderView(): Unit = {
@@ -47,8 +68,9 @@ object BookingPage {
     contentArea.innerHTML = ""
     contentArea.appendChild(
       if (isMap) buildMapViewContent()
-      else buildListViewContent(listViewClientIdFilter)
+      else buildListViewContent(listViewClientIdFilter, forcedWeekStart)
     )
+    forcedWeekStart = None
   }
 
 
@@ -82,7 +104,7 @@ object BookingPage {
             box-shadow:0 2px 8px rgba(0,0,0,0.07);
           """
 
-        Seq(listLabel -> "List View", mapLabel -> "Map View").foreach { case (el, txt) =>
+        Seq(listLabel -> "Timetable", mapLabel -> "Map View").foreach { case (el, txt) =>
           el.textContent = txt
           el.style.cssText = """
             cursor:pointer; padding:8px 24px; user-select:none;
@@ -179,13 +201,15 @@ object BookingPage {
   // ------------------------
   // LIST VIEW IMPLEMENTATION
   // ------------------------
-  private def buildListViewContent(clinic_id: Option[String]): Div = {
+  private def buildListViewContent(clinic_id: Option[String], weekStartOpt: Option[LocalDate]): Div = {
     // compute week bounds
     val today        = LocalDate.now(Clock.systemUTC())
-    val daysFromSun  = today.getDayOfWeek.getValue % 7
-    val weekStart0   = today.minusDays(daysFromSun.toLong)
-    var currentStart = weekStart0
-    val lastStart    = weekStart0.plusWeeks(52)
+    val defaultStart = {
+      val daysFromSun = today.getDayOfWeek.getValue % 7
+      today.minusDays(daysFromSun.toLong)
+    }
+    var currentStart = weekStartOpt.getOrElse(defaultStart)
+    val lastStart    = defaultStart.plusWeeks(52)
     val given_clinic_id = clinic_id.isDefined
 
     // page elements
@@ -223,12 +247,23 @@ object BookingPage {
     def updateNav(): Unit = {
       val end = currentStart.plusDays(6)
       weekLabel.textContent = s"${currentStart.format(displayFmt)} → ${end.format(displayFmt)}"
-      prevBtn.disabled = currentStart == weekStart0
+      prevBtn.disabled = currentStart == defaultStart
       nextBtn.disabled = currentStart == lastStart
     }
 
     def drawWeek(jumpToFirst: Boolean): Unit = {
       tableHolder.innerHTML = "<em>Loading…</em>"
+
+      /*
+      IMPORTANT - if currentStart is seemingly before the actual week we as humans are living in...
+      We can add the the following defensive code:
+
+      if (!jumpToFirst && currentStart.isBefore(weekStart0)) currentStart = weekStart0
+
+      tableHolder.innerHTML = "<em>Loading...</em>"
+
+       */
+
 //      fetchSlots().foreach { slots =>
 //        tableHolder.innerHTML = ""
 //        tableHolder.appendChild(buildTable(currentStart, slots))
@@ -242,17 +277,16 @@ object BookingPage {
         val byDay = slots.groupBy { s =>
           Instant.parse(s.slotTime.asInstanceOf[String]).atZone(zoneId).toLocalDate
         }
-        if (jumpToFirst) {
+        if (jumpToFirst) { // jump to first bug fix
           val startDate = byDay.keySet.min
           val daysFromSun = startDate.getDayOfWeek.getValue % 7
-          currentStart = startDate.minusDays(daysFromSun.toLong)
+          val candidateDate = startDate.minusDays(daysFromSun.toLong)
+          currentStart = if (candidateDate.isBefore(defaultStart)) defaultStart else candidateDate
         }
-
+        updateNav()
         tableHolder.innerHTML = ""
         tableHolder.appendChild(buildTable(currentStart, byDay))
       }
-
-      updateNav()
     }
 
     // WEEK NAV
@@ -271,10 +305,10 @@ object BookingPage {
 
     container.appendChild(tableHolder)
 
-    prevBtn.onclick = (_: dom.MouseEvent) => if (currentStart.isAfter(weekStart0)) { currentStart = currentStart.minusWeeks(1); drawWeek(false) }
+    prevBtn.onclick = (_: dom.MouseEvent) => if (currentStart.isAfter(defaultStart)) { currentStart = currentStart.minusWeeks(1); drawWeek(false) }
     nextBtn.onclick = (_: dom.MouseEvent) => if (currentStart.isBefore(lastStart)) { currentStart = currentStart.plusWeeks(1); drawWeek(false) }
 
-    drawWeek(given_clinic_id) // TODO: cld use 'true' always
+    drawWeek(true) // TODO: used to say given_clinic_id
     container
   }
 
@@ -304,8 +338,13 @@ object BookingPage {
 
     parts += "is_taken=false"
     if (clinicFilter.nonEmpty) parts += s"clinic_info=${encode(clinicFilter)}"
-    fromFilter.foreach(f => parts += s"slot_time_gte=${encode(f + ":00Z")}")
-    toFilter.foreach(t   => parts += s"slot_time_lte=${encode(t + ":00Z")}")
+    fromFilter.foreach(f =>
+      val inst  = Instant.parse(f + ":00Z")
+      val lower = if (inst.isBefore(Instant.now())) Instant.now() else inst
+      parts += s"slot_time_gte=${encode(lower.toString)}"
+    )
+    toFilter.foreach(t =>
+      parts += s"slot_time_lte=${encode(t + ":00Z")}")
     parts += "limit=100"; parts += "offset=0"
     val url = base + "?" + parts.mkString("&")
     dom.fetch(url).toFuture.flatMap(_.json().toFuture).map(_.asInstanceOf[js.Array[js.Dynamic]].toSeq)
@@ -366,6 +405,7 @@ object BookingPage {
         if (list.nonEmpty) {
           val btn = document.createElement("button").asInstanceOf[Button]
           btn.textContent = s"${list.size} available"
+          btn.setAttribute("data-slot-id", list.head.slotId.asInstanceOf[String])
           btn.style.cssText =
             """
               width: 100%; height: 100%;
@@ -487,9 +527,9 @@ object BookingPage {
 
             val icon = frontend.Leaflet.icon(js.Dynamic.literal(
               iconUrl = iconUrl,
-              iconSize = js.Array(32, 32), // adjust as needed
-              iconAnchor = js.Array(16, 32), // bottom center
-              popupAnchor = js.Array(0, -32)
+              iconSize = js.Array(48, 48), // adjust as needed
+              iconAnchor = js.Array(24, 48), // bottom center
+              popupAnchor = js.Array(0, -48)
             ))
 
             // 1) Create the popup container
@@ -519,7 +559,6 @@ object BookingPage {
             bookBtn.style.background = if (isAvailable) "#4caf50" else "red"
             bookBtn.disabled = !isAvailable  // disable if no slots
             bookBtn.onclick = (_: dom.MouseEvent) => {
-//              buildListViewContent(Some(clinicId)) /// THIS LINE DOESN'T CHANGE THE VIEW
               listViewClientIdFilter = Some(clinicId)
               isMap = false
               renderView()
@@ -574,7 +613,6 @@ object BookingPage {
                           |<strong>Length:</strong> $length min<br/>
                           |<strong>Clinic:</strong>
                        """.stripMargin
-      //      info.querySelector("strong + br + strong + br + span + strong").appendChild(clinicNameSpan)
       info.appendChild(clinicNameSpan)
 
       entry.appendChild(info)
@@ -584,8 +622,68 @@ object BookingPage {
       bookBtn.style.cssText =
         "background:#4caf50;color:white;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;"
       bookBtn.onclick = (_: dom.MouseEvent) => {
-        requestBooking(s)
-        dom.window.alert("Requested!") // you could also refresh
+        // Show confirmation modal
+        val confirmDiv = document.createElement("div").asInstanceOf[Div]
+        confirmDiv.style.cssText = "padding:20px;text-align:center;"
+        confirmDiv.innerHTML =
+          s"""
+             |<h3>Confirm Booking</h3>
+             |<p>Book this slot at <strong>${clinicNameSpan.textContent}</strong> on <strong>$time</strong>?</p>
+           """.stripMargin
+
+        val confirmBtn = document.createElement("button").asInstanceOf[Button]
+        confirmBtn.textContent = "Confirm"
+        confirmBtn.style.cssText = "margin:10px;padding:8px 16px;background:#4caf50;color:white;border:none;border-radius:4px;cursor:pointer;"
+        confirmBtn.onclick = (_: dom.MouseEvent) => {
+          requestBooking(s).foreach { success =>
+            if (!success) {
+              val failImg = document.createElement("img").asInstanceOf[dom.html.Image]
+              failImg.src = "/images/Sad.png"
+              failImg.style.cssText = "width:100px;height:auto;margin:20px auto;display:block;"
+              val errorMessage = document.createElement("div").asInstanceOf[Div]
+              errorMessage.style.cssText = "padding:20px;text-align:center;color:red;"
+              errorMessage.innerHTML =
+                s"""
+                  |<h3>Booking Failed</h3>
+                  |<p>Sorry, we couldn't book this slot. Please try again later.</p>
+                """.stripMargin
+              errorMessage.appendChild(failImg)
+              hideModal()
+              showModal(errorMessage)
+              dom.window.setTimeout(() => {
+                renderView()
+              }, 300)
+              return
+            } else {
+              val successMessage = document.createElement("div").asInstanceOf[Div]
+              successMessage.style.cssText = "padding:20px;text-align:center;"
+              successMessage.innerHTML =
+                s"""
+                  |<h3>Booking Successful</h3>
+                  |<p>You're all booked in! See you soon!.</p>
+                """.stripMargin
+              val img = document.createElement("img").asInstanceOf[dom.html.Image]
+              img.src = "/images/Confirmation.png"
+              successMessage.appendChild(img)
+              hideModal()
+              showModal(successMessage)
+              dom.window.setTimeout(() => {
+                renderView()
+              }, 300)
+              return
+            }
+          }
+          
+        }
+
+        val cancelBtn = document.createElement("button").asInstanceOf[Button]
+        cancelBtn.textContent = "Cancel"
+        cancelBtn.style.cssText = "margin:10px;padding:8px 16px;background:#ccc;color:#333;border:none;border-radius:4px;cursor:pointer;"
+        cancelBtn.onclick = (_: dom.MouseEvent) => hideModal()
+
+        confirmDiv.appendChild(confirmBtn)
+        confirmDiv.appendChild(cancelBtn)
+        showModal(confirmDiv)
       }
 
       entry.appendChild(bookBtn)
@@ -598,7 +696,7 @@ object BookingPage {
   // -------------------
   // BOOKING + HELPERS
   // -------------------
-  private def requestBooking(slot: js.Dynamic): Unit = {
+  private def requestBooking(slot: js.Dynamic): Future[Boolean] = {
     val p = js.Dynamic.literal(
       slot_id    = slot.slotId.asInstanceOf[String],
       patient_id = dom.window.localStorage.getItem("userId"),
@@ -612,7 +710,20 @@ object BookingPage {
       }
       body = js.JSON.stringify(p)
     }
-    dom.fetch("/api/bookings/request",ri).toFuture.foreach(_ => ())
+    dom.fetch("/api/bookings/request",ri).toFuture.flatMap { response =>
+      if (response.ok) {
+        response.json().toFuture.map { res =>
+          val result = res.asInstanceOf[js.Dynamic]
+          if (result.success.asInstanceOf[Boolean]) {
+            true
+          } else {
+            false
+          }
+        }
+      } else {
+        Future.successful(false)
+      }
+    }
   }
 
   private def th(txt: String): TableCell = {

@@ -130,6 +130,13 @@ object HomePage {
 
   private def buildBookingEntry(booking: Booking): Div = {
     val entry = document.createElement("div").asInstanceOf[Div]
+    entry.className = "booking-item"
+
+    // a little separator helps visually
+    entry.style.borderBottom = "1px solid #eee"
+    entry.style.paddingBottom = "12px"
+    entry.style.marginBottom = "12px"
+
     val isPending = booking.appointmentType == "NOT_SET"
     val titleText = if (isPending) "Pending Confirmation"
                     else booking.appointmentType.replace("_", " ").toLowerCase.capitalize
@@ -211,24 +218,51 @@ object HomePage {
     """
   }
 
-
   private def createChatButton(unread: Int): Div = {
-    println(s"Creating chat button with unread count: $unread")
-    val button = document.createElement("div").asInstanceOf[Div]
-    button.id = "chat-button"
-    button.textContent = "Chats"
-    button.style.position  = "fixed"     
-    button.style.left      = "50%"
-    button.style.top       = "150px"     
-    button.style.transform = "translateX(-50%)"
-    button.style.backgroundImage = "linear-gradient(135deg,#7b2ff7,#f107a3)"
-    button.style.color           = "white"
-    button.style.padding         = "24px 48px"
-    button.style.fontSize        = "1.2em"
-    button.style.fontWeight      = "bold"
-    button.style.borderRadius    = "30px"
-    button.style.cursor          = "pointer"
-    button.style.boxShadow       = "0 4px 10px rgba(0,0,0,0.2)"
+    val chatButton = document.createElement("button").asInstanceOf[dom.html.Button]
+    chatButton.id = "chat-float-btn"
+    chatButton.style.position = "fixed"
+    chatButton.style.bottom = "80px"
+    chatButton.style.right = "50px"
+    chatButton.style.zIndex = "1000"
+    chatButton.style.backgroundImage = "linear-gradient(135deg, #7b2ff7, #f107a3)"   
+    chatButton.style.color = "#fff"
+    chatButton.style.border = "none"
+    chatButton.style.borderRadius = "50%"
+    chatButton.style.width = "72px"
+    chatButton.style.height = "72px"
+    chatButton.style.boxShadow = "0 4px 16px rgba(0,0,0,0.18)"
+    chatButton.style.cursor = "pointer"
+    chatButton.style.display = "flex"
+    chatButton.style.setProperty("align-items", "center")
+    chatButton.style.setProperty("justify-content", "center")
+    chatButton.style.padding = "0"
+
+    val icon = document.createElement("img").asInstanceOf[dom.html.Image]
+    icon.src = "images/icons/MessagesWhite.png"
+    icon.alt = "Chats"
+    icon.style.width = "40px"
+    icon.style.height = "40px"
+    icon.style.display = "block"
+    icon.style.margin = "0"
+    icon.style.padding = "0"
+    icon.style.pointerEvents = "none" 
+
+    chatButton.appendChild(icon)
+
+    chatButton.addEventListener("mouseover", (_: dom.MouseEvent) => {
+      chatButton.style.transform = "translateY(-4px)"
+      chatButton.style.boxShadow = "0 8px 18px rgba(0,0,0,.25)"
+    })
+
+    chatButton.addEventListener("mouseout", (_: dom.MouseEvent) => {
+      chatButton.style.transform = "translateY(0)"
+      chatButton.style.boxShadow = "0 6px 14px rgba(0,0,0,.20)"
+    })
+
+    chatButton.addEventListener("click", (_: dom.MouseEvent) => {
+      ChatPage.render()
+    })
     
     if (unread > 0) {
       val badge = document.createElement("span").asInstanceOf[Span]
@@ -245,18 +279,12 @@ object HomePage {
       badge.style.borderRadius = "50%"
       badge.style.padding      = "2px 6px"
 
-      button.appendChild(badge)
+      chatButton.appendChild(badge)
     }
 
-    button.addEventListener("mouseover", (_: dom.MouseEvent) => {
-      button.style.boxShadow = "0 6px 14px rgba(0,0,0,0.3)"
-    })
-    button.addEventListener("mouseout", (_: dom.MouseEvent) => {
-      button.style.boxShadow = "0 4px 10px rgba(0,0,0,0.2)"
-    })
-    button.addEventListener("click", (_: dom.MouseEvent) => ChatPage.render())
-
-    button
+    val wrapper = document.createElement("div").asInstanceOf[dom.html.Div]
+    wrapper.appendChild(chatButton)
+    wrapper
   }
 
   // The new "Find Clinics" button
@@ -288,10 +316,10 @@ object HomePage {
     button.style.position = "fixed"
     button.style.left = "50%"
     button.style.bottom = "80px"
-    button.style.transform = "translate(-50%, 0)" // Ensure horizontal center remains fixed
+    button.style.transform = "translate(-50%, 0)" 
     button.style.backgroundImage = "linear-gradient(135deg, #7b2ff7, #f107a3)"
     button.style.color = "white"
-    button.style.padding = "24px 48px" // slightly larger
+    button.style.padding = "24px 48px"
     button.style.fontSize = "1.2em"
     button.style.fontWeight = "bold"
     button.style.borderRadius = "60px"

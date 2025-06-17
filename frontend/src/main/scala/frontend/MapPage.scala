@@ -54,6 +54,33 @@ object MapPage {
 
         document.body.appendChild(mapDiv)
 
+        // Just a little key
+        val legend = document.createElement("div").asInstanceOf[Div]
+        legend.style.cssText =
+          """
+            position: absolute;
+            bottom: 40px;
+            left: 20px;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+            font-size: 0.9em;
+            line-height: 1.4;
+          """
+        legend.innerHTML =
+          """
+            <div style="display:flex;align-items:center;gap:6px;">
+              <img src="/images/ClinicMapIconGreen.png" width="20" height="20"/>
+              <span>Press "Register Interest" to be notified for this clinic</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+              <img src="/images/ClinicMapIconOrange.png" width="20" height="20"/>
+              <span>No notifications for this clinic</span>
+            </div>
+          """
+        document.body.appendChild(legend)
+
         // Give the browser a moment to apply styles
         dom.window.setTimeout(() => initMap(), 0)
       }
