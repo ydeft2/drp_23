@@ -55,11 +55,13 @@ object HomePage {
             document.body.appendChild(buildBookingsBox())
             document.body.appendChild(createBookingButton())
             println("unreadChatCount: " + unreadChatCount)
+
             countUnreadMessages(userId).foreach { cnt =>
               unreadChatCount = cnt
               subscribeUnreadSSE(userId)
               document.body.appendChild(createChatButton(cnt))
             }
+
             
             Spinner.hide()
           }
@@ -213,6 +215,7 @@ object HomePage {
   private def createChatButton(unread: Int): Div = {
     println(s"Creating chat button with unread count: $unread")
   val button = document.createElement("div").asInstanceOf[Div]
+  button.id = "chat-button"
   button.textContent = "Chats"
   button.style.position  = "fixed"     
   button.style.left      = "50%"
