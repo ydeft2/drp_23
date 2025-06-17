@@ -303,11 +303,11 @@ object BookingDashboard {
   }
 
   def formatDate(date: js.Date): String =
-    f"${date.getUTCDate().toInt}%02d/${date.getUTCMonth().toInt + 1}%02d/${date.getUTCFullYear()}"
+    f"${date.getDate().toInt}%02d/${date.getMonth().toInt + 1}%02d/${date.getFullYear()}"
 
   def formatDay(date: js.Date): String = {
     val days = Array("Mon", "Tue", "Wed", "Thu", "Fri")
-    val idx = date.getUTCDay() match {
+    val idx = date.getDay() match {
       case 1 => 0; case 2 => 1; case 3 => 2; case 4 => 3; case 5 => 4; case _ => 0
     }
     s"${days(idx)}\n${formatDate(date)}"
@@ -315,7 +315,7 @@ object BookingDashboard {
 
   def formatSlotTime(iso: String): String = {
     val d = new js.Date(iso)
-    f"${d.getUTCHours().toInt}%02d:${d.getUTCMinutes().toInt}%02d"
+    f"${d.getHours().toInt}%02d:${d.getMinutes().toInt}%02d"
   }
 
   def showSlotDetails(slot: js.Dynamic): Unit = {
