@@ -1,9 +1,11 @@
 package frontend
 
+import org.scalajs.dom.Fetch
 import org.scalajs.dom
 import org.scalajs.dom.document
 import org.scalajs.dom.html.{Button, Div, Element, Input, Span, Table, TableCell, TableRow}
-
+import scala.scalajs.js.timers.setInterval
+import scala.scalajs.js.URIUtils.encodeURIComponent
 import scala.scalajs.js
 import scala.scalajs.js.Dynamic
 import java.time.*
@@ -71,6 +73,7 @@ object BookingPage {
       else buildListViewContent(listViewClientIdFilter, forcedWeekStart)
     )
     forcedWeekStart = None
+
   }
 
 
@@ -194,6 +197,10 @@ object BookingPage {
 
         document.body.appendChild(root)
         renderView()
+
+        setInterval(10000) {
+          checkSlotUpdates()
+        }
       }
     )
   }
@@ -730,4 +737,30 @@ object BookingPage {
   }
   private def encode(s: String): String =
     js.URIUtils.encodeURIComponent(s)
+
+  def checkSlotUpdates(): Unit = {
+    val now = js.Date.now()
+    val tenSecondsAgo = new js.Date(now - 10 * 1000).toISOString()
+
+    val header = new dom.Headers()
+    header.append("apikey", SUPABASE_ANON_KEY)
+    header.append("Authorization", s"Bearer $SUPABASE_ANON_KEY")
+
+    val reqInit = new dom.RequestInit {
+      method = dom.HttpMethod.GET
+      headers = header
+    }
+
+    dom.fetch(
+      s"https://djkrryzafuofyevgcyic.supabase.co/rest/v1/slots?updated_at=gt.${encodeURIComponent(tenSecondsAgo)}",
+      reqInit
+    ).toFuture.flatMap(_.json().toFuture).foreach { json =>
+      val slots = json.asInstanceOf[js.Array[js.Dynamic]]
+      if (slots.nonEmpty) {
+        Spinner.show()
+        renderView()
+        Spinner.hide()
+      }
+    }
+  }
 }
