@@ -17,8 +17,10 @@ case class MessageResponse(
   message      : String,
   sentAt       : Instant,
   senderName   : String,   
-  receiverName : String    
+  receiverName : String,
+  isRead       : Boolean    
 )
+
 
 object ChatPage {
 
@@ -34,6 +36,72 @@ object ChatPage {
 
   private var listPane: Div = _
   private var convPane: Div = _
+
+  private var es: dom.EventSource = _
+
+  private def subscribeSSE(): Unit = {
+    println("Subscribing to SSE for messages...")
+    if (es != null) es.close()
+
+    es = new dom.EventSource(s"/api/messages/stream/${selfId.toString}")
+
+    es.onmessage = (e: dom.MessageEvent) => {
+      val payload = js.JSON.parse(e.data.asInstanceOf[String])
+      val newMsg  = parseMessages(js.Array(payload)).head
+
+      all = all :+ newMsg
+      buildThreads()
+      println(s"New message received: ${newMsg.message} from ${newMsg.senderId}")
+      if (currentPeer.contains(peerOf(newMsg))) {
+        appendSingleMessage(newMsg)
+        markMessagesRead(List(newMsg))
+      } else {
+        renderList()
+      }
+    }
+
+    es.onerror = (_: dom.Event) => {
+      println("SSE error occurred, retrying subscription...")
+      es.close()
+      dom.window.setTimeout(() => subscribeSSE(), 2000)
+    }
+  }
+
+  private def peerOf(m: MessageResponse): UUID =
+    if m.senderId == selfId then m.receiverId else m.senderId
+
+  private def appendSingleMessage(m: MessageResponse): Unit = {
+    val bubble = document.createElement("div").asInstanceOf[Div]
+    bubble.style.maxWidth      = "70%"
+    bubble.style.margin        = "4px"
+    bubble.style.padding       = "6px 8px"
+    bubble.style.borderRadius  = "6px"
+
+    
+    bubble.appendChild(document.createTextNode(m.message + "  "))
+
+    
+    val timeFmt = DateTimeFormatter.ofPattern("HH:mm").withZone(safeZone)
+    val timeLabel = span(timeFmt.format(m.sentAt), grey = true)
+    timeLabel.style.fontSize = "0.78em"
+    bubble.appendChild(timeLabel)
+
+
+    if (m.senderId == selfId) {
+      bubble.style.marginLeft       = "auto"
+      bubble.style.backgroundColor  = "#d0e6ff"
+    } else {
+      bubble.style.marginRight      = "auto"
+      bubble.style.backgroundColor  = "#e6e6e6"
+    }
+
+    
+    val scrollBox = convPane
+      .querySelector("div[style*='overflow-y: auto']")
+      .asInstanceOf[Div]
+    scrollBox.appendChild(bubble)
+    scrollBox.scrollTop = scrollBox.scrollHeight
+  }
 
 
     
@@ -79,6 +147,8 @@ object ChatPage {
           renderList()
           println("ChatPage.render: list rendered listPane: " + listPane)
           currentPeer.orElse(grouped.keys.headOption).foreach(showConversation)
+
+          subscribeSSE()
           Spinner.hide()
         }
       )
@@ -99,7 +169,8 @@ object ChatPage {
           o.message.asInstanceOf[String],
           parseIsoToInstant(o.sent_at.asInstanceOf[String]),
           o.sender_name  .asInstanceOf[String],   
-          o.receiver_name.asInstanceOf[String]    
+          o.receiver_name.asInstanceOf[String],
+          o.is_read.asInstanceOf[Boolean]    
         )
       ) catch { case _ => None }
     }
@@ -117,6 +188,8 @@ object ChatPage {
         case arr: js.Array[js.Dynamic] => all = parseMessages(arr); onSuccess()
         case other                     => Spinner.hide(); dom.window.alert("Invalid response: " + other)
       }
+
+      println("ChatPage.fetchMessages: fetch initiated with token: " + token + ", uid: " + uid)
   }
 
   private def sendMessage(peer: UUID, text: String, onOK: () => Unit): Unit = {
@@ -175,6 +248,8 @@ object ChatPage {
   /* =================== threads =================== */
 
   private def buildThreads(): Unit = {
+
+    println("ChatPage.buildThreads called")
     grouped = all.groupBy(m => if m.senderId == selfId then m.receiverId else m.senderId)
                 .view.mapValues(_.sortBy(_.sentAt)).toMap
     
@@ -186,6 +261,8 @@ object ChatPage {
         else                          first.receiverName
       peerId -> name
     }
+
+    println("ChatPage.buildThreads: derivedNames: " + derivedNames)
 
   
     peerName = peerName ++ derivedNames       
@@ -223,10 +300,30 @@ object ChatPage {
       li.style.padding = "10px"
       if currentPeer.contains(peer) then li.style.backgroundColor = "#eef4ff"
 
+
+      if (msgs.exists(m => !m.isRead && m.receiverId == selfId)) {
+        val dot = document.createElement("span").asInstanceOf[Span]
+        dot.textContent = "●"
+        dot.style.color      = "#007bff"
+        dot.style.marginLeft = "8px"
+        dot.style.fontSize   = "0.8em"
+        li.appendChild(dot)
+      }
+
       li.onclick = (_: dom.MouseEvent) => {
+        val toClear = msgs.filter(m => m.receiverId == selfId && !m.isRead)
+        if (toClear.nonEmpty) {
+          all = all.map { m =>
+            if (toClear.exists(_.messageId == m.messageId)) m.copy(isRead = true)
+            else m
+          }
+          buildThreads()    
+          markMessagesRead(toClear)
+    }
         currentPeer = Some(peer)
         renderList()
         showConversation(peer)
+      
       }
 
       val name = peerName.getOrElse(peer, peer.toString.take(8))
@@ -248,6 +345,21 @@ object ChatPage {
 
     listPane.appendChild(ul)
   }
+  
+  private def markMessagesRead(msgs: List[MessageResponse]): Unit = {
+  val hdr = new dom.Headers()
+  hdr.append("Content-Type", "application/json")
+  val init = new dom.RequestInit {
+    method  = dom.HttpMethod.POST
+    headers = hdr
+  }
+  msgs.foreach { m =>
+    init.body = js.JSON.stringify(m.messageId.toString)
+    dom.fetch(s"/api/messages/markMessageRead/${m.messageId}", init)
+      .toFuture
+      .foreach(_ => ())
+  }
+}
 
 
   private def showConversation(peer: UUID): Unit = {
@@ -257,6 +369,14 @@ object ChatPage {
 
 
     val msgs = grouped.getOrElse(peer, Nil)
+
+    if (!msgs.isEmpty) {
+      val unread = grouped(peer).filter(m => m.receiverId == selfId && !m.isRead)
+      if (unread.nonEmpty) {
+        markMessagesRead(unread)
+      }
+    }
+
     val scrollBox = div(); scrollBox.style.setProperty("flex-grow", "1")
     scrollBox.style.overflowY = "auto"; scrollBox.style.paddingRight = "6px"
     convPane.appendChild(scrollBox)

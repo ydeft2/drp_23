@@ -14,7 +14,8 @@ object messages {
     message: String,
     sentAt: Instant,
     senderName: String,   
-    receiverName: String 
+    receiverName: String,
+    isRead: Boolean
   )
 
   object Message {
@@ -28,13 +29,13 @@ object messages {
       }
     }
 
-    given decoder: Decoder[Message] = Decoder.forProduct7(
-      "message_id", "sender_id", "receiver_id", "message", "sent_at", "sender_name", "receiver_name"
+    given decoder: Decoder[Message] = Decoder.forProduct8(
+      "message_id", "sender_id", "receiver_id", "message", "sent_at", "sender_name", "receiver_name", "is_read"
     )(Message.apply)
 
-    given encoder: Encoder[Message] = Encoder.forProduct7(
-      "message_id", "sender_id", "receiver_id", "message", "sent_at", "sender_name", "receiver_name"
-    )(m => (m.messageId, m.senderId, m.receiverId, m.message, m.sentAt, m.senderName, m.receiverName))
+    given encoder: Encoder[Message] = Encoder.forProduct8(
+      "message_id", "sender_id", "receiver_id", "message", "sent_at", "sender_name", "receiver_name",  "is_read"
+    )(m => (m.messageId, m.senderId, m.receiverId, m.message, m.sentAt, m.senderName, m.receiverName, m.isRead))
   }
 
   case class MessageRequest(

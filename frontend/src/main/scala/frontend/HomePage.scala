@@ -11,6 +11,7 @@ import scalajs.js.JSConverters.JSRichFutureNonThenable
 import scala.Option
 import scala.Some
 import scala.None
+import scala.concurrent.Future
 
 object HomePage {
   case class Booking(
@@ -26,12 +27,17 @@ object HomePage {
 
   private var unreadNotifications: Int = 0
 
+  private var unreadChatCount: Int = 0
+
+  private var es: dom.EventSource = _
+
   def render(): Unit = {
     Spinner.show()
     val userId = dom.window.localStorage.getItem("userId")
 
     fetchUnreadCount().foreach { unreadCount =>
       unreadNotifications = unreadCount
+      
 
       val accountBtn = createHeaderButton("Account")
       accountBtn.addEventListener("click", (_: dom.MouseEvent) => Account.render())
@@ -48,7 +54,15 @@ object HomePage {
             document.body.appendChild(createFindClinicsButton())
             document.body.appendChild(buildBookingsBox())
             document.body.appendChild(createBookingButton())
-            document.body.appendChild(createChatButton())
+            println("unreadChatCount: " + unreadChatCount)
+
+            countUnreadMessages(userId).foreach { cnt =>
+              unreadChatCount = cnt
+              subscribeUnreadSSE(userId)
+              document.body.appendChild(createChatButton(cnt))
+            }
+
+            
             Spinner.hide()
           }
         }
@@ -204,8 +218,7 @@ object HomePage {
     """
   }
 
-
-  private def createChatButton(): Div = {
+  private def createChatButton(unread: Int): Div = {
     val chatButton = document.createElement("button").asInstanceOf[dom.html.Button]
     chatButton.id = "chat-float-btn"
     chatButton.style.position = "fixed"
@@ -250,6 +263,24 @@ object HomePage {
     chatButton.addEventListener("click", (_: dom.MouseEvent) => {
       ChatPage.render()
     })
+    
+    if (unread > 0) {
+      val badge = document.createElement("span").asInstanceOf[Span]
+      badge.textContent = unread.toString
+      badge.className   = "notification-badge"
+
+      badge.style.position     = "absolute"
+      badge.style.top          = "6px"
+      badge.style.right        = "12px"
+      badge.style.background   = "#007bff"
+      badge.style.color        = "white"
+      badge.style.fontSize     = "0.7em"
+      badge.style.lineHeight   = "1"
+      badge.style.borderRadius = "50%"
+      badge.style.padding      = "2px 6px"
+
+      chatButton.appendChild(badge)
+    }
 
     val wrapper = document.createElement("div").asInstanceOf[dom.html.Div]
     wrapper.appendChild(chatButton)
@@ -402,5 +433,56 @@ object HomePage {
       }
     }
   }
+
+    private def countUnreadMessages(userId: String): Future[Int] = {
+    dom.fetch(s"/api/messages/unreadCount/$userId")
+      .toFuture
+      .flatMap(_.json().toFuture)
+      .map { jsObj =>
+        // parse out the integer
+        jsObj.asInstanceOf[js.Dynamic].count.asInstanceOf[Double].toInt
+      }
+      .recover { case _ => 0 }
+  }
+
+
+   private def subscribeUnreadSSE(userId: String): Unit = {
+    if (es != null) es.close()
+    es = new dom.EventSource(s"/api/messages/stream/$userId")
+    es.onmessage = (e: dom.MessageEvent) => {
+      val raw = JSON.parse(e.data.asInstanceOf[String])
+      val recv = raw.receiver_id.asInstanceOf[String]
+      if (recv == userId) {
+        unreadChatCount += 1
+        updateChatBadge(unreadChatCount)
+      }
+    }
+    es.onerror = (_: dom.Event) => {
+      es.close()
+      dom.window.setTimeout(() => subscribeUnreadSSE(userId), 2000)
+    }
+  }
+
+  private def updateChatBadge(cnt: Int): Unit = {
+    val btn = document.getElementById("chat-button").asInstanceOf[Div]
+    // clear old badge
+    Option(btn.querySelector(".notification-badge")).foreach(_.remove())
+    if (cnt > 0) {
+      val badge = document.createElement("span").asInstanceOf[Span]
+      badge.className   = "notification-badge"
+      badge.textContent = cnt.toString
+      badge.style.position     = "absolute"
+      badge.style.top          = "8px"
+      badge.style.right        = "12px"
+      badge.style.background   = "#007bff"
+      badge.style.color        = "white"
+      badge.style.fontSize     = "0.8em"
+      badge.style.borderRadius = "50%"
+      badge.style.padding      = "2px 6px"
+      btn.appendChild(badge)
+    }
+  }
 }
+
+ 
 
