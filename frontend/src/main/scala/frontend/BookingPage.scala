@@ -653,7 +653,6 @@ object BookingPage {
               dom.window.setTimeout(() => {
                 renderView()
               }, 300)
-              return
             } else {
               val successMessage = document.createElement("div").asInstanceOf[Div]
               successMessage.style.cssText = "padding:20px;text-align:center;"
@@ -670,10 +669,8 @@ object BookingPage {
               dom.window.setTimeout(() => {
                 renderView()
               }, 300)
-              return
             }
           }
-          
         }
 
         val cancelBtn = document.createElement("button").asInstanceOf[Button]
@@ -712,14 +709,7 @@ object BookingPage {
     }
     dom.fetch("/api/bookings/request",ri).toFuture.flatMap { response =>
       if (response.ok) {
-        response.json().toFuture.map { res =>
-          val result = res.asInstanceOf[js.Dynamic]
-          if (result.success.asInstanceOf[Boolean]) {
-            true
-          } else {
-            false
-          }
-        }
+        Future.successful(true)
       } else {
         Future.successful(false)
       }
