@@ -613,7 +613,6 @@ object BookingPage {
                           |<strong>Length:</strong> $length min<br/>
                           |<strong>Clinic:</strong>
                        """.stripMargin
-      //      info.querySelector("strong + br + strong + br + span + strong").appendChild(clinicNameSpan)
       info.appendChild(clinicNameSpan)
 
       entry.appendChild(info)
@@ -623,8 +622,45 @@ object BookingPage {
       bookBtn.style.cssText =
         "background:#4caf50;color:white;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;"
       bookBtn.onclick = (_: dom.MouseEvent) => {
-        requestBooking(s)
-        dom.window.alert("Requested!") // you could also refresh
+        // Show confirmation modal
+        val confirmDiv = document.createElement("div").asInstanceOf[Div]
+        confirmDiv.style.cssText = "padding:20px;text-align:center;"
+        confirmDiv.innerHTML =
+          s"""
+             |<h3>Confirm Booking</h3>
+             |<p>Book this slot at <strong>${clinicNameSpan.textContent}</strong> on <strong>$time</strong>?</p>
+           """.stripMargin
+
+        val confirmBtn = document.createElement("button").asInstanceOf[Button]
+        confirmBtn.textContent = "Confirm"
+        confirmBtn.style.cssText = "margin:10px;padding:8px 16px;background:#4caf50;color:white;border:none;border-radius:4px;cursor:pointer;"
+        confirmBtn.onclick = (_: dom.MouseEvent) => {
+          requestBooking(s)
+          val successMessage = document.createElement("div").asInstanceOf[Div]
+          successMessage.style.cssText = "padding:20px;text-align:center;"
+          successMessage.innerHTML =
+            s"""
+               |<h3>Booking Successful</h3>
+               |<p>You're all booked in! See you soon!.</p>
+             """.stripMargin
+          val img = document.createElement("img").asInstanceOf[dom.html.Image]
+          img.src = "/images/Confirmation.png"
+          successMessage.appendChild(img)
+          hideModal()
+          showModal(successMessage)
+          dom.window.setTimeout(() => {
+            renderView()
+          }, 300)
+        }
+
+        val cancelBtn = document.createElement("button").asInstanceOf[Button]
+        cancelBtn.textContent = "Cancel"
+        cancelBtn.style.cssText = "margin:10px;padding:8px 16px;background:#ccc;color:#333;border:none;border-radius:4px;cursor:pointer;"
+        cancelBtn.onclick = (_: dom.MouseEvent) => hideModal()
+
+        confirmDiv.appendChild(confirmBtn)
+        confirmDiv.appendChild(cancelBtn)
+        showModal(confirmDiv)
       }
 
       entry.appendChild(bookBtn)
