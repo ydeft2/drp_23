@@ -73,6 +73,8 @@ import concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.scalajs.js.timers._
+import concurrent.duration.DurationInt
 
 object AdminPage {
 
@@ -96,8 +98,32 @@ object AdminPage {
         )
         subscribeUnreadSSE(dom.window.localStorage.getItem("userId"))
         Spinner.hide()
+
+        setInterval(2.seconds) {
+            println("Refreshing inbox badge")
+              refreshInboxBadge(dom.window.localStorage.getItem("userId"))
+            }
       }
     }
+  }
+
+  private def refreshInboxBadge(userId: String): Unit = {
+  
+      val tiles = document.getElementsByClassName("dashboard-item")
+      for i <- 0 until tiles.length do
+        val t = tiles(i).asInstanceOf[Div]
+        fetchUnreadCount().foreach { unreadCount =>
+      unreadNotifications = unreadCount}
+        if t.innerText.startsWith("Inbox") then
+          // remove old badge
+          Option(t.querySelector(".notification-badge")).foreach(_.remove())
+          // append new if needed
+          
+          if unreadNotifications > 0 then
+            val b = document.createElement("span").asInstanceOf[Span]
+            b.className   = "notification-badge"
+            b.textContent = unreadNotifications.toString
+            t.querySelector(".icon-with-badge").appendChild(b)
   }
 
   private def updateChatBadge(cnt: Int): Unit = {

@@ -12,6 +12,8 @@ import scala.Option
 import scala.Some
 import scala.None
 import scala.concurrent.Future
+import scala.scalajs.js.timers._
+import concurrent.duration.DurationInt
 
 object HomePage {
   case class Booking(
@@ -44,6 +46,7 @@ object HomePage {
 
       val inboxLabel = if (unreadNotifications > 0) s"Inbox ($unreadNotifications)" else "Inbox"
       val inboxBtn = createHeaderButton(inboxLabel)
+      inboxBtn.id = "inbox-button" // Set an ID for the inbox button
       inboxBtn.addEventListener("click", (_: dom.MouseEvent) => Inbox.render())
       Layout.renderPage(
         leftButton = Some(accountBtn),
@@ -64,9 +67,21 @@ object HomePage {
 
             
             Spinner.hide()
+            setInterval(2.seconds) {
+              refreshInboxBadge(userId)
+            }
           }
         }
       )
+    }
+  }
+
+  private def refreshInboxBadge(userId: String): Unit = {
+    println("Refreshing inbox badge...")
+    fetchUnreadCount().foreach { unreadCount =>
+    unreadNotifications = unreadCount
+    val inboxBtn = document.querySelector("#inbox-button").asInstanceOf[Button]
+    inboxBtn.textContent = if (unreadNotifications > 0) s"Inbox ($unreadNotifications)" else "Inbox"
     }
   }
 
@@ -220,7 +235,7 @@ object HomePage {
 
   private def createChatButton(unread: Int): Div = {
     val chatButton = document.createElement("button").asInstanceOf[dom.html.Button]
-    chatButton.id = "chat-float-btn"
+    chatButton.id = "chat-button"
     chatButton.style.position = "fixed"
     chatButton.style.bottom = "80px"
     chatButton.style.right = "50px"
@@ -270,14 +285,14 @@ object HomePage {
       badge.className   = "notification-badge"
 
       badge.style.position     = "absolute"
-      badge.style.top          = "6px"
-      badge.style.right        = "12px"
-      badge.style.background   = "#007bff"
+      badge.style.top          = "1px"
+      badge.style.right        = "2px"
+      badge.style.background   = "#7b2ff7"
       badge.style.color        = "white"
-      badge.style.fontSize     = "0.7em"
+      badge.style.fontSize     = "1em"
       badge.style.lineHeight   = "1"
       badge.style.borderRadius = "50%"
-      badge.style.padding      = "2px 6px"
+      badge.style.padding      = "1px 2px"
 
       chatButton.appendChild(badge)
     }
