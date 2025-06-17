@@ -116,6 +116,7 @@ object HomePage {
 
   private def buildBookingEntry(booking: Booking): Div = {
     val entry = document.createElement("div").asInstanceOf[Div]
+    entry.className = "booking-item"
 
     // a little separator helps visually
     entry.style.borderBottom = "1px solid #eee"
